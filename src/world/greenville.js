@@ -105,10 +105,10 @@ function building(group, {
   // Porch posts + roof lip
   if (porch) {
     const porchZ = frontZ + 1.15;
-    const woodMat = woodMap
+    const walkMat = woodMap
       ? std(COL.wood, { map: woodMap, roughnessMap: woodMap })
       : std(COL.wood);
-    group.add(box(w * 0.85, 0.1, 1.6, woodMat, x, 0.12, porchZ - 0.3));
+    group.add(box(w * 0.85, 0.1, 1.6, walkMat, x, 0.12, porchZ - 0.3));
     for (const sx of [-w * 0.38, w * 0.38]) {
       group.add(box(0.14, 2.4, 0.14, COL.woodDark, x + sx, 1.2, porchZ));
     }
@@ -463,6 +463,142 @@ export function buildGreenville(scene) {
   lamp(6.5, 8);
   lamp(-6.5, -8);
   lamp(6.5, 20);
+
+
+  // —— Soft Open density pass: spend the 1% map budget ——
+  // Individual boardwalk planks (real geo, not just texture seams)
+  for (const side of [-1, 1]) {
+    for (let i = 0; i < 36; i++) {
+      const pz = -22 + i * 1.55;
+      const plank = box(2.35, 0.06, 1.45, walkMat, side * 6.35, 0.24, pz);
+      plank.rotation.y = (i % 3 - 1) * 0.01;
+      root.add(plank);
+      // Nail heads
+      if (i % 2 === 0) {
+        root.add(box(0.04, 0.02, 0.04, COL.bone, side * 5.4, 0.28, pz, { roughness: 0.5, metalness: 0.4 }));
+        root.add(box(0.04, 0.02, 0.04, COL.bone, side * 7.2, 0.28, pz, { roughness: 0.5, metalness: 0.4 }));
+      }
+    }
+  }
+
+  // Window interiors — recessed emissive room boxes behind glass
+  function windowInterior(x, y, z, w = 0.7, h = 0.7) {
+    const room = box(w * 0.9, h * 0.9, 0.45, 0x1a1008, x, y, z - 0.25, {
+      emissive: 0x6a3a14, emissiveIntensity: 0.55, roughness: 0.9,
+    });
+    room.castShadow = false;
+    root.add(room);
+    // Curtain strip
+    root.add(box(0.08, h * 0.85, 0.02, 0x4a2018, x - w * 0.35, y, z - 0.02, { roughness: 0.95 }));
+  }
+  windowInterior(-11 - 8 * 0.28, 1.6, 8 + 7 / 2 + 0.1);
+  windowInterior(-11 + 8 * 0.28, 1.6, 8 + 7 / 2 + 0.1);
+  windowInterior(11 - 7 * 0.28, 1.6, 6 + 8 / 2 + 0.1);
+  windowInterior(11 + 7 * 0.28, 1.6, 6 + 8 / 2 + 0.1);
+
+  // Porch railings + balusters
+  for (const [bx, bz, bw] of [[-11, 8 + 3.5 + 1.0, 8], [11, 6 + 4 + 1.0, 7]]) {
+    for (let i = 0; i < 7; i++) {
+      const px = bx - bw * 0.35 + i * (bw * 0.7 / 6);
+      root.add(box(0.06, 0.7, 0.06, COL.woodDark, px, 0.55, bz));
+    }
+    root.add(box(bw * 0.75, 0.06, 0.08, COL.wood, bx, 0.92, bz));
+  }
+
+  // Hitch detail — rings, feed bag, loose rope coil
+  root.add(box(0.08, 0.08, 0.08, COL.bone, -4.5 - 1.35, 1.05, -2 + 0.12));
+  root.add(box(0.08, 0.08, 0.08, COL.bone, -4.5 + 1.35, 1.05, -2 + 0.12));
+  const feed = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 8), std(0x8a7040, { roughness: 0.95 }));
+  feed.position.set(-4.5, 0.28, -2.6);
+  feed.scale.set(1.1, 0.7, 0.9);
+  feed.castShadow = true;
+  root.add(feed);
+  // Rope coil
+  for (let i = 0; i < 4; i++) {
+    const coil = new THREE.Mesh(new THREE.TorusGeometry(0.18 - i * 0.02, 0.025, 6, 14), ropeMat);
+    coil.position.set(-3.2, 0.08 + i * 0.04, -2.3);
+    coil.rotation.x = Math.PI / 2;
+    root.add(coil);
+  }
+
+  // Alley clutter — sack, lantern, tools, wagon wheel, broom
+  const sack = new THREE.Mesh(new THREE.SphereGeometry(0.32, 10, 8), std(0x6a5a38, { roughness: 0.98 }));
+  sack.position.set(alleyX - 2.0, 0.28, alleyZ + 0.4);
+  sack.scale.set(1.2, 0.85, 1.0);
+  sack.castShadow = true;
+  root.add(sack);
+  // Lantern on crate
+  root.add(box(0.12, 0.18, 0.12, COL.rust, alleyX - 1.2, 1.55, alleyZ, {
+    emissive: 0x8a4010, emissiveIntensity: 0.9,
+  }));
+  const lanternLit = new THREE.PointLight(0xc07840, 0.55, 8, 2);
+  lanternLit.position.set(alleyX - 1.2, 1.7, alleyZ);
+  root.add(lanternLit);
+  // Wagon wheel against wall
+  const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.05, 8, 20), std(COL.woodDark, { roughness: 0.85 }));
+  wheel.position.set(alleyX + 1.4, 0.55, alleyZ - 1.4);
+  wheel.rotation.y = 0.3;
+  wheel.castShadow = true;
+  root.add(wheel);
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    root.add(box(0.04, 0.04, 0.5, COL.wood, alleyX + 1.4 + Math.cos(a) * 0.05, 0.55, alleyZ - 1.4 + Math.sin(a) * 0.05));
+  }
+  // Broom
+  root.add(box(0.04, 1.1, 0.04, COL.wood, alleyX - 0.8, 0.55, alleyZ + 1.5));
+  root.add(box(0.18, 0.25, 0.08, 0x5a4830, alleyX - 0.8, 0.12, alleyZ + 1.5));
+  // Pitchfork / tools lean
+  root.add(box(0.03, 1.3, 0.03, COL.bone, alleyX + 0.2, 0.65, alleyZ - 1.5, { metalness: 0.5, roughness: 0.4 }));
+
+  // False-front extra cornice / dentils on saloon + hotel
+  for (const [fx, fz, fw, fh] of [[-11, 8 + 3.5, 8, 4.2], [11, 6 + 4, 7, 4.5]]) {
+    for (let i = 0; i < 9; i++) {
+      root.add(box(0.12, 0.22, 0.12, COL.bone, fx - fw * 0.4 + i * (fw * 0.8 / 8), fh + 0.55, fz + 0.25));
+    }
+  }
+
+  // Creek — better water material + foam edge + submerged stones
+  if (root.userData.water) {
+    const w = root.userData.water;
+    w.material.roughness = 0.15;
+    w.material.metalness = 0.35;
+    w.material.opacity = 0.78;
+    w.material.envMapIntensity = 1.2;
+  }
+  for (let i = 0; i < 8; i++) {
+    const foam = new THREE.Mesh(
+      new THREE.CircleGeometry(0.4 + (i % 3) * 0.15, 8),
+      new THREE.MeshStandardMaterial({ color: 0xc8d0c8, roughness: 0.85, transparent: true, opacity: 0.35, emissive: 0x405040, emissiveIntensity: 0.1 }),
+    );
+    foam.rotation.x = -Math.PI / 2;
+    foam.position.set(-6 + i * 1.6, -0.22, 49 + (i % 2) * 0.8);
+    root.add(foam);
+  }
+  // Ground decals — hoof-worn patches near hitch + alley
+  for (const [dx, dz, s] of [[-4.5, -2, 2.2], [-7, 2.2, 1.8], [0, 10, 3.5], [2, 46, 2.5]]) {
+    const worn = new THREE.Mesh(
+      new THREE.CircleGeometry(s, 12),
+      std(0x4a3020, { roughness: 1, map: dirtMap }),
+    );
+    worn.rotation.x = -Math.PI / 2;
+    worn.position.set(dx, 0.022, dz);
+    worn.receiveShadow = true;
+    root.add(worn);
+  }
+
+  // Extra false-front building (livery) — spend the strip budget
+  building(root, {
+    w: 6.5, h: 3.6, d: 6, x: -10.5, z: -16,
+    color: 0x6a4a30, adobeMap, woodMap, porch: true,
+  });
+  const liverySign = makeSignTexture('LIVERY', '#3a2010', '#d0c0a0');
+  const ls = new THREE.Mesh(
+    new THREE.PlaneGeometry(3.2, 0.85),
+    new THREE.MeshStandardMaterial({ map: liverySign, roughness: 0.7, emissive: 0x2a1810, emissiveIntensity: 0.15 }),
+  );
+  ls.position.set(-10.5, 4.0, -16 + 3 + 0.28);
+  root.add(ls);
+
 
   scene.add(root);
 

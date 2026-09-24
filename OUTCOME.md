@@ -6,60 +6,49 @@
 
 **Repo:** https://github.com/C-00974/lone-star-red-county
 
-**Tip SHA:** `d5b6d94` (fidelity pass · CT America/Chicago Sep 24, 2026)
+**Tip SHA:** `5ba1b0e` · graphics parity swing vs GH render class · CT America/Chicago Sep 24, 2026
 
 ## What works (Quiet path)
 
-1. **Title** — RED COUNTY / Soft Open; Start Soft Open; Controls + Settings panels. Zero Golden Hour chapters.
-2. **Cold open** — Rae dialogue panels (4 beats) → Choose horse.
-3. **Prep** — Dun (steady / stamina) or Bay (sharp / burst). Quiet approach locked.
-4. **World** — Authored Greenville strip with procedural textures: grit dirt, wood boardwalks, adobe grain, saloon/hotel canvas signs, porch posts, hitch rope, alley crates, creek water opacity, dusk sky.
-5. **Horse** — Second craft pass: denser lathe barrel, layered mane, leather saddle map, coat noise, jointed legs + gait; Dun/Bay variants. Procedural (no external GLB).
-6. **Quiet loop** — Window timer (~150s) + compass + case/drop beacons + heat meter; alley case grab → ride to creek drop; Clean / Botched / Window Closed end cards → Ride again or Title.
-7. **Touch** — `?touch=1` or Settings: stick + Gallop/Mount/Act with short labels; in-play legend swaps to stick / Gallop / Mount / Act.
-8. **In-play controls** — Desktop legend always visible during heist (W/S · A/D · Shift · E · Space); first-ride tip fades ~6s; legend stays. Does not cover compass.
+1. **Title** — RED COUNTY / Soft Open; Start Soft Open; Controls + Settings. Zero Golden Hour chapters.
+2. **Cold open** — Rae dialogue → Choose horse.
+3. **Prep** — Dun (steady) or Bay (sharp / burst). Quiet approach locked.
+4. **World** — Soft Open density pass on the tiny strip: real boardwalk planks, window interiors, porch rails, hitch rings/feed/rope coil, alley lantern/sack/wagon wheel/tools, false-front dentils, LIVERY block, creek foam + worn decals.
+5. **Horse** — Dense procedural mount (GH-class part count): muscle masses (no lathe barrel), multi-segment neck/head, bridle/bit, layered mane/tail, western saddle tree, denser rider (vest, duster, holster, spurs, Stetson). Dun/Bay retint. Mount/dismount + gait kept.
+6. **Quiet loop** — Window + compass + case/drop beacons + heat; alley grab → creek drop; Clean / Botched / Window Closed.
+7. **Touch** — `?touch=1` or Settings; in-play legend.
 
-## Fidelity pass (Sep 24, 2026 CT)
+## Graphics parity swing (Sep 24, 2026 CT)
 
-Chris on tip `8a984de`: "great first legit" start — but no control info while playing, lighting ridiculous, graphics need ~20×. Soft Open stays a *small* strip so we can push fidelity. Story/Quiet loop kept.
+Chris: Soft Open is ~1% of the map *on purpose* for fidelity — close the gap for real vs Golden Hour render class. We greenfielded and spent budget on loop speed; this tip spends it on **render craft**.
 
-### A) In-play controls
-- Semi-transparent bone/rust HUD panel, bottom-left, during `play`
-- Desktop: Move W/S · Steer A/D · Gallop Shift · Mount E · Act Space
-- Touch: legend + under-button labels (Stick / Gallop / Mount / Act)
-- Optional tip banner fades after ~6s; legend remains
+### Ported craft (from LoneStar-Next `src/render/`, rewritten for western dusk)
+- `src/render/sky.js` — procedural sky dome (sun disc, Mie, cumulus, cirrus, Venus belt). Reskinned: rust/amber sun, cool opposite fill, muted storm/city glow. Soft Open locks phase ≈ 0.55 (late western afternoon → early dusk). FogExp2 far/subtle + directional height-aware fog chunks.
+- `src/render/sky-pmrem.js` — reusable PMREM for sky-only env map (r170).
+- `src/render/lighting.js` — strong sun + hemi + cool fill + **playAmb floor** (Chris: always be able to see). Shadow map 4096, texel-snapped follow frustum on the tiny strip.
+- `src/render/bloom.js` + `postprocessing.js` — TextureBloomPass + OutputPass composite (Next pattern) + ACES.
+- `src/render/renderer.js` — WebGLRenderer + post chain wiring.
 
-### B) Lighting rewrite
-- Equirect sky gradient (violet zenith → amber haze → rust horizon) — not near-black cave
-- Strong warm key sun, low western angle (rust/amber)
-- Soft east fill + ambient so shadows don't crush detail
-- Fog only for far depth (`near≈52`, `far≈145`); near field clear
-- Building windows / street lamps as secondary fill
-- Exposure ~1.48; soft contact shadows (PCF soft, higher map)
-- Subtle UnrealBloom (high threshold) on lamps/windows/beacons
+LoneStar-Next was **not modified** (read-only reference).
 
-### C) Graphics fidelity
-- Procedural canvas textures: dirt grit, street bed, wood planks, adobe grain, leather, coat noise, water, crate wood, painted signs
-- Horse denser segments + leather saddle + layered mane/tail
-- World: false-front depth, porch posts, hitch rope, SALOON/HOTEL lettering, alley crates, creek water
-- Horse casts; ground receives
+### Authored for Red County
+- Western dusk palettes (black/blood/rust/bone — no GH gold film look)
+- Dense procedural horse + rider (`horseMesh.js`) — no third-party GLB (CC0 GLB download needed Drive/Poly Pizza login; fallback used)
+- World density pass on Greenville strip
 
-### Asset licenses
-- All textures procedural (runtime canvas) — no third-party assets
-- No vendored GLB (pure Three.js mesh craft) — no CDN
+### Horse asset + license
+- **Procedural** Three.js meshes only (vendored into bundle via esbuild)
+- No Kenney / Quaternius / Poly Haven GLB in this tip
+- License: original authored geometry; textures are runtime canvas procedurals
 
-### Known limits
-- Soft Open strip only (intentionally small)
-- Bloom is global-threshold (cheap), not selective mesh bloom
-- Horse is hand-authored low-poly, not a scanned GLTF mount
-- Parent should browser-check — do **not** claim Chris-approved beauty
-- Decoy / Loud, audio, NPC traffic still stubs
+### Honest remaining gap vs Golden Hour
+- GH vehicles are lofted authored surfaces (`evoraModel.js` station/section craft) — horse is dense parts, not a scanned/GLTF hero mesh
+- GH sky has richer storm-wall / downtown light-dome storytelling; RC sky is the same *class* of shader with a quieter western lock
+- No light pooling needed yet (strip is tiny); GH downtown needs it
+- Soft Open still intentionally ~1% map — fidelity spend, not open world
 
-## Distinct from Golden Hour
-
-- New repo + path (`LoneStar-RedCounty`), not a reskin of LoneStar-Next
-- No scout camera, scrapbook, film-crew chrome, or gold theme
-- Heist-forward horse loop only
+### Public tip
+- One-tap: `docs/index.html` (no runtime CDN). Vendor assets into repo/docs only.
 
 ## Build
 

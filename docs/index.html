@@ -245,7 +245,7 @@ h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); color: var(--bone); letter-spacing: 
   <!-- TITLE -->
   <div id="screen-title" class="screen active">
     <div class="brand">
-      <div class="kicker">Soft Open · Quiet · tip d5b6d94</div>
+      <div class="kicker">Soft Open · Quiet · tip 5ba1b0e</div>
       <h1>RED COUNTY</h1>
       <p class="tag">Horses. Heist. Blood on the dust.</p>
       <p class="sub">Greenville strip — Quiet approach. You ride for Rae.</p>
@@ -10387,8 +10387,8 @@ h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); color: var(--bone); letter-spacing: 
         ];
         position.set(coordinates, positionSize * vertices * face);
         uv.set(uv1, uvSize * vertices * face);
-        const fill2 = [face, face, face, face, face, face];
-        faceIndex.set(fill2, faceIndexSize * vertices * face);
+        const fill = [face, face, face, face, face, face];
+        faceIndex.set(fill, faceIndexSize * vertices * face);
       }
       const planes = new BufferGeometry();
       planes.setAttribute("position", new BufferAttribute(position, positionSize));
@@ -18650,24 +18650,22 @@ void main() {
       gl.unpackColorSpace = ColorManagement._getUnpackColorSpace();
     }
   };
-  var Fog = class _Fog {
-    constructor(color, near = 1, far = 1e3) {
-      this.isFog = true;
+  var FogExp2 = class _FogExp2 {
+    constructor(color, density = 25e-5) {
+      this.isFogExp2 = true;
       this.name = "";
       this.color = new Color(color);
-      this.near = near;
-      this.far = far;
+      this.density = density;
     }
     clone() {
-      return new _Fog(this.color, this.near, this.far);
+      return new _FogExp2(this.color, this.density);
     }
     toJSON() {
       return {
-        type: "Fog",
+        type: "FogExp2",
         name: this.name,
         color: this.color.getHex(),
-        near: this.near,
-        far: this.far
+        density: this.density
       };
     }
   };
@@ -19505,104 +19503,6 @@ void main() {
     QuadraticBezierCurve3,
     SplineCurve
   });
-  var LatheGeometry = class _LatheGeometry extends BufferGeometry {
-    constructor(points = [new Vector2(0, -0.5), new Vector2(0.5, 0), new Vector2(0, 0.5)], segments = 12, phiStart = 0, phiLength = Math.PI * 2) {
-      super();
-      this.type = "LatheGeometry";
-      this.parameters = {
-        points,
-        segments,
-        phiStart,
-        phiLength
-      };
-      segments = Math.floor(segments);
-      phiLength = clamp(phiLength, 0, Math.PI * 2);
-      const indices = [];
-      const vertices = [];
-      const uvs = [];
-      const initNormals = [];
-      const normals = [];
-      const inverseSegments = 1 / segments;
-      const vertex2 = new Vector3();
-      const uv = new Vector2();
-      const normal = new Vector3();
-      const curNormal = new Vector3();
-      const prevNormal = new Vector3();
-      let dx = 0;
-      let dy = 0;
-      for (let j = 0; j <= points.length - 1; j++) {
-        switch (j) {
-          case 0:
-            dx = points[j + 1].x - points[j].x;
-            dy = points[j + 1].y - points[j].y;
-            normal.x = dy * 1;
-            normal.y = -dx;
-            normal.z = dy * 0;
-            prevNormal.copy(normal);
-            normal.normalize();
-            initNormals.push(normal.x, normal.y, normal.z);
-            break;
-          case points.length - 1:
-            initNormals.push(prevNormal.x, prevNormal.y, prevNormal.z);
-            break;
-          default:
-            dx = points[j + 1].x - points[j].x;
-            dy = points[j + 1].y - points[j].y;
-            normal.x = dy * 1;
-            normal.y = -dx;
-            normal.z = dy * 0;
-            curNormal.copy(normal);
-            normal.x += prevNormal.x;
-            normal.y += prevNormal.y;
-            normal.z += prevNormal.z;
-            normal.normalize();
-            initNormals.push(normal.x, normal.y, normal.z);
-            prevNormal.copy(curNormal);
-        }
-      }
-      for (let i = 0; i <= segments; i++) {
-        const phi = phiStart + i * inverseSegments * phiLength;
-        const sin = Math.sin(phi);
-        const cos = Math.cos(phi);
-        for (let j = 0; j <= points.length - 1; j++) {
-          vertex2.x = points[j].x * sin;
-          vertex2.y = points[j].y;
-          vertex2.z = points[j].x * cos;
-          vertices.push(vertex2.x, vertex2.y, vertex2.z);
-          uv.x = i / segments;
-          uv.y = j / (points.length - 1);
-          uvs.push(uv.x, uv.y);
-          const x = initNormals[3 * j + 0] * sin;
-          const y = initNormals[3 * j + 1];
-          const z = initNormals[3 * j + 0] * cos;
-          normals.push(x, y, z);
-        }
-      }
-      for (let i = 0; i < segments; i++) {
-        for (let j = 0; j < points.length - 1; j++) {
-          const base = j + i * points.length;
-          const a = base;
-          const b = base + points.length;
-          const c = base + points.length + 1;
-          const d = base + 1;
-          indices.push(a, b, d);
-          indices.push(c, d, b);
-        }
-      }
-      this.setIndex(indices);
-      this.setAttribute("position", new Float32BufferAttribute(vertices, 3));
-      this.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
-      this.setAttribute("normal", new Float32BufferAttribute(normals, 3));
-    }
-    copy(source) {
-      super.copy(source);
-      this.parameters = Object.assign({}, source.parameters);
-      return this;
-    }
-    static fromJSON(data) {
-      return new _LatheGeometry(data.points, data.segments, data.phiStart, data.phiLength);
-    }
-  };
   var CircleGeometry = class _CircleGeometry extends BufferGeometry {
     constructor(radius = 1, segments = 32, thetaStart = 0, thetaLength = Math.PI * 2) {
       super();
@@ -21404,6 +21304,1544 @@ void main() {
     }
   }
 
+  // src/systems/input.js
+  function createInput({ touchRoot, stickEl, knobEl, gallopBtn, mountBtn, actBtn }) {
+    const keys = /* @__PURE__ */ Object.create(null);
+    const stick = { x: 0, y: 0, active: false };
+    let gallop = false;
+    let mountPulse = false;
+    let actPulse = false;
+    let pointerId = null;
+    const down = (e) => {
+      keys[e.code] = true;
+      if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) e.preventDefault();
+    };
+    const up = (e) => {
+      keys[e.code] = false;
+    };
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+    function setStickFromEvent(clientX, clientY) {
+      const r = stickEl.getBoundingClientRect();
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      let dx = (clientX - cx) / (r.width / 2);
+      let dy = (clientY - cy) / (r.height / 2);
+      const len = Math.hypot(dx, dy) || 1;
+      if (len > 1) {
+        dx /= len;
+        dy /= len;
+      }
+      stick.x = dx;
+      stick.y = dy;
+      stick.active = true;
+      knobEl.style.transform = `translate(${dx * (r.width * 0.32)}px, ${dy * (r.height * 0.32)}px)`;
+    }
+    function resetStick() {
+      stick.x = 0;
+      stick.y = 0;
+      stick.active = false;
+      pointerId = null;
+      knobEl.style.transform = "translate(0,0)";
+    }
+    stickEl.addEventListener("pointerdown", (e) => {
+      pointerId = e.pointerId;
+      stickEl.setPointerCapture(e.pointerId);
+      setStickFromEvent(e.clientX, e.clientY);
+    });
+    stickEl.addEventListener("pointermove", (e) => {
+      if (pointerId !== e.pointerId) return;
+      setStickFromEvent(e.clientX, e.clientY);
+    });
+    stickEl.addEventListener("pointerup", resetStick);
+    stickEl.addEventListener("pointercancel", resetStick);
+    const hold = (btn, on, off) => {
+      const start = (e) => {
+        e.preventDefault();
+        btn.classList.add("held");
+        on();
+      };
+      const end = () => {
+        btn.classList.remove("held");
+        off();
+      };
+      btn.addEventListener("pointerdown", start);
+      btn.addEventListener("pointerup", end);
+      btn.addEventListener("pointerleave", end);
+      btn.addEventListener("pointercancel", end);
+    };
+    hold(gallopBtn, () => {
+      gallop = true;
+    }, () => {
+      gallop = false;
+    });
+    mountBtn.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      mountPulse = true;
+    });
+    actBtn.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      actPulse = true;
+    });
+    function setTouchVisible(v) {
+      touchRoot.classList.toggle("hidden", !v);
+    }
+    function sample() {
+      const forward = (keys.KeyW || keys.ArrowUp ? 1 : 0) + (keys.KeyS || keys.ArrowDown ? -1 : 0) + -stick.y;
+      const steer = (keys.KeyD || keys.ArrowRight ? 1 : 0) + (keys.KeyA || keys.ArrowLeft ? -1 : 0) + stick.x;
+      const sprint = !!(keys.ShiftLeft || keys.ShiftRight || gallop);
+      const mount = !!keys.KeyE || mountPulse;
+      const act = !!keys.Space || actPulse;
+      mountPulse = false;
+      actPulse = false;
+      return {
+        forward: Math.max(-1, Math.min(1, forward)),
+        steer: Math.max(-1, Math.min(1, steer)),
+        sprint,
+        mount,
+        act
+      };
+    }
+    return { sample, setTouchVisible, keys };
+  }
+
+  // src/systems/textures.js
+  function canvas(size) {
+    const c = document.createElement("canvas");
+    c.width = c.height = size;
+    const ctx = c.getContext("2d");
+    return { c, ctx, size };
+  }
+  function toTex(c, { wrap = RepeatWrapping, repeat = [1, 1], colorSpace = SRGBColorSpace } = {}) {
+    const tex = new CanvasTexture(c);
+    tex.wrapS = tex.wrapT = wrap;
+    tex.repeat.set(repeat[0], repeat[1]);
+    tex.colorSpace = colorSpace;
+    tex.anisotropy = 4;
+    tex.needsUpdate = true;
+    return tex;
+  }
+  function makeDirtTexture(size = 256) {
+    const { c, ctx } = canvas(size);
+    const g = ctx.createLinearGradient(0, 0, size, size);
+    g.addColorStop(0, "#6a4428");
+    g.addColorStop(0.45, "#5a3820");
+    g.addColorStop(1, "#4a2e18");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, size, size);
+    for (let i = 0; i < 180; i++) {
+      const x = Math.random() * size;
+      const y = Math.random() * size;
+      const r = 4 + Math.random() * 28;
+      ctx.fillStyle = `rgba(${70 + Math.random() * 50 | 0},${40 + Math.random() * 30 | 0},${20 + Math.random() * 20 | 0},${0.08 + Math.random() * 0.12})`;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    for (let i = 0; i < 2200; i++) {
+      const x = Math.random() * size;
+      const y = Math.random() * size;
+      const bright = Math.random() > 0.55;
+      ctx.fillStyle = bright ? `rgba(180,150,110,${0.15 + Math.random() * 0.25})` : `rgba(30,18,10,${0.2 + Math.random() * 0.35})`;
+      ctx.fillRect(x, y, 1 + (Math.random() > 0.85 ? 1 : 0), 1);
+    }
+    for (let i = 0; i < 40; i++) {
+      ctx.fillStyle = `rgba(90,70,50,${0.25 + Math.random() * 0.3})`;
+      ctx.beginPath();
+      ctx.ellipse(Math.random() * size, Math.random() * size, 1 + Math.random() * 2.5, 0.8 + Math.random() * 1.5, Math.random(), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    return toTex(c, { repeat: [8, 12] });
+  }
+  function makeStreetTexture(size = 256) {
+    const { c, ctx } = canvas(size);
+    ctx.fillStyle = "#3a2414";
+    ctx.fillRect(0, 0, size, size);
+    for (let i = 0; i < 120; i++) {
+      ctx.fillStyle = `rgba(${40 + Math.random() * 40 | 0},${25 + Math.random() * 25 | 0},${12 + Math.random() * 15 | 0},${0.1 + Math.random() * 0.15})`;
+      ctx.fillRect(Math.random() * size, Math.random() * size, 8 + Math.random() * 40, 3 + Math.random() * 12);
+    }
+    for (let i = 0; i < 1800; i++) {
+      ctx.fillStyle = Math.random() > 0.5 ? `rgba(120,90,60,${0.1 + Math.random() * 0.2})` : `rgba(20,12,8,${0.25 + Math.random() * 0.35})`;
+      ctx.fillRect(Math.random() * size, Math.random() * size, 1, 1);
+    }
+    ctx.strokeStyle = "rgba(25,15,10,0.35)";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(size * 0.3, 0);
+    ctx.lineTo(size * 0.28, size);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(size * 0.7, 0);
+    ctx.lineTo(size * 0.72, size);
+    ctx.stroke();
+    return toTex(c, { repeat: [2, 14] });
+  }
+  function makeWoodTexture(size = 256) {
+    const { c, ctx } = canvas(size);
+    ctx.fillStyle = "#4a2e18";
+    ctx.fillRect(0, 0, size, size);
+    const plankH = size / 6;
+    for (let i = 0; i < 6; i++) {
+      const y = i * plankH;
+      const shade = 55 + i % 3 * 12 + Math.random() * 10;
+      ctx.fillStyle = `rgb(${shade | 0},${shade * 0.65 | 0},${shade * 0.35 | 0})`;
+      ctx.fillRect(0, y, size, plankH - 1.5);
+      ctx.strokeStyle = `rgba(30,18,8,${0.15 + Math.random() * 0.2})`;
+      ctx.lineWidth = 1;
+      for (let g = 0; g < 5; g++) {
+        const gy = y + 4 + g * (plankH / 6);
+        ctx.beginPath();
+        ctx.moveTo(0, gy + Math.sin(g) * 1.5);
+        for (let x = 0; x < size; x += 8) {
+          ctx.lineTo(x, gy + Math.sin(x * 0.08 + i) * 1.2);
+        }
+        ctx.stroke();
+      }
+      if (Math.random() > 0.45) {
+        const kx = 20 + Math.random() * (size - 40);
+        const ky = y + plankH * 0.4;
+        ctx.fillStyle = "rgba(30,16,8,0.45)";
+        ctx.beginPath();
+        ctx.ellipse(kx, ky, 4 + Math.random() * 3, 2.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = "rgba(15,8,4,0.55)";
+      ctx.fillRect(0, y + plankH - 1.5, size, 1.5);
+    }
+    return toTex(c, { repeat: [2, 10] });
+  }
+  function makeAdobeTexture(size = 256) {
+    const { c, ctx } = canvas(size);
+    ctx.fillStyle = "#a08058";
+    ctx.fillRect(0, 0, size, size);
+    for (let i = 0; i < 350; i++) {
+      const x = Math.random() * size;
+      const y = Math.random() * size;
+      const r = 3 + Math.random() * 18;
+      const v = 140 + Math.random() * 50;
+      ctx.fillStyle = `rgba(${v | 0},${v * 0.8 | 0},${v * 0.5 | 0},${0.06 + Math.random() * 0.1})`;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    for (let i = 0; i < 3e3; i++) {
+      const v = 90 + Math.random() * 80;
+      ctx.fillStyle = `rgba(${v | 0},${v * 0.78 | 0},${v * 0.48 | 0},${0.12 + Math.random() * 0.2})`;
+      ctx.fillRect(Math.random() * size, Math.random() * size, 1, 1);
+    }
+    ctx.strokeStyle = "rgba(60,40,25,0.18)";
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 8; i++) {
+      ctx.beginPath();
+      let x = Math.random() * size;
+      let y = Math.random() * size;
+      ctx.moveTo(x, y);
+      for (let s = 0; s < 6; s++) {
+        x += (Math.random() - 0.5) * 40;
+        y += 8 + Math.random() * 20;
+        ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    return toTex(c, { repeat: [2, 2] });
+  }
+  function makeLeatherTexture(size = 128) {
+    const { c, ctx } = canvas(size);
+    const g = ctx.createRadialGradient(size * 0.4, size * 0.35, 8, size * 0.5, size * 0.5, size * 0.7);
+    g.addColorStop(0, "#5a3420");
+    g.addColorStop(0.55, "#3a2010");
+    g.addColorStop(1, "#241408");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, size, size);
+    for (let i = 0; i < 800; i++) {
+      ctx.fillStyle = Math.random() > 0.5 ? `rgba(120,80,50,${0.08 + Math.random() * 0.15})` : `rgba(20,10,5,${0.1 + Math.random() * 0.2})`;
+      ctx.fillRect(Math.random() * size, Math.random() * size, 1 + Math.random(), 1);
+    }
+    for (let i = 0; i < 12; i++) {
+      ctx.strokeStyle = `rgba(90,60,35,${0.15 + Math.random() * 0.2})`;
+      ctx.lineWidth = 1 + Math.random();
+      ctx.beginPath();
+      ctx.arc(Math.random() * size, Math.random() * size, 6 + Math.random() * 20, 0, Math.PI * (0.4 + Math.random() * 0.8));
+      ctx.stroke();
+    }
+    return toTex(c, { repeat: [1, 1] });
+  }
+  function makeCoatTexture(hexBase, size = 128) {
+    const { c, ctx } = canvas(size);
+    ctx.fillStyle = `#${hexBase.toString(16).padStart(6, "0")}`;
+    ctx.fillRect(0, 0, size, size);
+    const r = hexBase >> 16 & 255;
+    const g = hexBase >> 8 & 255;
+    const b = hexBase & 255;
+    for (let i = 0; i < 1200; i++) {
+      const dr = (Math.random() - 0.5) * 40;
+      const dg = (Math.random() - 0.5) * 30;
+      const db = (Math.random() - 0.5) * 20;
+      ctx.fillStyle = `rgba(${r + dr | 0},${g + dg | 0},${b + db | 0},${0.12 + Math.random() * 0.2})`;
+      ctx.fillRect(Math.random() * size, Math.random() * size, 1 + Math.random() * 2, 1 + Math.random() * 2);
+    }
+    return toTex(c, { repeat: [2, 2] });
+  }
+  function makeSignTexture(text, bg = "#7a3820", fg = "#e8dcc8", size = 256) {
+    const c = document.createElement("canvas");
+    c.width = size;
+    c.height = Math.round(size * 0.4);
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, c.width, c.height);
+    for (let i = 0; i < 80; i++) {
+      ctx.fillStyle = `rgba(20,10,5,${0.05 + Math.random() * 0.1})`;
+      ctx.fillRect(Math.random() * c.width, Math.random() * c.height, 4 + Math.random() * 20, 2);
+    }
+    ctx.strokeStyle = "#d0c0a0";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(6, 6, c.width - 12, c.height - 12);
+    ctx.strokeStyle = "rgba(20,8,4,0.5)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(10, 10, c.width - 20, c.height - 20);
+    ctx.fillStyle = fg;
+    ctx.font = `bold ${Math.round(c.height * 0.42)}px "Times New Roman", Palatino, serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, c.width / 2, c.height / 2 + 1);
+    ctx.fillStyle = "#8b1a1a";
+    ctx.fillRect(c.width * 0.28, c.height * 0.78, c.width * 0.44, 3);
+    const tex = new CanvasTexture(c);
+    tex.colorSpace = SRGBColorSpace;
+    tex.needsUpdate = true;
+    return tex;
+  }
+  function makeWaterTexture(size = 256) {
+    const { c, ctx } = canvas(size);
+    ctx.fillStyle = "#2a4848";
+    ctx.fillRect(0, 0, size, size);
+    for (let i = 0; i < 40; i++) {
+      const y = i / 40 * size;
+      ctx.strokeStyle = `rgba(${60 + Math.random() * 40 | 0},${100 + Math.random() * 40 | 0},${90 + Math.random() * 30 | 0},${0.15 + Math.random() * 0.2})`;
+      ctx.lineWidth = 1 + Math.random() * 2;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      for (let x = 0; x <= size; x += 8) {
+        ctx.lineTo(x, y + Math.sin(x * 0.08 + i) * 3);
+      }
+      ctx.stroke();
+    }
+    for (let i = 0; i < 200; i++) {
+      ctx.fillStyle = `rgba(180,220,210,${0.05 + Math.random() * 0.12})`;
+      ctx.fillRect(Math.random() * size, Math.random() * size, 2, 1);
+    }
+    return toTex(c, { repeat: [3, 1.5] });
+  }
+  function makeCrateWoodTexture(size = 128) {
+    const { c, ctx } = canvas(size);
+    ctx.fillStyle = "#4a2a14";
+    ctx.fillRect(0, 0, size, size);
+    const plankW = size / 4;
+    for (let i = 0; i < 4; i++) {
+      const x = i * plankW;
+      const shade = 50 + i % 2 * 18;
+      ctx.fillStyle = `rgb(${shade},${shade * 0.6 | 0},${shade * 0.3 | 0})`;
+      ctx.fillRect(x, 0, plankW - 2, size);
+      ctx.fillStyle = "rgba(20,10,5,0.4)";
+      ctx.fillRect(x + plankW - 2, 0, 2, size);
+    }
+    ctx.fillStyle = "rgba(90,50,25,0.55)";
+    ctx.fillRect(0, size * 0.2, size, 4);
+    ctx.fillRect(0, size * 0.75, size, 4);
+    return toTex(c, { repeat: [1, 1] });
+  }
+
+  // src/systems/horseMesh.js
+  function mat(color, opts = {}) {
+    return new MeshStandardMaterial({
+      color,
+      roughness: 0.82,
+      metalness: 0.04,
+      ...opts
+    });
+  }
+  function add(parent, geo, material, x, y, z, opts = {}) {
+    const m = new Mesh(geo, material);
+    m.position.set(x, y, z);
+    if (opts.rx) m.rotation.x = opts.rx;
+    if (opts.ry) m.rotation.y = opts.ry;
+    if (opts.rz) m.rotation.z = opts.rz;
+    if (opts.sx || opts.sy || opts.sz) m.scale.set(opts.sx || 1, opts.sy || 1, opts.sz || 1);
+    m.castShadow = opts.cast !== false;
+    m.receiveShadow = opts.recv !== false;
+    parent.add(m);
+    return m;
+  }
+  function makeLeg(bodyMat, hoofMat, darkMat) {
+    const g = new Group();
+    add(g, new SphereGeometry(0.12, 10, 8), bodyMat, 0, -0.02, 0.02, { sx: 1.1, sy: 0.9, sz: 1.15 });
+    const upper = add(g, new CylinderGeometry(0.1, 0.085, 0.46, 10), bodyMat, 0, -0.24, 0);
+    add(g, new BoxGeometry(0.03, 0.28, 0.04), bodyMat, 0.06, -0.28, 0.02, { cast: false });
+    const knee = new Group();
+    knee.position.y = -0.46;
+    g.add(knee);
+    add(knee, new SphereGeometry(0.07, 8, 6), bodyMat, 0, 0, 0.01, { sx: 1.1, sy: 0.85, sz: 1.15 });
+    add(knee, new CylinderGeometry(0.072, 0.055, 0.38, 10), bodyMat, 0, -0.2, 0);
+    add(knee, new CylinderGeometry(0.045, 0.042, 0.22, 8), bodyMat, 0, -0.42, 0.01);
+    add(knee, new SphereGeometry(0.055, 8, 6), bodyMat, 0, -0.52, 0.02, { sx: 1.15, sy: 0.7, sz: 1.2 });
+    add(knee, new BoxGeometry(0.08, 0.06, 0.1), darkMat, 0, -0.55, 0.04, { cast: false });
+    add(knee, new CylinderGeometry(0.055, 0.062, 0.1, 10), hoofMat, 0, -0.6, 0.03, { rx: 0.1 });
+    add(knee, new BoxGeometry(0.04, 0.02, 0.05), darkMat, 0, -0.66, 0.01, { cast: false });
+    g.userData.upper = upper;
+    g.userData.knee = knee;
+    return g;
+  }
+  function makeDenseRider(darkMat, coatMat, denimMat, leatherMat, boneMat) {
+    const rider = new Group();
+    rider.name = "rider";
+    const skin = mat(12888194, { roughness: 0.68 });
+    for (const side of [-1, 1]) {
+      const leg = new Group();
+      leg.position.set(side * 0.17, 0.08, 0.02);
+      leg.rotation.z = -side * 0.14;
+      add(leg, new BoxGeometry(0.15, 0.28, 0.17), denimMat, 0, 0.05, 0);
+      add(leg, new BoxGeometry(0.14, 0.22, 0.16), denimMat, 0, -0.18, 0.02, { rx: 0.15 });
+      add(leg, new BoxGeometry(0.15, 0.16, 0.26), darkMat, 0, -0.36, 0.06);
+      add(leg, new BoxGeometry(0.12, 0.05, 0.08), darkMat, 0, -0.42, 0.16);
+      add(leg, new BoxGeometry(0.1, 0.03, 0.12), boneMat, 0, -0.28, 0.05, { cast: false });
+      add(leg, new CylinderGeometry(0.015, 0.015, 0.08, 6), darkMat, side * 0.08, -0.38, 0, { rz: Math.PI / 2 });
+      add(leg, new SphereGeometry(0.025, 6, 4), darkMat, side * 0.12, -0.38, 0);
+      rider.add(leg);
+    }
+    add(rider, new BoxGeometry(0.36, 0.42, 0.24), coatMat, 0, 0.42, -0.02);
+    add(rider, new BoxGeometry(0.4, 0.38, 0.1), mat(3809300, { roughness: 0.9 }), 0, 0.44, 0.1);
+    add(rider, new BoxGeometry(0.08, 0.36, 0.02), boneMat, 0, 0.44, 0.16, { cast: false });
+    for (const by of [0.32, 0.42, 0.52]) {
+      add(rider, new SphereGeometry(0.02, 6, 4), boneMat, 0, by, 0.17, { cast: false });
+    }
+    add(rider, new BoxGeometry(0.22, 0.35, 0.08), coatMat, -0.22, 0.2, -0.04, { rz: 0.2 });
+    add(rider, new BoxGeometry(0.22, 0.35, 0.08), coatMat, 0.22, 0.2, -0.04, { rz: -0.2 });
+    add(rider, new BoxGeometry(0.34, 0.08, 0.22), coatMat, 0, 0.66, -0.02);
+    add(rider, new BoxGeometry(0.16, 0.1, 0.08), mat(6957088, { roughness: 0.85 }), 0, 0.58, 0.12);
+    for (const side of [-1, 1]) {
+      const arm = new Group();
+      arm.position.set(side * 0.28, 0.58, 0);
+      add(arm, new SphereGeometry(0.08, 8, 6), coatMat, 0, 0, 0);
+      add(arm, new BoxGeometry(0.11, 0.26, 0.11), coatMat, 0, -0.16, 0.06, { rx: -0.5 });
+      add(arm, new BoxGeometry(0.1, 0.22, 0.1), coatMat, 0, -0.36, 0.14, { rx: -0.35 });
+      add(arm, new BoxGeometry(0.09, 0.08, 0.09), darkMat, 0, -0.48, 0.18);
+      if (side === 1) {
+        add(rider, new BoxGeometry(0.1, 0.22, 0.08), leatherMat, 0.28, 0.28, 0.02);
+        add(rider, new BoxGeometry(0.04, 0.14, 0.04), darkMat, 0.28, 0.22, 0.06, { cast: false });
+      }
+      rider.add(arm);
+    }
+    add(rider, new BoxGeometry(0.42, 0.06, 0.28), leatherMat, 0, 0.22, -0.02);
+    add(rider, new BoxGeometry(0.08, 0.07, 0.04), boneMat, 0, 0.22, 0.14);
+    add(rider, new CylinderGeometry(0.07, 0.085, 0.12, 10), skin, 0, 0.74, -0.02);
+    add(rider, new SphereGeometry(0.13, 12, 10), skin, 0, 0.9, -0.02, { sy: 1.12, sz: 0.95 });
+    add(rider, new BoxGeometry(0.1, 0.04, 0.06), skin, 0, 0.84, 0.1);
+    add(rider, new BoxGeometry(0.12, 0.03, 0.04), darkMat, 0, 0.92, 0.08, { cast: false });
+    const eyeMat = mat(657414, { roughness: 0.25 });
+    add(rider, new SphereGeometry(0.025, 8, 6), eyeMat, -0.05, 0.92, 0.1);
+    add(rider, new SphereGeometry(0.025, 8, 6), eyeMat, 0.05, 0.92, 0.1);
+    add(rider, new BoxGeometry(0.12, 0.04, 0.06), mat(3811872, { roughness: 0.95 }), 0, 0.82, 0.08, { cast: false });
+    add(rider, new CylinderGeometry(0.14, 0.16, 0.18, 14), darkMat, 0, 1.04, -0.02);
+    add(rider, new BoxGeometry(0.04, 0.16, 0.18), darkMat, 0, 1.06, -0.02, { cast: false });
+    add(rider, new CylinderGeometry(0.3, 0.32, 0.035, 16), darkMat, 0, 0.96, -0.02);
+    add(rider, new BoxGeometry(0.24, 0.03, 0.12), darkMat, 0, 0.96, 0.2);
+    add(rider, new TorusGeometry(0.15, 0.012, 6, 16), boneMat, 0, 0.97, -0.02, { rx: Math.PI / 2, cast: false });
+    add(rider, new BoxGeometry(0.06, 0.14, 0.04), mat(6957088), -0.08, 0.5, -0.14, { rx: 0.3 });
+    return rider;
+  }
+  function createDenseHorseMesh(profile) {
+    const root = new Group();
+    root.name = "horse";
+    const coatMap = makeCoatTexture(profile.color);
+    const leatherMap = makeLeatherTexture();
+    const bodyMat = mat(profile.color, { map: coatMap, roughness: 0.78, roughnessMap: coatMap });
+    const maneMat = mat(profile.mane, { roughness: 0.95 });
+    const dark = mat(1708040, { roughness: 0.75 });
+    const leather = mat(3809296, { map: leatherMap, roughness: 0.72, roughnessMap: leatherMap });
+    const hoofMat = mat(1708556, { roughness: 0.55, metalness: 0.08 });
+    const coatMat = mat(2758672, { roughness: 0.85 });
+    const denimMat = mat(2762808, { roughness: 0.9 });
+    const boneMat = mat(13154456, { roughness: 0.65, metalness: 0.15 });
+    const whiteMat = mat(15260872, { roughness: 0.7 });
+    const bodyRoot = new Group();
+    bodyRoot.position.y = 1.15;
+    root.add(bodyRoot);
+    add(bodyRoot, new SphereGeometry(0.42, 16, 12), bodyMat, 0, 0.02, 0, { sx: 1.05, sy: 0.95, sz: 1.55 });
+    add(bodyRoot, new SphereGeometry(0.36, 14, 12), bodyMat, 0, -0.02, 0.55, { sx: 1.15, sy: 1, sz: 1.1 });
+    add(bodyRoot, new SphereGeometry(0.38, 14, 12), bodyMat, 0, 0.06, -0.55, { sx: 1.2, sy: 1.1, sz: 1.05 });
+    add(bodyRoot, new SphereGeometry(0.3, 12, 10), bodyMat, 0, -0.2, 0.05, { sx: 0.95, sy: 0.75, sz: 1.4 });
+    add(bodyRoot, new BoxGeometry(0.12, 0.1, 0.9), bodyMat, 0, 0.32, 0.05, { cast: false });
+    add(bodyRoot, new SphereGeometry(0.16, 10, 8), bodyMat, -0.22, 0.2, 0.4, { sx: 0.7, sy: 1, sz: 1.1 });
+    add(bodyRoot, new SphereGeometry(0.16, 10, 8), bodyMat, 0.22, 0.2, 0.4, { sx: 0.7, sy: 1, sz: 1.1 });
+    add(bodyRoot, new SphereGeometry(0.14, 10, 8), bodyMat, -0.26, 0.22, -0.5, { sx: 0.8, sy: 1, sz: 0.9 });
+    add(bodyRoot, new SphereGeometry(0.14, 10, 8), bodyMat, 0.26, 0.22, -0.5, { sx: 0.8, sy: 1, sz: 0.9 });
+    const neckGroup = new Group();
+    neckGroup.position.set(0, 0.18, 0.78);
+    neckGroup.rotation.x = -0.55;
+    bodyRoot.add(neckGroup);
+    add(neckGroup, new CylinderGeometry(0.18, 0.24, 0.38, 14), bodyMat, 0, 0.18, 0);
+    add(neckGroup, new CylinderGeometry(0.14, 0.18, 0.34, 14), bodyMat, 0, 0.5, 0.02, { rx: -0.25 });
+    add(neckGroup, new CylinderGeometry(0.12, 0.14, 0.2, 12), bodyMat, 0, 0.72, 0.06, { rx: -0.15 });
+    add(neckGroup, new BoxGeometry(0.04, 0.5, 0.06), bodyMat, 0.1, 0.4, 0.08, { cast: false });
+    const headGroup = new Group();
+    headGroup.position.set(0, 0.86, 0.08);
+    headGroup.rotation.x = 0.4;
+    neckGroup.add(headGroup);
+    add(headGroup, new BoxGeometry(0.26, 0.24, 0.28), bodyMat, 0, 0.02, 0);
+    add(headGroup, new SphereGeometry(0.11, 10, 8), bodyMat, -0.11, -0.02, 0.02, { sx: 0.7, sy: 1.1, sz: 1.15 });
+    add(headGroup, new SphereGeometry(0.11, 10, 8), bodyMat, 0.11, -0.02, 0.02, { sx: 0.7, sy: 1.1, sz: 1.15 });
+    add(headGroup, new BoxGeometry(0.18, 0.16, 0.38), bodyMat, 0, -0.04, 0.28);
+    add(headGroup, new BoxGeometry(0.16, 0.1, 0.14), dark, 0, -0.06, 0.5);
+    add(headGroup, new BoxGeometry(0.06, 0.14, 0.02), whiteMat, 0, 0.06, 0.14, { cast: false });
+    add(headGroup, new SphereGeometry(0.028, 6, 4), dark, -0.045, -0.02, 0.56);
+    add(headGroup, new SphereGeometry(0.028, 6, 4), dark, 0.045, -0.02, 0.56);
+    add(headGroup, new BoxGeometry(0.14, 0.08, 0.2), bodyMat, 0, -0.12, 0.2);
+    for (const side of [-1, 1]) {
+      add(headGroup, new ConeGeometry(0.05, 0.18, 6), bodyMat, side * 0.09, 0.2, -0.04, { rz: -side * 0.2, rx: -0.15 });
+      add(headGroup, new ConeGeometry(0.03, 0.1, 5), dark, side * 0.09, 0.18, -0.02, { rz: -side * 0.2, cast: false });
+    }
+    const eyeMat = mat(657414, { roughness: 0.25 });
+    add(headGroup, new SphereGeometry(0.04, 10, 8), eyeMat, -0.13, 0.06, 0.1);
+    add(headGroup, new SphereGeometry(0.04, 10, 8), eyeMat, 0.13, 0.06, 0.1);
+    add(headGroup, new BoxGeometry(0.06, 0.02, 0.04), dark, -0.13, 0.1, 0.1, { cast: false });
+    add(headGroup, new BoxGeometry(0.06, 0.02, 0.04), dark, 0.13, 0.1, 0.1, { cast: false });
+    add(headGroup, new TorusGeometry(0.14, 0.012, 6, 16), leather, 0, 0, 0.05, { rx: Math.PI / 2 });
+    add(headGroup, new TorusGeometry(0.1, 0.01, 5, 12), leather, 0, -0.04, 0.35, { rx: Math.PI / 2 });
+    add(headGroup, new TorusGeometry(0.05, 8e-3, 5, 10), dark, 0, -0.08, 0.52, { rx: Math.PI / 2 });
+    for (const side of [-1, 1]) {
+      add(headGroup, new BoxGeometry(0.02, 0.02, 0.5), leather, side * 0.12, -0.02, 0.15, { cast: false });
+    }
+    for (let i = 0; i < 12; i++) {
+      const t = i / 11;
+      add(
+        neckGroup,
+        new BoxGeometry(0.05 + i % 3 * 0.015, 0.12 + t * 0.16, 0.08),
+        maneMat,
+        (i % 2 - 0.5) * 0.05,
+        0.2 + t * 0.55,
+        -0.14 - t * 0.02,
+        { rx: 0.15 + t * 0.2 }
+      );
+    }
+    add(headGroup, new BoxGeometry(0.08, 0.18, 0.22), maneMat, 0, 0.14, -0.06);
+    add(headGroup, new BoxGeometry(0.05, 0.16, 0.1), maneMat, 0, 0.06, 0.12, { rx: 0.55 });
+    const tailGroup = new Group();
+    tailGroup.position.set(0, 0.2, -0.9);
+    bodyRoot.add(tailGroup);
+    add(tailGroup, new SphereGeometry(0.08, 8, 6), maneMat, 0, 0.02, 0);
+    add(tailGroup, new CylinderGeometry(0.07, 0.1, 0.5, 10), maneMat, 0, -0.14, -0.16, { rx: 0.55 });
+    add(tailGroup, new CylinderGeometry(0.05, 0.08, 0.45, 10), maneMat, 0, -0.42, -0.4, { rx: 0.35 });
+    add(tailGroup, new CylinderGeometry(0.03, 0.055, 0.32, 8), maneMat, 0, -0.64, -0.58, { rx: 0.25 });
+    for (let i = 0; i < 5; i++) {
+      add(tailGroup, new BoxGeometry(0.04, 0.35, 0.06), maneMat, (i - 2) * 0.03, -0.5, -0.5, { rx: 0.3, cast: false });
+    }
+    add(bodyRoot, new BoxGeometry(0.58, 0.04, 0.55), mat(6957088, { roughness: 0.9 }), 0, 0.32, 0.02);
+    add(bodyRoot, new BoxGeometry(0.5, 0.14, 0.48), leather, 0, 0.42, 0.02);
+    add(bodyRoot, new BoxGeometry(0.1, 0.28, 0.36), leather, -0.28, 0.22, 0.02);
+    add(bodyRoot, new BoxGeometry(0.1, 0.28, 0.36), leather, 0.28, 0.22, 0.02);
+    add(bodyRoot, new CylinderGeometry(0.045, 0.055, 0.14, 10), leather, 0, 0.56, 0.18);
+    add(bodyRoot, new SphereGeometry(0.05, 8, 6), leather, 0, 0.64, 0.18);
+    add(bodyRoot, new BoxGeometry(0.42, 0.16, 0.12), leather, 0, 0.54, -0.18);
+    add(bodyRoot, new BoxGeometry(0.48, 0.04, 0.08), leather, 0, 0.28, 0.02);
+    for (const sx of [-0.32, 0.32]) {
+      add(bodyRoot, new BoxGeometry(0.035, 0.38, 0.035), leather, sx, 0.02, 0.08);
+      add(bodyRoot, new TorusGeometry(0.07, 0.015, 6, 12), dark, sx, -0.18, 0.08, { ry: Math.PI / 2 });
+    }
+    for (const sx of [-0.18, 0.18]) {
+      add(bodyRoot, new CylinderGeometry(0.01, 0.01, 0.2, 5), leather, sx, 0.5, -0.05, { cast: false });
+    }
+    const legDefs = [
+      { name: "fl", x: -0.22, z: 0.52 },
+      { name: "fr", x: 0.22, z: 0.52 },
+      { name: "bl", x: -0.24, z: -0.52 },
+      { name: "br", x: 0.24, z: -0.52 }
+    ];
+    const legs = [];
+    for (const def of legDefs) {
+      const leg = makeLeg(bodyMat, hoofMat, dark);
+      leg.name = def.name;
+      leg.position.set(def.x, 1.15, def.z);
+      root.add(leg);
+      legs.push(leg);
+    }
+    const rider = makeDenseRider(dark, coatMat, denimMat, leather, boneMat);
+    rider.position.set(0, 1.58, 0.02);
+    root.add(rider);
+    return { root, legs, rider, body: bodyRoot, neck: neckGroup, head: headGroup, tail: tailGroup };
+  }
+
+  // src/systems/horse.js
+  var HORSE_PROFILES = {
+    dun: {
+      id: "dun",
+      name: "Dun",
+      color: 10123332,
+      mane: 3811864,
+      walk: 4.2,
+      trot: 7.5,
+      gallop: 12.5,
+      turn: 1.55,
+      accel: 9.5,
+      brake: 14,
+      staminaMax: 100,
+      staminaDrain: 18,
+      staminaRegen: 14
+    },
+    bay: {
+      id: "bay",
+      name: "Bay",
+      color: 6959644,
+      mane: 1707016,
+      walk: 4.5,
+      trot: 8.2,
+      gallop: 14.2,
+      turn: 2.15,
+      accel: 12,
+      brake: 16,
+      staminaMax: 82,
+      staminaDrain: 26,
+      staminaRegen: 12
+    }
+  };
+  function createHorseMesh(profile) {
+    return createDenseHorseMesh(profile);
+  }
+  function createHorseController(profile, mesh) {
+    const state = {
+      mounted: true,
+      yaw: 0,
+      speed: 0,
+      stamina: profile.staminaMax,
+      gait: "idle",
+      bob: 0
+    };
+    const pos = mesh.root.position;
+    const tmp2 = new Vector3();
+    const restUpper = 0.08;
+    const restKnee = 0.12;
+    function update(dt, input2, groundY = 0) {
+      if (!state.mounted) {
+        state.speed = MathUtils.damp(state.speed, 0, 12, dt);
+        state.gait = "idle";
+        mesh.rider.visible = false;
+        mesh.legs.forEach((leg) => {
+          leg.rotation.x = MathUtils.damp(leg.rotation.x, 0, 8, dt);
+          leg.userData.knee.rotation.x = MathUtils.damp(leg.userData.knee.rotation.x, restKnee, 8, dt);
+        });
+        mesh.body.position.y = MathUtils.damp(mesh.body.position.y, 1.15, 8, dt);
+        mesh.body.rotation.x = MathUtils.damp(mesh.body.rotation.x, 0, 8, dt);
+        return;
+      }
+      mesh.rider.visible = true;
+      const wantSprint = input2.sprint && input2.forward > 0.15 && state.stamina > 5;
+      let target = 0;
+      if (input2.forward > 0.15) {
+        if (wantSprint) target = profile.gallop;
+        else if (Math.abs(input2.forward) > 0.55 || Math.hypot(input2.forward, input2.steer) > 0.7) target = profile.trot;
+        else target = profile.walk;
+      } else if (input2.forward < -0.15) {
+        target = -profile.walk * 0.55;
+      }
+      const accelerating = Math.abs(target) > Math.abs(state.speed) + 0.05;
+      const rate = accelerating ? profile.accel : profile.brake;
+      state.speed = MathUtils.damp(state.speed, target, rate * 0.55, dt);
+      if (Math.abs(target) < 0.1 && Math.abs(state.speed) < 0.35) state.speed = 0;
+      const turnScale = MathUtils.clamp(1 - Math.abs(state.speed) / (profile.gallop * 1.4), 0.35, 1);
+      state.yaw -= input2.steer * profile.turn * turnScale * dt * (state.speed >= 0 ? 1 : -1);
+      const dx = Math.sin(state.yaw) * state.speed * dt;
+      const dz = Math.cos(state.yaw) * state.speed * dt;
+      pos.x += dx;
+      pos.z += dz;
+      pos.y = groundY;
+      mesh.root.rotation.y = state.yaw;
+      if (wantSprint && Math.abs(state.speed) > profile.trot * 0.8) {
+        state.stamina = Math.max(0, state.stamina - profile.staminaDrain * dt);
+        if (state.stamina <= 0) state.speed = Math.min(state.speed, profile.trot);
+      } else {
+        state.stamina = Math.min(profile.staminaMax, state.stamina + profile.staminaRegen * dt);
+      }
+      const abs = Math.abs(state.speed);
+      if (abs < 0.4) state.gait = "idle";
+      else if (abs < profile.walk * 1.15) state.gait = "walk";
+      else if (abs < profile.trot * 1.1) state.gait = "trot";
+      else state.gait = "gallop";
+      const freq = state.gait === "gallop" ? 11 : state.gait === "trot" ? 8.5 : state.gait === "walk" ? 5.2 : 0;
+      state.bob += freq * dt;
+      const speedN = MathUtils.clamp(abs / profile.gallop, 0, 1);
+      const amp = state.gait === "gallop" ? 0.55 : state.gait === "trot" ? 0.38 : state.gait === "walk" ? 0.28 : 0;
+      const phases = [0, Math.PI, Math.PI, 0];
+      mesh.legs.forEach((leg, i) => {
+        const phase2 = state.bob + phases[i];
+        const swing = Math.sin(phase2) * amp * (0.45 + speedN * 0.55);
+        const gallopBias = state.gait === "gallop" ? i < 2 ? 0.12 : -0.08 : 0;
+        leg.rotation.x = restUpper + swing + gallopBias * speedN;
+        const lift = Math.max(0, Math.sin(phase2));
+        leg.userData.knee.rotation.x = restKnee + lift * amp * 0.85;
+      });
+      const bobY = state.gait === "idle" ? 0 : Math.abs(Math.sin(state.bob * (state.gait === "gallop" ? 1 : 2))) * 0.06 * (0.5 + speedN);
+      mesh.body.position.y = 1.15 + bobY;
+      const pitch = state.gait === "gallop" ? Math.sin(state.bob) * 0.08 * speedN - 0.04 * speedN : state.gait === "trot" ? Math.sin(state.bob * 2) * 0.03 : 0;
+      mesh.body.rotation.x = pitch;
+      if (mesh.neck) {
+        mesh.neck.rotation.x = -0.55 + pitch * 0.6;
+      }
+      if (mesh.tail) {
+        mesh.tail.rotation.y = Math.sin(state.bob * 0.7) * 0.15 * speedN;
+        mesh.tail.rotation.x = 0.1 + Math.sin(state.bob) * 0.08 * speedN;
+      }
+    }
+    function getWorldPos(out = tmp2) {
+      return out.copy(pos);
+    }
+    return { state, profile, mesh, update, getWorldPos, pos };
+  }
+
+  // src/systems/camera.js
+  function createFollowCamera(camera2) {
+    const offset = new Vector3(0, 4.1, -6.2);
+    const look = new Vector3(0, 1.55, 2);
+    const cur = new Vector3();
+    const target = new Vector3();
+    const lookAt = new Vector3();
+    const worldOff = new Vector3();
+    const worldLook = new Vector3();
+    const quat = new Quaternion();
+    const up = new Vector3(0, 1, 0);
+    function update(dt, horseRoot, yaw) {
+      quat.setFromAxisAngle(up, yaw);
+      worldOff.copy(offset).applyQuaternion(quat);
+      worldLook.copy(look).applyQuaternion(quat);
+      target.copy(horseRoot.position).add(worldOff);
+      lookAt.copy(horseRoot.position).add(worldLook);
+      cur.lerp(target, 1 - Math.exp(-5.8 * dt));
+      camera2.position.copy(cur);
+      camera2.lookAt(lookAt);
+    }
+    function snap(horseRoot, yaw) {
+      quat.setFromAxisAngle(up, yaw);
+      worldOff.copy(offset).applyQuaternion(quat);
+      cur.copy(horseRoot.position).add(worldOff);
+      camera2.position.copy(cur);
+      lookAt.copy(horseRoot.position).add(look.clone().applyQuaternion(quat));
+      camera2.lookAt(lookAt);
+    }
+    return { update, snap };
+  }
+
+  // src/systems/heat.js
+  function createHeat() {
+    let heat2 = 0;
+    const max = 100;
+    function update(dt, { carrying: carrying2, inStreet, galloping, nearDrop }) {
+      let d = -6 * dt;
+      if (carrying2 && inStreet) d += 14 * dt;
+      if (carrying2 && galloping && inStreet) d += 10 * dt;
+      if (carrying2 && nearDrop) d -= 8 * dt;
+      if (!carrying2 && inStreet && galloping) d += 3 * dt;
+      heat2 = Math.max(0, Math.min(max, heat2 + d));
+    }
+    function reset() {
+      heat2 = 0;
+    }
+    function get() {
+      return heat2;
+    }
+    function ratio() {
+      return heat2 / max;
+    }
+    function isBotched() {
+      return heat2 >= max;
+    }
+    return { update, reset, get, ratio, isBotched, max };
+  }
+
+  // src/systems/ui.js
+  function createUI() {
+    const $ = (id) => document.getElementById(id);
+    const screens = {
+      title: $("screen-title"),
+      cinematic: $("screen-cinematic"),
+      prep: $("screen-prep"),
+      end: $("screen-end")
+    };
+    const hud = $("hud");
+    const prompt = $("hud-prompt");
+    const obj = $("hud-obj");
+    const timer = $("hud-timer");
+    const stam = $("bar-stam");
+    const heat2 = $("bar-heat");
+    const cineSpeaker = $("cine-speaker");
+    const cineLine = $("cine-line");
+    const compass = $("hud-compass");
+    const compassArrow = $("compass-arrow");
+    const compassLabel = $("compass-label");
+    const playControls = $("hud-controls");
+    const playControlsBody = $("hud-controls-body");
+    const rideTip = $("hud-ride-tip");
+    function showScreen(name) {
+      for (const [k, el] of Object.entries(screens)) {
+        el.classList.toggle("active", k === name);
+      }
+      hud.classList.toggle("hidden", name !== null && name !== void 0 ? true : false);
+      if (compass) compass.classList.add("hidden");
+      if (playControls) playControls.classList.add("hidden");
+      if (rideTip) rideTip.classList.add("hidden");
+    }
+    function playMode() {
+      for (const el of Object.values(screens)) el.classList.remove("active");
+      hud.classList.remove("hidden");
+      if (compass) compass.classList.remove("hidden");
+    }
+    function setPrompt(text) {
+      if (!text) {
+        prompt.classList.remove("show");
+        prompt.textContent = "";
+        return;
+      }
+      prompt.textContent = text;
+      prompt.classList.add("show");
+    }
+    function setObjective(text) {
+      obj.textContent = text;
+    }
+    function setMeters(staminaRatio, heatRatio) {
+      stam.style.transform = `scaleX(${Math.max(0, Math.min(1, staminaRatio))})`;
+      heat2.style.transform = `scaleX(${Math.max(0, Math.min(1, heatRatio))})`;
+    }
+    function setTimer(sec) {
+      if (sec == null || sec < 0) {
+        timer.textContent = "\u2014";
+        return;
+      }
+      const s = Math.max(0, Math.ceil(sec));
+      const m = Math.floor(s / 60);
+      const r = s % 60;
+      timer.textContent = `${m}:${r.toString().padStart(2, "0")}`;
+      timer.style.color = s <= 20 ? "#c42828" : "";
+    }
+    function setCompass(deg, label) {
+      if (!compass) return;
+      if (label == null) {
+        compass.classList.add("hidden");
+        return;
+      }
+      compass.classList.remove("hidden");
+      if (compassArrow) compassArrow.style.transform = `rotate(${deg}deg)`;
+      if (compassLabel) compassLabel.textContent = label;
+    }
+    function setCine(speaker, line) {
+      cineSpeaker.textContent = speaker;
+      cineLine.textContent = line;
+    }
+    function showEnd({ clean, title, body, kicker }) {
+      showScreen("end");
+      hud.classList.add("hidden");
+      if (compass) compass.classList.add("hidden");
+      if (playControls) playControls.classList.add("hidden");
+      if (rideTip) rideTip.classList.add("hidden");
+      $("end-kicker").textContent = kicker || "Soft Open";
+      const t = $("end-title");
+      t.textContent = title;
+      t.className = clean ? "clean" : "botched";
+      $("end-body").textContent = body;
+    }
+    function showPlayControls(touch) {
+      if (!playControls) return;
+      playControls.classList.remove("hidden");
+      if (playControlsBody) {
+        playControlsBody.innerHTML = touch ? "<div><b>Stick</b> move</div><div><b>Gallop</b> \xB7 <b>Mount</b> \xB7 <b>Act</b></div>" : "<div><b>W/S</b> Move \xB7 <b>A/D</b> Steer</div><div><b>Shift</b> Gallop \xB7 <b>E</b> Mount \xB7 <b>Space</b> Act</div>";
+      }
+      if (rideTip) {
+        rideTip.classList.remove("hidden", "fade");
+        void rideTip.offsetWidth;
+        rideTip.classList.add("show");
+        clearTimeout(rideTip._fadeTimer);
+        rideTip._fadeTimer = setTimeout(() => {
+          rideTip.classList.add("fade");
+          setTimeout(() => rideTip.classList.add("hidden"), 700);
+        }, 6e3);
+      }
+    }
+    function hidePlayControls() {
+      if (playControls) playControls.classList.add("hidden");
+      if (rideTip) {
+        rideTip.classList.add("hidden");
+        rideTip.classList.remove("show", "fade");
+        clearTimeout(rideTip._fadeTimer);
+      }
+    }
+    return {
+      $,
+      showScreen,
+      playMode,
+      setPrompt,
+      setObjective,
+      setMeters,
+      setTimer,
+      setCompass,
+      setCine,
+      showEnd,
+      showPlayControls,
+      hidePlayControls,
+      screens,
+      hud
+    };
+  }
+
+  // src/world/greenville.js
+  var COL = {
+    dirt: 8016436,
+    dirtDark: 4073496,
+    wood: 5913122,
+    woodDark: 3021326,
+    adobe: 10518616,
+    adobeDark: 8018488,
+    roof: 4858392,
+    rust: 10111012,
+    bone: 13680800,
+    blood: 12855336,
+    water: 2771528,
+    brush: 4872752,
+    falseFront: 3810324
+  };
+  function std(color, extras = {}) {
+    return new MeshStandardMaterial({
+      color,
+      roughness: 0.88,
+      metalness: 0.02,
+      ...extras
+    });
+  }
+  function box(w, h, d, colorOrMat, x, y, z, matOpts = {}) {
+    const material = colorOrMat.isMaterial ? colorOrMat : std(colorOrMat, matOpts);
+    const mesh = new Mesh(new BoxGeometry(w, h, d), material);
+    mesh.position.set(x, y, z);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    return mesh;
+  }
+  function building(group, {
+    w,
+    h,
+    d,
+    x,
+    z,
+    color = COL.adobe,
+    adobeMap = null,
+    woodMap = null,
+    roofH = 0.4,
+    signTex = null,
+    porch = true
+  }) {
+    const wallMat = adobeMap ? std(color, { map: adobeMap, roughnessMap: adobeMap, roughness: 0.92 }) : std(color);
+    const base = box(w, h, d, wallMat, x, h / 2, z);
+    group.add(base);
+    const roof = box(w + 0.35, roofH, d + 0.35, COL.roof, x, h + roofH / 2, z);
+    group.add(roof);
+    const frontH = h * 0.52;
+    const frontZ = z + d / 2;
+    group.add(box(w + 0.3, frontH, 0.22, COL.falseFront, x, h + frontH * 0.12, frontZ + 0.05));
+    group.add(box(w + 0.2, frontH * 0.92, 0.1, 4861976, x, h + frontH * 0.14, frontZ + 0.16));
+    group.add(box(w + 0.4, 0.12, 0.2, COL.bone, x, h + frontH * 0.4, frontZ + 0.18, {
+      emissive: 2760720,
+      emissiveIntensity: 0.12
+    }));
+    for (const sx of [-w * 0.42, w * 0.42]) {
+      group.add(box(0.14, 0.35, 0.28, COL.woodDark, x + sx, h + 0.15, frontZ + 0.2));
+    }
+    group.add(box(0.9, 1.85, 0.12, COL.woodDark, x, 0.92, frontZ + 0.1));
+    group.add(box(1.05, 0.1, 0.14, COL.wood, x, 1.9, frontZ + 0.12));
+    const winMat = {
+      emissive: 9062936,
+      emissiveIntensity: 0.65,
+      roughness: 0.45,
+      metalness: 0.05
+    };
+    group.add(box(0.58, 0.58, 0.08, 2758672, x - w * 0.28, 1.6, frontZ + 0.1, winMat));
+    group.add(box(0.58, 0.58, 0.08, 2758672, x + w * 0.28, 1.6, frontZ + 0.1, winMat));
+    for (const wx of [-w * 0.28, w * 0.28]) {
+      group.add(box(0.68, 0.06, 0.1, COL.bone, x + wx, 1.92, frontZ + 0.12));
+      group.add(box(0.68, 0.06, 0.1, COL.bone, x + wx, 1.28, frontZ + 0.12));
+    }
+    if (porch) {
+      const porchZ = frontZ + 1.15;
+      const walkMat = woodMap ? std(COL.wood, { map: woodMap, roughnessMap: woodMap }) : std(COL.wood);
+      group.add(box(w * 0.85, 0.1, 1.6, walkMat, x, 0.12, porchZ - 0.3));
+      for (const sx of [-w * 0.38, w * 0.38]) {
+        group.add(box(0.14, 2.4, 0.14, COL.woodDark, x + sx, 1.2, porchZ));
+      }
+      group.add(box(w * 0.9, 0.08, 1.7, COL.woodDark, x, 2.45, porchZ - 0.2));
+    }
+    if (signTex) {
+      const sign = new Mesh(
+        new PlaneGeometry(Math.min(w * 0.7, 4.2), 1),
+        new MeshStandardMaterial({
+          map: signTex,
+          roughness: 0.7,
+          metalness: 0.05,
+          emissive: 3807248,
+          emissiveIntensity: 0.2
+        })
+      );
+      sign.position.set(x, h + 0.55, frontZ + 0.28);
+      sign.castShadow = true;
+      group.add(sign);
+    }
+    return base;
+  }
+  function makeBeacon({ color, emissive, lightColor, height = 5.2 }) {
+    const g = new Group();
+    g.name = "beacon";
+    const post = box(0.12, height, 0.12, COL.bone, 0, height / 2, 0);
+    post.castShadow = false;
+    g.add(post);
+    const tip = box(0.28, 0.45, 0.28, color, 0, height + 0.1, 0, {
+      emissive,
+      emissiveIntensity: 0.85,
+      roughness: 0.45
+    });
+    tip.castShadow = false;
+    g.add(tip);
+    const orb = new Mesh(
+      new SphereGeometry(0.22, 10, 8),
+      new MeshStandardMaterial({
+        color,
+        emissive,
+        emissiveIntensity: 1.2,
+        roughness: 0.35,
+        metalness: 0.1
+      })
+    );
+    orb.position.set(0, height + 0.55, 0);
+    orb.castShadow = false;
+    g.add(orb);
+    const light = new PointLight(lightColor, 1.4, 26, 1.6);
+    light.position.set(0, height + 0.4, 0);
+    g.add(light);
+    g.userData.orb = orb;
+    g.userData.tip = tip;
+    g.userData.light = light;
+    g.userData.baseIntensity = 1.4;
+    return g;
+  }
+  function hitchRope(group, x0, y0, z0, x1, y1, z1, mat2) {
+    const curve = new CatmullRomCurve3([
+      new Vector3(x0, y0, z0),
+      new Vector3((x0 + x1) / 2, Math.min(y0, y1) - 0.18, (z0 + z1) / 2),
+      new Vector3(x1, y1, z1)
+    ]);
+    const geo = new TubeGeometry(curve, 12, 0.025, 5, false);
+    const rope = new Mesh(geo, mat2);
+    rope.castShadow = true;
+    group.add(rope);
+  }
+  function buildGreenville(scene2) {
+    const root = new Group();
+    root.name = "greenville";
+    const dirtMap = makeDirtTexture();
+    const streetMap = makeStreetTexture();
+    const woodMap = makeWoodTexture();
+    const adobeMap = makeAdobeTexture();
+    const adobeMapB = makeAdobeTexture(192);
+    const waterMap = makeWaterTexture();
+    const crateMap = makeCrateWoodTexture();
+    const saloonSign = makeSignTexture("SALOON", "#7a3018", "#e8dcc8");
+    const hotelSign = makeSignTexture("HOTEL", "#5a3020", "#d0c0a0");
+    const ground = new Mesh(
+      new PlaneGeometry(90, 130),
+      std(COL.dirt, { map: dirtMap, roughnessMap: dirtMap, roughness: 0.96 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    root.add(ground);
+    for (const [px2, pz2, s, col] of [
+      [-12, 15, 8, 6965296],
+      [14, -8, 7, 5913640],
+      [8, 30, 9, 8017208],
+      [-18, -12, 6, 4861984],
+      [0, 55, 14, 5914664]
+    ]) {
+      const patch = new Mesh(
+        new CircleGeometry(s, 10),
+        std(col, { roughness: 0.98 })
+      );
+      patch.rotation.x = -Math.PI / 2;
+      patch.position.set(px2, 8e-3, pz2);
+      patch.receiveShadow = true;
+      root.add(patch);
+    }
+    const street = new Mesh(
+      new PlaneGeometry(10, 90),
+      std(COL.dirtDark, { map: streetMap, roughnessMap: streetMap, roughness: 1 })
+    );
+    street.rotation.x = -Math.PI / 2;
+    street.position.set(0, 0.018, 10);
+    street.receiveShadow = true;
+    root.add(street);
+    for (const x of [-4.9, 4.9]) {
+      const rut = new Mesh(
+        new PlaneGeometry(0.2, 88),
+        std(5914672, { roughness: 0.98 })
+      );
+      rut.rotation.x = -Math.PI / 2;
+      rut.position.set(x, 0.025, 10);
+      rut.receiveShadow = true;
+      root.add(rut);
+    }
+    const walkMat = std(COL.wood, { map: woodMap, roughnessMap: woodMap, roughness: 0.9 });
+    for (const side of [-1, 1]) {
+      const walk = box(2.5, 0.22, 55, walkMat, side * 6.35, 0.11, 5);
+      root.add(walk);
+      root.add(box(0.14, 0.3, 55, COL.woodDark, side * 5.12, 0.15, 5));
+      for (let i = 0; i < 18; i++) {
+        root.add(box(2.4, 0.02, 0.04, 2758672, side * 6.35, 0.23, -20 + i * 3));
+      }
+    }
+    building(root, {
+      w: 8,
+      h: 4.2,
+      d: 7,
+      x: -11,
+      z: 8,
+      color: COL.adobe,
+      adobeMap,
+      woodMap,
+      signTex: saloonSign
+    });
+    building(root, {
+      w: 6,
+      h: 3.4,
+      d: 6,
+      x: -10,
+      z: -4,
+      color: COL.adobeDark,
+      adobeMap: adobeMapB,
+      woodMap,
+      porch: true
+    });
+    building(root, {
+      w: 5,
+      h: 3.2,
+      d: 5,
+      x: -9.5,
+      z: 20,
+      color: 8020036,
+      adobeMap,
+      woodMap
+    });
+    building(root, {
+      w: 7,
+      h: 4.5,
+      d: 8,
+      x: 11,
+      z: 6,
+      color: 9071176,
+      adobeMap: adobeMapB,
+      woodMap,
+      signTex: hotelSign
+    });
+    building(root, {
+      w: 5.5,
+      h: 3.3,
+      d: 5.5,
+      x: 10.5,
+      z: -6,
+      color: COL.adobe,
+      adobeMap,
+      woodMap
+    });
+    building(root, {
+      w: 5,
+      h: 2.8,
+      d: 4,
+      x: 10,
+      z: -18,
+      color: COL.wood,
+      adobeMap: woodMap,
+      woodMap,
+      porch: false
+    });
+    const alleyZ = 2.2;
+    const alleyX = -7.2;
+    const alleyFill = new PointLight(12875840, 0.7, 16, 1.8);
+    alleyFill.position.set(-5.2, 2.4, alleyZ);
+    root.add(alleyFill);
+    const alleyWarm = new PointLight(10504232, 0.45, 12, 2);
+    alleyWarm.position.set(alleyX, 1.8, alleyZ);
+    root.add(alleyWarm);
+    root.add(box(0.18, 2.4, 0.18, COL.woodDark, -5.4, 1.2, alleyZ + 1.6));
+    root.add(box(0.18, 2.4, 0.18, COL.woodDark, -5.4, 1.2, alleyZ - 1.6));
+    root.add(box(0.14, 0.14, 3.4, COL.bone, -5.4, 2.35, alleyZ, {
+      emissive: 3811344,
+      emissiveIntensity: 0.15
+    }));
+    const crateMat = std(COL.wood, { map: crateMap, roughnessMap: crateMap });
+    root.add(box(0.95, 0.95, 0.95, crateMat, alleyX - 1.2, 0.48, alleyZ));
+    root.add(box(0.75, 1.15, 0.75, crateMat, alleyX - 0.3, 0.58, alleyZ - 1.1));
+    root.add(box(0.7, 0.7, 0.7, crateMat, alleyX - 1.5, 0.35, alleyZ + 1.2));
+    root.add(box(0.65, 0.55, 0.65, crateMat, alleyX - 1.2, 1.2, alleyZ));
+    const barrelMat = std(COL.rust, { map: crateMap, roughness: 0.7, metalness: 0.15 });
+    const barrel = new Mesh(new CylinderGeometry(0.42, 0.42, 0.9, 14), barrelMat);
+    barrel.position.set(alleyX + 0.5, 0.45, alleyZ + 0.8);
+    barrel.castShadow = true;
+    barrel.receiveShadow = true;
+    root.add(barrel);
+    const barrel2 = new Mesh(new CylinderGeometry(0.38, 0.38, 0.8, 14), barrelMat);
+    barrel2.position.set(alleyX + 0.9, 0.4, alleyZ - 0.6);
+    barrel2.castShadow = true;
+    root.add(barrel2);
+    const caseMesh = box(0.7, 0.36, 0.5, 3809300, alleyX, 0.55, alleyZ + 0.2);
+    caseMesh.name = "case";
+    root.add(caseMesh);
+    const caseLid = box(0.72, 0.06, 0.52, COL.bone, alleyX, 0.76, alleyZ + 0.2, {
+      emissive: 4855824,
+      emissiveIntensity: 0.35
+    });
+    caseLid.name = "caseLid";
+    root.add(caseLid);
+    const caseGlow = new PointLight(12855336, 1, 10);
+    caseGlow.position.copy(caseMesh.position).add(new Vector3(0, 0.7, 0));
+    root.add(caseGlow);
+    const caseBeacon = makeBeacon({
+      color: COL.blood,
+      emissive: 9116186,
+      lightColor: 12855336,
+      height: 5.4
+    });
+    caseBeacon.position.set(alleyX, 0, alleyZ + 0.2);
+    root.add(caseBeacon);
+    const hitch = new Group();
+    hitch.name = "hitch";
+    hitch.position.set(-4.5, 0, -2);
+    hitch.add(box(0.18, 1.3, 0.18, COL.woodDark, -1.35, 0.65, 0));
+    hitch.add(box(0.18, 1.3, 0.18, COL.woodDark, 1.35, 0.65, 0));
+    hitch.add(box(2.9, 0.14, 0.14, COL.wood, 0, 1.18, 0));
+    hitch.add(box(0.24, 0.12, 0.24, COL.bone, -1.35, 1.32, 0, { emissive: 2760720, emissiveIntensity: 0.15 }));
+    hitch.add(box(0.24, 0.12, 0.24, COL.bone, 1.35, 1.32, 0, { emissive: 2760720, emissiveIntensity: 0.15 }));
+    hitch.add(box(3.1, 0.06, 0.55, COL.woodDark, 0, 0.03, 0));
+    const ropeMat = std(9072720, { roughness: 0.95 });
+    hitchRope(hitch, -1.3, 1.05, 0.02, 1.3, 1.05, 0.02, ropeMat);
+    hitchRope(hitch, -1.3, 0.95, -0.04, 1.3, 0.95, -0.04, ropeMat);
+    root.add(hitch);
+    for (let z = -25; z < 40; z += 4) {
+      for (const x of [-5.2, 5.2]) {
+        root.add(box(0.12, 1.05, 0.12, COL.woodDark, x, 0.52, z));
+        if (z % 8 === 0) {
+          root.add(box(0.06, 0.06, 3.8, COL.wood, x, 0.85, z + 2));
+        }
+      }
+    }
+    root.add(box(2.2, 0.5, 0.7, COL.wood, 4.5, 0.25, -2));
+    const troughWater = new Mesh(
+      new BoxGeometry(1.9, 0.08, 0.5),
+      new MeshStandardMaterial({
+        color: 3824216,
+        roughness: 0.25,
+        metalness: 0.15,
+        transparent: true,
+        opacity: 0.75
+      })
+    );
+    troughWater.position.set(4.5, 0.48, -2);
+    root.add(troughWater);
+    const creekBed = new Mesh(
+      new PlaneGeometry(28, 18),
+      std(4863008, { map: dirtMap, roughness: 1 })
+    );
+    creekBed.rotation.x = -Math.PI / 2;
+    creekBed.position.set(0, -0.35, 48);
+    creekBed.receiveShadow = true;
+    root.add(creekBed);
+    const water = new Mesh(
+      new PlaneGeometry(22, 8),
+      new MeshStandardMaterial({
+        color: COL.water,
+        map: waterMap,
+        roughness: 0.28,
+        metalness: 0.25,
+        transparent: true,
+        opacity: 0.82
+      })
+    );
+    water.rotation.x = -Math.PI / 2;
+    water.position.set(0, -0.26, 50);
+    water.receiveShadow = true;
+    root.add(water);
+    root.userData.water = water;
+    for (let i = 0; i < 10; i++) {
+      const stone = box(
+        0.5 + i % 3 * 0.25,
+        0.25,
+        0.4 + i % 2 * 0.2,
+        5916728,
+        -8 + i * 1.8,
+        0.05,
+        46 + i % 3 * 0.4
+      );
+      root.add(stone);
+    }
+    const drop = new Group();
+    drop.name = "drop";
+    drop.position.set(2, 0, 46);
+    drop.add(box(2.4, 0.9, 1.2, crateMat, 0, 0.45, 0));
+    drop.add(box(0.3, 0.3, 0.3, COL.bone, -0.6, 1, 0.2));
+    const dropLight = new PointLight(11033130, 0.55, 12);
+    dropLight.position.set(0, 2, 0);
+    drop.add(dropLight);
+    root.add(drop);
+    const dropBeacon = makeBeacon({
+      color: COL.rust,
+      emissive: 6959120,
+      lightColor: 11033130,
+      height: 5
+    });
+    dropBeacon.position.copy(drop.position);
+    dropBeacon.visible = false;
+    root.add(dropBeacon);
+    for (let i = 0; i < 14; i++) {
+      const bx = Math.sin(i * 2.7) * 10;
+      const bz = 42 + i % 5 * 2.2;
+      root.add(box(0.6 + i % 3 * 0.3, 0.4, 0.5, COL.brush, bx, 0.2, bz));
+    }
+    for (const [x, z, s] of [[-35, 30, 12], [38, 55, 16], [-28, 70, 10], [30, -20, 9], [-40, 50, 8]]) {
+      root.add(box(s, s * 0.55, s * 0.45, 6965296, x, s * 0.22, z));
+      root.add(box(s * 0.6, s * 0.25, s * 0.35, 5913640, x + s * 0.15, s * 0.55, z));
+    }
+    const lamp = (x, z) => {
+      const l = new PointLight(12613696, 0.4, 18);
+      l.position.set(x, 3.2, z);
+      root.add(l);
+      root.add(box(0.15, 2.8, 0.15, COL.woodDark, x, 1.4, z));
+      root.add(box(0.38, 0.28, 0.38, COL.rust, x, 3, z, {
+        emissive: 9060384,
+        emissiveIntensity: 0.7
+      }));
+    };
+    lamp(-6.5, 8);
+    lamp(6.5, 8);
+    lamp(-6.5, -8);
+    lamp(6.5, 20);
+    for (const side of [-1, 1]) {
+      for (let i = 0; i < 36; i++) {
+        const pz2 = -22 + i * 1.55;
+        const plank = box(2.35, 0.06, 1.45, walkMat, side * 6.35, 0.24, pz2);
+        plank.rotation.y = (i % 3 - 1) * 0.01;
+        root.add(plank);
+        if (i % 2 === 0) {
+          root.add(box(0.04, 0.02, 0.04, COL.bone, side * 5.4, 0.28, pz2, { roughness: 0.5, metalness: 0.4 }));
+          root.add(box(0.04, 0.02, 0.04, COL.bone, side * 7.2, 0.28, pz2, { roughness: 0.5, metalness: 0.4 }));
+        }
+      }
+    }
+    function windowInterior(x, y, z, w = 0.7, h = 0.7) {
+      const room = box(w * 0.9, h * 0.9, 0.45, 1708040, x, y, z - 0.25, {
+        emissive: 6961684,
+        emissiveIntensity: 0.55,
+        roughness: 0.9
+      });
+      room.castShadow = false;
+      root.add(room);
+      root.add(box(0.08, h * 0.85, 0.02, 4857880, x - w * 0.35, y, z - 0.02, { roughness: 0.95 }));
+    }
+    windowInterior(-11 - 8 * 0.28, 1.6, 8 + 7 / 2 + 0.1);
+    windowInterior(-11 + 8 * 0.28, 1.6, 8 + 7 / 2 + 0.1);
+    windowInterior(11 - 7 * 0.28, 1.6, 6 + 8 / 2 + 0.1);
+    windowInterior(11 + 7 * 0.28, 1.6, 6 + 8 / 2 + 0.1);
+    for (const [bx, bz, bw] of [[-11, 8 + 3.5 + 1, 8], [11, 6 + 4 + 1, 7]]) {
+      for (let i = 0; i < 7; i++) {
+        const px2 = bx - bw * 0.35 + i * (bw * 0.7 / 6);
+        root.add(box(0.06, 0.7, 0.06, COL.woodDark, px2, 0.55, bz));
+      }
+      root.add(box(bw * 0.75, 0.06, 0.08, COL.wood, bx, 0.92, bz));
+    }
+    root.add(box(0.08, 0.08, 0.08, COL.bone, -4.5 - 1.35, 1.05, -2 + 0.12));
+    root.add(box(0.08, 0.08, 0.08, COL.bone, -4.5 + 1.35, 1.05, -2 + 0.12));
+    const feed = new Mesh(new SphereGeometry(0.28, 10, 8), std(9072704, { roughness: 0.95 }));
+    feed.position.set(-4.5, 0.28, -2.6);
+    feed.scale.set(1.1, 0.7, 0.9);
+    feed.castShadow = true;
+    root.add(feed);
+    for (let i = 0; i < 4; i++) {
+      const coil = new Mesh(new TorusGeometry(0.18 - i * 0.02, 0.025, 6, 14), ropeMat);
+      coil.position.set(-3.2, 0.08 + i * 0.04, -2.3);
+      coil.rotation.x = Math.PI / 2;
+      root.add(coil);
+    }
+    const sack = new Mesh(new SphereGeometry(0.32, 10, 8), std(6969912, { roughness: 0.98 }));
+    sack.position.set(alleyX - 2, 0.28, alleyZ + 0.4);
+    sack.scale.set(1.2, 0.85, 1);
+    sack.castShadow = true;
+    root.add(sack);
+    root.add(box(0.12, 0.18, 0.12, COL.rust, alleyX - 1.2, 1.55, alleyZ, {
+      emissive: 9060368,
+      emissiveIntensity: 0.9
+    }));
+    const lanternLit = new PointLight(12613696, 0.55, 8, 2);
+    lanternLit.position.set(alleyX - 1.2, 1.7, alleyZ);
+    root.add(lanternLit);
+    const wheel = new Mesh(new TorusGeometry(0.55, 0.05, 8, 20), std(COL.woodDark, { roughness: 0.85 }));
+    wheel.position.set(alleyX + 1.4, 0.55, alleyZ - 1.4);
+    wheel.rotation.y = 0.3;
+    wheel.castShadow = true;
+    root.add(wheel);
+    for (let i = 0; i < 6; i++) {
+      const a = i / 6 * Math.PI * 2;
+      root.add(box(0.04, 0.04, 0.5, COL.wood, alleyX + 1.4 + Math.cos(a) * 0.05, 0.55, alleyZ - 1.4 + Math.sin(a) * 0.05));
+    }
+    root.add(box(0.04, 1.1, 0.04, COL.wood, alleyX - 0.8, 0.55, alleyZ + 1.5));
+    root.add(box(0.18, 0.25, 0.08, 5916720, alleyX - 0.8, 0.12, alleyZ + 1.5));
+    root.add(box(0.03, 1.3, 0.03, COL.bone, alleyX + 0.2, 0.65, alleyZ - 1.5, { metalness: 0.5, roughness: 0.4 }));
+    for (const [fx, fz, fw, fh] of [[-11, 8 + 3.5, 8, 4.2], [11, 6 + 4, 7, 4.5]]) {
+      for (let i = 0; i < 9; i++) {
+        root.add(box(0.12, 0.22, 0.12, COL.bone, fx - fw * 0.4 + i * (fw * 0.8 / 8), fh + 0.55, fz + 0.25));
+      }
+    }
+    if (root.userData.water) {
+      const w = root.userData.water;
+      w.material.roughness = 0.15;
+      w.material.metalness = 0.35;
+      w.material.opacity = 0.78;
+      w.material.envMapIntensity = 1.2;
+    }
+    for (let i = 0; i < 8; i++) {
+      const foam = new Mesh(
+        new CircleGeometry(0.4 + i % 3 * 0.15, 8),
+        new MeshStandardMaterial({ color: 13160648, roughness: 0.85, transparent: true, opacity: 0.35, emissive: 4214848, emissiveIntensity: 0.1 })
+      );
+      foam.rotation.x = -Math.PI / 2;
+      foam.position.set(-6 + i * 1.6, -0.22, 49 + i % 2 * 0.8);
+      root.add(foam);
+    }
+    for (const [dx, dz, s] of [[-4.5, -2, 2.2], [-7, 2.2, 1.8], [0, 10, 3.5], [2, 46, 2.5]]) {
+      const worn = new Mesh(
+        new CircleGeometry(s, 12),
+        std(4861984, { roughness: 1, map: dirtMap })
+      );
+      worn.rotation.x = -Math.PI / 2;
+      worn.position.set(dx, 0.022, dz);
+      worn.receiveShadow = true;
+      root.add(worn);
+    }
+    building(root, {
+      w: 6.5,
+      h: 3.6,
+      d: 6,
+      x: -10.5,
+      z: -16,
+      color: 6965808,
+      adobeMap,
+      woodMap,
+      porch: true
+    });
+    const liverySign = makeSignTexture("LIVERY", "#3a2010", "#d0c0a0");
+    const ls = new Mesh(
+      new PlaneGeometry(3.2, 0.85),
+      new MeshStandardMaterial({ map: liverySign, roughness: 0.7, emissive: 2758672, emissiveIntensity: 0.15 })
+    );
+    ls.position.set(-10.5, 4, -16 + 3 + 0.28);
+    root.add(ls);
+    scene2.add(root);
+    const points = {
+      spawn: new Vector3(-3.5, 0, -3),
+      hitch: hitch.position.clone(),
+      alleyCase: caseMesh.position.clone(),
+      drop: drop.position.clone(),
+      streetMinX: -5,
+      streetMaxX: 5,
+      streetMinZ: -20,
+      streetMaxZ: 38
+    };
+    function pulseBeacon(beacon, t, amp = 0.55) {
+      if (!beacon.visible) return;
+      const pulse = 0.65 + Math.sin(t * 3.2) * amp;
+      const light = beacon.userData.light;
+      const orb = beacon.userData.orb;
+      const tip = beacon.userData.tip;
+      if (light) light.intensity = beacon.userData.baseIntensity * pulse;
+      if (orb?.material) orb.material.emissiveIntensity = 0.7 + pulse * 0.7;
+      if (tip?.material) tip.material.emissiveIntensity = 0.45 + pulse * 0.5;
+    }
+    return {
+      root,
+      caseMesh,
+      caseGlow,
+      caseBeacon,
+      dropBeacon,
+      hitch,
+      drop,
+      points,
+      hideCase() {
+        caseMesh.visible = false;
+        caseLid.visible = false;
+        caseGlow.visible = false;
+        caseBeacon.visible = false;
+      },
+      showCase() {
+        caseMesh.visible = true;
+        caseLid.visible = true;
+        caseGlow.visible = true;
+        caseBeacon.visible = true;
+        dropBeacon.visible = false;
+      },
+      setCarrying(carrying2) {
+        dropBeacon.visible = !!carrying2;
+        if (carrying2) {
+          caseMesh.visible = false;
+          caseLid.visible = false;
+          caseGlow.visible = false;
+          caseBeacon.visible = false;
+        }
+      },
+      updateBeacons(t) {
+        pulseBeacon(caseBeacon, t, 0.6);
+        pulseBeacon(dropBeacon, t, 0.5);
+        if (caseGlow.visible) {
+          caseGlow.intensity = 0.75 + Math.sin(t * 3.2) * 0.4;
+        }
+        const w = root.userData.water;
+        if (w?.material?.map) {
+          w.material.map.offset.x = Math.sin(t * 0.15) * 0.02;
+          w.material.map.offset.y = t * 0.02;
+        }
+      }
+    };
+  }
+  function isInStreet(pos, points) {
+    return pos.x > points.streetMinX && pos.x < points.streetMaxX && pos.z > points.streetMinZ && pos.z < points.streetMaxZ;
+  }
+  function dist2(a, b) {
+    const dx = a.x - b.x;
+    const dz = a.z - b.z;
+    return Math.hypot(dx, dz);
+  }
+
+  // src/scenes/dialogue.js
+  var COLD_OPEN = [
+    { speaker: "RAE", line: "Greenville's quiet tonight. That's the lie they sell." },
+    { speaker: "RAE", line: "Case is in the alley behind the saloon. Soft wash at the creek. No guns if we can help it." },
+    { speaker: "RAE", line: "You pick the horse. Quiet approach. Window's tight \u2014 don't make heat on the street." },
+    { speaker: "RAE", line: "Ride clean, we eat. Botch it\u2026 we don't talk about that." }
+  ];
+  var END_CLEAN = {
+    clean: true,
+    title: "Clean",
+    kicker: "Soft Open \xB7 Quiet",
+    body: "Case hits the wash. Rae doesn\u2019t smile \u2014 she never does \u2014 but the heat dies in the dust. Greenville looks the other way."
+  };
+  var END_BOTCHED = {
+    clean: false,
+    title: "Botched",
+    kicker: "Soft Open \xB7 Quiet",
+    body: "Heat cooked the strip. Whistles, boots, bad luck. The case is gone or worse \u2014 and Rae already knows."
+  };
+  var END_TIMEOUT = {
+    clean: false,
+    title: "Window Closed",
+    kicker: "Soft Open \xB7 Quiet",
+    body: "Time burned out. The alley\u2019s empty and the wash is watched. Try again before Greenville wakes up."
+  };
+
   // node_modules/three/examples/jsm/shaders/CopyShader.js
   var CopyShader = {
     name: "CopyShader",
@@ -22198,1529 +23636,1135 @@ void main() {
     }
   };
 
-  // src/systems/input.js
-  function createInput({ touchRoot, stickEl, knobEl, gallopBtn, mountBtn, actBtn }) {
-    const keys = /* @__PURE__ */ Object.create(null);
-    const stick = { x: 0, y: 0, active: false };
-    let gallop = false;
-    let mountPulse = false;
-    let actPulse = false;
-    let pointerId = null;
-    const down = (e) => {
-      keys[e.code] = true;
-      if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) e.preventDefault();
-    };
-    const up = (e) => {
-      keys[e.code] = false;
-    };
-    window.addEventListener("keydown", down);
-    window.addEventListener("keyup", up);
-    function setStickFromEvent(clientX, clientY) {
-      const r = stickEl.getBoundingClientRect();
-      const cx = r.left + r.width / 2;
-      const cy = r.top + r.height / 2;
-      let dx = (clientX - cx) / (r.width / 2);
-      let dy = (clientY - cy) / (r.height / 2);
-      const len = Math.hypot(dx, dy) || 1;
-      if (len > 1) {
-        dx /= len;
-        dy /= len;
-      }
-      stick.x = dx;
-      stick.y = dy;
-      stick.active = true;
-      knobEl.style.transform = `translate(${dx * (r.width * 0.32)}px, ${dy * (r.height * 0.32)}px)`;
+  // src/render/bloom.js
+  var TextureBloomPass = class extends UnrealBloomPass {
+    dispose() {
+      this.materialHighPassFilter.dispose();
+      super.dispose();
     }
-    function resetStick() {
-      stick.x = 0;
-      stick.y = 0;
-      stick.active = false;
-      pointerId = null;
-      knobEl.style.transform = "translate(0,0)";
-    }
-    stickEl.addEventListener("pointerdown", (e) => {
-      pointerId = e.pointerId;
-      stickEl.setPointerCapture(e.pointerId);
-      setStickFromEvent(e.clientX, e.clientY);
-    });
-    stickEl.addEventListener("pointermove", (e) => {
-      if (pointerId !== e.pointerId) return;
-      setStickFromEvent(e.clientX, e.clientY);
-    });
-    stickEl.addEventListener("pointerup", resetStick);
-    stickEl.addEventListener("pointercancel", resetStick);
-    const hold = (btn, on, off) => {
-      const start = (e) => {
-        e.preventDefault();
-        btn.classList.add("held");
-        on();
+    render(renderer2, writeBuffer, readBuffer, deltaTime, maskActive) {
+      if (maskActive) throw new Error("TextureBloomPass does not support stencil masks");
+      renderer2.getClearColor(this._oldClearColor);
+      const alpha = renderer2.getClearAlpha(), autoClear = renderer2.autoClear;
+      renderer2.autoClear = false;
+      renderer2.setClearColor(this.clearColor, 0);
+      const draw = (material, target) => {
+        this.fsQuad.material = material;
+        renderer2.setRenderTarget(target);
+        renderer2.clear();
+        this.fsQuad.render(renderer2);
       };
-      const end = () => {
-        btn.classList.remove("held");
-        off();
-      };
-      btn.addEventListener("pointerdown", start);
-      btn.addEventListener("pointerup", end);
-      btn.addEventListener("pointerleave", end);
-      btn.addEventListener("pointercancel", end);
-    };
-    hold(gallopBtn, () => {
-      gallop = true;
-    }, () => {
-      gallop = false;
-    });
-    mountBtn.addEventListener("pointerdown", (e) => {
-      e.preventDefault();
-      mountPulse = true;
-    });
-    actBtn.addEventListener("pointerdown", (e) => {
-      e.preventDefault();
-      actPulse = true;
-    });
-    function setTouchVisible(v) {
-      touchRoot.classList.toggle("hidden", !v);
-    }
-    function sample() {
-      const forward = (keys.KeyW || keys.ArrowUp ? 1 : 0) + (keys.KeyS || keys.ArrowDown ? -1 : 0) + -stick.y;
-      const steer = (keys.KeyD || keys.ArrowRight ? 1 : 0) + (keys.KeyA || keys.ArrowLeft ? -1 : 0) + stick.x;
-      const sprint = !!(keys.ShiftLeft || keys.ShiftRight || gallop);
-      const mount = !!keys.KeyE || mountPulse;
-      const act = !!keys.Space || actPulse;
-      mountPulse = false;
-      actPulse = false;
-      return {
-        forward: Math.max(-1, Math.min(1, forward)),
-        steer: Math.max(-1, Math.min(1, steer)),
-        sprint,
-        mount,
-        act
-      };
-    }
-    return { sample, setTouchVisible, keys };
-  }
-
-  // src/systems/textures.js
-  function canvas(size) {
-    const c = document.createElement("canvas");
-    c.width = c.height = size;
-    const ctx = c.getContext("2d");
-    return { c, ctx, size };
-  }
-  function toTex(c, { wrap = RepeatWrapping, repeat = [1, 1], colorSpace = SRGBColorSpace } = {}) {
-    const tex = new CanvasTexture(c);
-    tex.wrapS = tex.wrapT = wrap;
-    tex.repeat.set(repeat[0], repeat[1]);
-    tex.colorSpace = colorSpace;
-    tex.anisotropy = 4;
-    tex.needsUpdate = true;
-    return tex;
-  }
-  function makeDirtTexture(size = 256) {
-    const { c, ctx } = canvas(size);
-    const g = ctx.createLinearGradient(0, 0, size, size);
-    g.addColorStop(0, "#6a4428");
-    g.addColorStop(0.45, "#5a3820");
-    g.addColorStop(1, "#4a2e18");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, size, size);
-    for (let i = 0; i < 180; i++) {
-      const x = Math.random() * size;
-      const y = Math.random() * size;
-      const r = 4 + Math.random() * 28;
-      ctx.fillStyle = `rgba(${70 + Math.random() * 50 | 0},${40 + Math.random() * 30 | 0},${20 + Math.random() * 20 | 0},${0.08 + Math.random() * 0.12})`;
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    for (let i = 0; i < 2200; i++) {
-      const x = Math.random() * size;
-      const y = Math.random() * size;
-      const bright = Math.random() > 0.55;
-      ctx.fillStyle = bright ? `rgba(180,150,110,${0.15 + Math.random() * 0.25})` : `rgba(30,18,10,${0.2 + Math.random() * 0.35})`;
-      ctx.fillRect(x, y, 1 + (Math.random() > 0.85 ? 1 : 0), 1);
-    }
-    for (let i = 0; i < 40; i++) {
-      ctx.fillStyle = `rgba(90,70,50,${0.25 + Math.random() * 0.3})`;
-      ctx.beginPath();
-      ctx.ellipse(Math.random() * size, Math.random() * size, 1 + Math.random() * 2.5, 0.8 + Math.random() * 1.5, Math.random(), 0, Math.PI * 2);
-      ctx.fill();
-    }
-    return toTex(c, { repeat: [8, 12] });
-  }
-  function makeStreetTexture(size = 256) {
-    const { c, ctx } = canvas(size);
-    ctx.fillStyle = "#3a2414";
-    ctx.fillRect(0, 0, size, size);
-    for (let i = 0; i < 120; i++) {
-      ctx.fillStyle = `rgba(${40 + Math.random() * 40 | 0},${25 + Math.random() * 25 | 0},${12 + Math.random() * 15 | 0},${0.1 + Math.random() * 0.15})`;
-      ctx.fillRect(Math.random() * size, Math.random() * size, 8 + Math.random() * 40, 3 + Math.random() * 12);
-    }
-    for (let i = 0; i < 1800; i++) {
-      ctx.fillStyle = Math.random() > 0.5 ? `rgba(120,90,60,${0.1 + Math.random() * 0.2})` : `rgba(20,12,8,${0.25 + Math.random() * 0.35})`;
-      ctx.fillRect(Math.random() * size, Math.random() * size, 1, 1);
-    }
-    ctx.strokeStyle = "rgba(25,15,10,0.35)";
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(size * 0.3, 0);
-    ctx.lineTo(size * 0.28, size);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(size * 0.7, 0);
-    ctx.lineTo(size * 0.72, size);
-    ctx.stroke();
-    return toTex(c, { repeat: [2, 14] });
-  }
-  function makeWoodTexture(size = 256) {
-    const { c, ctx } = canvas(size);
-    ctx.fillStyle = "#4a2e18";
-    ctx.fillRect(0, 0, size, size);
-    const plankH = size / 6;
-    for (let i = 0; i < 6; i++) {
-      const y = i * plankH;
-      const shade = 55 + i % 3 * 12 + Math.random() * 10;
-      ctx.fillStyle = `rgb(${shade | 0},${shade * 0.65 | 0},${shade * 0.35 | 0})`;
-      ctx.fillRect(0, y, size, plankH - 1.5);
-      ctx.strokeStyle = `rgba(30,18,8,${0.15 + Math.random() * 0.2})`;
-      ctx.lineWidth = 1;
-      for (let g = 0; g < 5; g++) {
-        const gy = y + 4 + g * (plankH / 6);
-        ctx.beginPath();
-        ctx.moveTo(0, gy + Math.sin(g) * 1.5);
-        for (let x = 0; x < size; x += 8) {
-          ctx.lineTo(x, gy + Math.sin(x * 0.08 + i) * 1.2);
+      try {
+        this.highPassUniforms.tDiffuse.value = readBuffer.texture;
+        this.highPassUniforms.luminosityThreshold.value = this.threshold;
+        draw(this.materialHighPassFilter, this.renderTargetBright);
+        let input2 = this.renderTargetBright;
+        for (let i = 0; i < this.nMips; i++) {
+          const material = this.separableBlurMaterials[i];
+          material.uniforms.colorTexture.value = input2.texture;
+          material.uniforms.direction.value = HORIZONTAL;
+          draw(material, this.renderTargetsHorizontal[i]);
+          material.uniforms.colorTexture.value = this.renderTargetsHorizontal[i].texture;
+          material.uniforms.direction.value = VERTICAL;
+          draw(material, this.renderTargetsVertical[i]);
+          input2 = this.renderTargetsVertical[i];
         }
-        ctx.stroke();
+        this.compositeMaterial.uniforms.bloomStrength.value = this.strength;
+        this.compositeMaterial.uniforms.bloomRadius.value = this.radius;
+        this.compositeMaterial.uniforms.bloomTintColors.value = this.bloomTintColors;
+        draw(this.compositeMaterial, this.renderTargetsHorizontal[0]);
+      } finally {
+        renderer2.setClearColor(this._oldClearColor, alpha);
+        renderer2.autoClear = autoClear;
       }
-      if (Math.random() > 0.45) {
-        const kx = 20 + Math.random() * (size - 40);
-        const ky = y + plankH * 0.4;
-        ctx.fillStyle = "rgba(30,16,8,0.45)";
-        ctx.beginPath();
-        ctx.ellipse(kx, ky, 4 + Math.random() * 3, 2.5, 0, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.fillStyle = "rgba(15,8,4,0.55)";
-      ctx.fillRect(0, y + plankH - 1.5, size, 1.5);
     }
-    return toTex(c, { repeat: [2, 10] });
-  }
-  function makeAdobeTexture(size = 256) {
-    const { c, ctx } = canvas(size);
-    ctx.fillStyle = "#a08058";
-    ctx.fillRect(0, 0, size, size);
-    for (let i = 0; i < 350; i++) {
-      const x = Math.random() * size;
-      const y = Math.random() * size;
-      const r = 3 + Math.random() * 18;
-      const v = 140 + Math.random() * 50;
-      ctx.fillStyle = `rgba(${v | 0},${v * 0.8 | 0},${v * 0.5 | 0},${0.06 + Math.random() * 0.1})`;
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    for (let i = 0; i < 3e3; i++) {
-      const v = 90 + Math.random() * 80;
-      ctx.fillStyle = `rgba(${v | 0},${v * 0.78 | 0},${v * 0.48 | 0},${0.12 + Math.random() * 0.2})`;
-      ctx.fillRect(Math.random() * size, Math.random() * size, 1, 1);
-    }
-    ctx.strokeStyle = "rgba(60,40,25,0.18)";
-    ctx.lineWidth = 1;
-    for (let i = 0; i < 8; i++) {
-      ctx.beginPath();
-      let x = Math.random() * size;
-      let y = Math.random() * size;
-      ctx.moveTo(x, y);
-      for (let s = 0; s < 6; s++) {
-        x += (Math.random() - 0.5) * 40;
-        y += 8 + Math.random() * 20;
-        ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-    }
-    return toTex(c, { repeat: [2, 2] });
-  }
-  function makeLeatherTexture(size = 128) {
-    const { c, ctx } = canvas(size);
-    const g = ctx.createRadialGradient(size * 0.4, size * 0.35, 8, size * 0.5, size * 0.5, size * 0.7);
-    g.addColorStop(0, "#5a3420");
-    g.addColorStop(0.55, "#3a2010");
-    g.addColorStop(1, "#241408");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, size, size);
-    for (let i = 0; i < 800; i++) {
-      ctx.fillStyle = Math.random() > 0.5 ? `rgba(120,80,50,${0.08 + Math.random() * 0.15})` : `rgba(20,10,5,${0.1 + Math.random() * 0.2})`;
-      ctx.fillRect(Math.random() * size, Math.random() * size, 1 + Math.random(), 1);
-    }
-    for (let i = 0; i < 12; i++) {
-      ctx.strokeStyle = `rgba(90,60,35,${0.15 + Math.random() * 0.2})`;
-      ctx.lineWidth = 1 + Math.random();
-      ctx.beginPath();
-      ctx.arc(Math.random() * size, Math.random() * size, 6 + Math.random() * 20, 0, Math.PI * (0.4 + Math.random() * 0.8));
-      ctx.stroke();
-    }
-    return toTex(c, { repeat: [1, 1] });
-  }
-  function makeCoatTexture(hexBase, size = 128) {
-    const { c, ctx } = canvas(size);
-    ctx.fillStyle = `#${hexBase.toString(16).padStart(6, "0")}`;
-    ctx.fillRect(0, 0, size, size);
-    const r = hexBase >> 16 & 255;
-    const g = hexBase >> 8 & 255;
-    const b = hexBase & 255;
-    for (let i = 0; i < 1200; i++) {
-      const dr = (Math.random() - 0.5) * 40;
-      const dg = (Math.random() - 0.5) * 30;
-      const db = (Math.random() - 0.5) * 20;
-      ctx.fillStyle = `rgba(${r + dr | 0},${g + dg | 0},${b + db | 0},${0.12 + Math.random() * 0.2})`;
-      ctx.fillRect(Math.random() * size, Math.random() * size, 1 + Math.random() * 2, 1 + Math.random() * 2);
-    }
-    return toTex(c, { repeat: [2, 2] });
-  }
-  function makeSignTexture(text, bg = "#7a3820", fg = "#e8dcc8", size = 256) {
-    const c = document.createElement("canvas");
-    c.width = size;
-    c.height = Math.round(size * 0.4);
-    const ctx = c.getContext("2d");
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, c.width, c.height);
-    for (let i = 0; i < 80; i++) {
-      ctx.fillStyle = `rgba(20,10,5,${0.05 + Math.random() * 0.1})`;
-      ctx.fillRect(Math.random() * c.width, Math.random() * c.height, 4 + Math.random() * 20, 2);
-    }
-    ctx.strokeStyle = "#d0c0a0";
-    ctx.lineWidth = 4;
-    ctx.strokeRect(6, 6, c.width - 12, c.height - 12);
-    ctx.strokeStyle = "rgba(20,8,4,0.5)";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(10, 10, c.width - 20, c.height - 20);
-    ctx.fillStyle = fg;
-    ctx.font = `bold ${Math.round(c.height * 0.42)}px "Times New Roman", Palatino, serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(text, c.width / 2, c.height / 2 + 1);
-    ctx.fillStyle = "#8b1a1a";
-    ctx.fillRect(c.width * 0.28, c.height * 0.78, c.width * 0.44, 3);
-    const tex = new CanvasTexture(c);
-    tex.colorSpace = SRGBColorSpace;
-    tex.needsUpdate = true;
-    return tex;
-  }
-  function makeSkyTexture(size = 512) {
-    const c = document.createElement("canvas");
-    c.width = size;
-    c.height = size / 2;
-    const ctx = c.getContext("2d");
-    const g = ctx.createLinearGradient(0, 0, 0, c.height);
-    g.addColorStop(0, "#4a3a58");
-    g.addColorStop(0.35, "#7a5a68");
-    g.addColorStop(0.62, "#c48860");
-    g.addColorStop(0.78, "#e0a070");
-    g.addColorStop(0.9, "#b87048");
-    g.addColorStop(1, "#6a4030");
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, c.width, c.height);
-    const sunX = c.width * 0.22;
-    const sunY = c.height * 0.72;
-    const sg = ctx.createRadialGradient(sunX, sunY, 4, sunX, sunY, c.height * 0.45);
-    sg.addColorStop(0, "rgba(255,200,140,0.85)");
-    sg.addColorStop(0.25, "rgba(232,140,70,0.45)");
-    sg.addColorStop(0.55, "rgba(180,80,40,0.15)");
-    sg.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = sg;
-    ctx.fillRect(0, 0, c.width, c.height);
-    for (let i = 0; i < 18; i++) {
-      const x = Math.random() * c.width;
-      const y = c.height * (0.25 + Math.random() * 0.35);
-      const w = 40 + Math.random() * 120;
-      ctx.fillStyle = `rgba(220,190,170,${0.04 + Math.random() * 0.08})`;
-      ctx.beginPath();
-      ctx.ellipse(x, y, w, 6 + Math.random() * 10, 0, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    const tex = new CanvasTexture(c);
-    tex.colorSpace = SRGBColorSpace;
-    tex.mapping = EquirectangularReflectionMapping;
-    tex.needsUpdate = true;
-    return tex;
-  }
-  function makeWaterTexture(size = 256) {
-    const { c, ctx } = canvas(size);
-    ctx.fillStyle = "#2a4848";
-    ctx.fillRect(0, 0, size, size);
-    for (let i = 0; i < 40; i++) {
-      const y = i / 40 * size;
-      ctx.strokeStyle = `rgba(${60 + Math.random() * 40 | 0},${100 + Math.random() * 40 | 0},${90 + Math.random() * 30 | 0},${0.15 + Math.random() * 0.2})`;
-      ctx.lineWidth = 1 + Math.random() * 2;
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      for (let x = 0; x <= size; x += 8) {
-        ctx.lineTo(x, y + Math.sin(x * 0.08 + i) * 3);
-      }
-      ctx.stroke();
-    }
-    for (let i = 0; i < 200; i++) {
-      ctx.fillStyle = `rgba(180,220,210,${0.05 + Math.random() * 0.12})`;
-      ctx.fillRect(Math.random() * size, Math.random() * size, 2, 1);
-    }
-    return toTex(c, { repeat: [3, 1.5] });
-  }
-  function makeCrateWoodTexture(size = 128) {
-    const { c, ctx } = canvas(size);
-    ctx.fillStyle = "#4a2a14";
-    ctx.fillRect(0, 0, size, size);
-    const plankW = size / 4;
-    for (let i = 0; i < 4; i++) {
-      const x = i * plankW;
-      const shade = 50 + i % 2 * 18;
-      ctx.fillStyle = `rgb(${shade},${shade * 0.6 | 0},${shade * 0.3 | 0})`;
-      ctx.fillRect(x, 0, plankW - 2, size);
-      ctx.fillStyle = "rgba(20,10,5,0.4)";
-      ctx.fillRect(x + plankW - 2, 0, 2, size);
-    }
-    ctx.fillStyle = "rgba(90,50,25,0.55)";
-    ctx.fillRect(0, size * 0.2, size, 4);
-    ctx.fillRect(0, size * 0.75, size, 4);
-    return toTex(c, { repeat: [1, 1] });
+  };
+  var HORIZONTAL = new Vector2(1, 0);
+  var VERTICAL = new Vector2(0, 1);
+  function createBloomOutput(bloom) {
+    const output = new OutputPass();
+    if (!bloom) return output;
+    output.uniforms.tBloom = { value: bloom.renderTargetsHorizontal[0].texture };
+    output.uniforms.bloomMix = { value: 1 };
+    const source = output.material.fragmentShader;
+    const sample = "gl_FragColor = texture2D( tDiffuse, vUv );";
+    if (!source.includes(sample)) throw new Error("Three OutputPass shader changed: review bloom integration");
+    output.material.fragmentShader = source.replace("uniform sampler2D tDiffuse;", "uniform sampler2D tDiffuse;\n uniform sampler2D tBloom;\n uniform float bloomMix;").replace(sample, sample + "\n vec4 bloomSample = texture2D(tBloom, vUv);\n gl_FragColor += bloomSample * bloomSample.a * bloomMix;");
+    const render = output.render.bind(output);
+    output.render = (...args) => {
+      output.uniforms.bloomMix.value = bloom.enabled ? 1 : 0;
+      render(...args);
+    };
+    return output;
   }
 
-  // src/systems/horse.js
-  var HORSE_PROFILES = {
-    dun: {
-      id: "dun",
-      name: "Dun",
-      color: 10123332,
-      mane: 3811864,
-      walk: 4.2,
-      trot: 7.5,
-      gallop: 12.5,
-      turn: 1.55,
-      accel: 9.5,
-      brake: 14,
-      staminaMax: 100,
-      staminaDrain: 18,
-      staminaRegen: 14
+  // node_modules/three/examples/jsm/shaders/FXAAShader.js
+  var FXAAShader = {
+    name: "FXAAShader",
+    uniforms: {
+      "tDiffuse": { value: null },
+      "resolution": { value: new Vector2(1 / 1024, 1 / 512) }
     },
-    bay: {
-      id: "bay",
-      name: "Bay",
-      color: 6959644,
-      mane: 1707016,
-      walk: 4.5,
-      trot: 8.2,
-      gallop: 14.2,
-      turn: 2.15,
-      accel: 12,
-      brake: 16,
-      staminaMax: 82,
-      staminaDrain: 26,
-      staminaRegen: 12
-    }
+    vertexShader: (
+      /* glsl */
+      `
+
+		varying vec2 vUv;
+
+		void main() {
+
+			vUv = uv;
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+
+		}`
+    ),
+    fragmentShader: (
+      /* glsl */
+      `
+
+		// FXAA algorithm from NVIDIA, C# implementation by Jasper Flick, GLSL port by Dave Hoskins
+		// http://developer.download.nvidia.com/assets/gamedev/files/sdk/11/FXAA_WhitePaper.pdf
+		// https://catlikecoding.com/unity/tutorials/advanced-rendering/fxaa/
+
+		uniform sampler2D tDiffuse;
+		uniform vec2 resolution;
+		varying vec2 vUv;
+
+		#define EDGE_STEP_COUNT 6
+		#define EDGE_GUESS 8.0
+		#define EDGE_STEPS 1.0, 1.5, 2.0, 2.0, 2.0, 4.0
+		const float edgeSteps[EDGE_STEP_COUNT] = float[EDGE_STEP_COUNT]( EDGE_STEPS );
+
+		float _ContrastThreshold = 0.0312;
+		float _RelativeThreshold = 0.063;
+		float _SubpixelBlending = 1.0;
+
+		vec4 Sample( sampler2D  tex2D, vec2 uv ) {
+
+			return texture( tex2D, uv );
+
+		}
+
+		float SampleLuminance( sampler2D tex2D, vec2 uv ) {
+
+			return dot( Sample( tex2D, uv ).rgb, vec3( 0.3, 0.59, 0.11 ) );
+
+		}
+
+		float SampleLuminance( sampler2D tex2D, vec2 texSize, vec2 uv, float uOffset, float vOffset ) {
+
+			uv += texSize * vec2(uOffset, vOffset);
+			return SampleLuminance(tex2D, uv);
+
+		}
+
+		struct LuminanceData {
+
+			float m, n, e, s, w;
+			float ne, nw, se, sw;
+			float highest, lowest, contrast;
+
+		};
+
+		LuminanceData SampleLuminanceNeighborhood( sampler2D tex2D, vec2 texSize, vec2 uv ) {
+
+			LuminanceData l;
+			l.m = SampleLuminance( tex2D, uv );
+			l.n = SampleLuminance( tex2D, texSize, uv,  0.0,  1.0 );
+			l.e = SampleLuminance( tex2D, texSize, uv,  1.0,  0.0 );
+			l.s = SampleLuminance( tex2D, texSize, uv,  0.0, -1.0 );
+			l.w = SampleLuminance( tex2D, texSize, uv, -1.0,  0.0 );
+
+			l.ne = SampleLuminance( tex2D, texSize, uv,  1.0,  1.0 );
+			l.nw = SampleLuminance( tex2D, texSize, uv, -1.0,  1.0 );
+			l.se = SampleLuminance( tex2D, texSize, uv,  1.0, -1.0 );
+			l.sw = SampleLuminance( tex2D, texSize, uv, -1.0, -1.0 );
+
+			l.highest = max( max( max( max( l.n, l.e ), l.s ), l.w ), l.m );
+			l.lowest = min( min( min( min( l.n, l.e ), l.s ), l.w ), l.m );
+			l.contrast = l.highest - l.lowest;
+			return l;
+
+		}
+
+		bool ShouldSkipPixel( LuminanceData l ) {
+
+			float threshold = max( _ContrastThreshold, _RelativeThreshold * l.highest );
+			return l.contrast < threshold;
+
+		}
+
+		float DeterminePixelBlendFactor( LuminanceData l ) {
+
+			float f = 2.0 * ( l.n + l.e + l.s + l.w );
+			f += l.ne + l.nw + l.se + l.sw;
+			f *= 1.0 / 12.0;
+			f = abs( f - l.m );
+			f = clamp( f / l.contrast, 0.0, 1.0 );
+
+			float blendFactor = smoothstep( 0.0, 1.0, f );
+			return blendFactor * blendFactor * _SubpixelBlending;
+
+		}
+
+		struct EdgeData {
+
+			bool isHorizontal;
+			float pixelStep;
+			float oppositeLuminance, gradient;
+
+		};
+
+		EdgeData DetermineEdge( vec2 texSize, LuminanceData l ) {
+
+			EdgeData e;
+			float horizontal =
+				abs( l.n + l.s - 2.0 * l.m ) * 2.0 +
+				abs( l.ne + l.se - 2.0 * l.e ) +
+				abs( l.nw + l.sw - 2.0 * l.w );
+			float vertical =
+				abs( l.e + l.w - 2.0 * l.m ) * 2.0 +
+				abs( l.ne + l.nw - 2.0 * l.n ) +
+				abs( l.se + l.sw - 2.0 * l.s );
+			e.isHorizontal = horizontal >= vertical;
+
+			float pLuminance = e.isHorizontal ? l.n : l.e;
+			float nLuminance = e.isHorizontal ? l.s : l.w;
+			float pGradient = abs( pLuminance - l.m );
+			float nGradient = abs( nLuminance - l.m );
+
+			e.pixelStep = e.isHorizontal ? texSize.y : texSize.x;
+			
+			if (pGradient < nGradient) {
+
+				e.pixelStep = -e.pixelStep;
+				e.oppositeLuminance = nLuminance;
+				e.gradient = nGradient;
+
+			} else {
+
+				e.oppositeLuminance = pLuminance;
+				e.gradient = pGradient;
+
+			}
+
+			return e;
+
+		}
+
+		float DetermineEdgeBlendFactor( sampler2D  tex2D, vec2 texSize, LuminanceData l, EdgeData e, vec2 uv ) {
+
+			vec2 uvEdge = uv;
+			vec2 edgeStep;
+			if (e.isHorizontal) {
+
+				uvEdge.y += e.pixelStep * 0.5;
+				edgeStep = vec2( texSize.x, 0.0 );
+
+			} else {
+
+				uvEdge.x += e.pixelStep * 0.5;
+				edgeStep = vec2( 0.0, texSize.y );
+
+			}
+
+			float edgeLuminance = ( l.m + e.oppositeLuminance ) * 0.5;
+			float gradientThreshold = e.gradient * 0.25;
+
+			vec2 puv = uvEdge + edgeStep * edgeSteps[0];
+			float pLuminanceDelta = SampleLuminance( tex2D, puv ) - edgeLuminance;
+			bool pAtEnd = abs( pLuminanceDelta ) >= gradientThreshold;
+
+			for ( int i = 1; i < EDGE_STEP_COUNT && !pAtEnd; i++ ) {
+
+				puv += edgeStep * edgeSteps[i];
+				pLuminanceDelta = SampleLuminance( tex2D, puv ) - edgeLuminance;
+				pAtEnd = abs( pLuminanceDelta ) >= gradientThreshold;
+
+			}
+
+			if ( !pAtEnd ) {
+
+				puv += edgeStep * EDGE_GUESS;
+
+			}
+
+			vec2 nuv = uvEdge - edgeStep * edgeSteps[0];
+			float nLuminanceDelta = SampleLuminance( tex2D, nuv ) - edgeLuminance;
+			bool nAtEnd = abs( nLuminanceDelta ) >= gradientThreshold;
+
+			for ( int i = 1; i < EDGE_STEP_COUNT && !nAtEnd; i++ ) {
+
+				nuv -= edgeStep * edgeSteps[i];
+				nLuminanceDelta = SampleLuminance( tex2D, nuv ) - edgeLuminance;
+				nAtEnd = abs( nLuminanceDelta ) >= gradientThreshold;
+
+			}
+
+			if ( !nAtEnd ) {
+
+				nuv -= edgeStep * EDGE_GUESS;
+
+			}
+
+			float pDistance, nDistance;
+			if ( e.isHorizontal ) {
+
+				pDistance = puv.x - uv.x;
+				nDistance = uv.x - nuv.x;
+
+			} else {
+				
+				pDistance = puv.y - uv.y;
+				nDistance = uv.y - nuv.y;
+
+			}
+
+			float shortestDistance;
+			bool deltaSign;
+			if ( pDistance <= nDistance ) {
+
+				shortestDistance = pDistance;
+				deltaSign = pLuminanceDelta >= 0.0;
+
+			} else {
+
+				shortestDistance = nDistance;
+				deltaSign = nLuminanceDelta >= 0.0;
+
+			}
+
+			if ( deltaSign == ( l.m - edgeLuminance >= 0.0 ) ) {
+
+				return 0.0;
+
+			}
+
+			return 0.5 - shortestDistance / ( pDistance + nDistance );
+
+		}
+
+		vec4 ApplyFXAA( sampler2D  tex2D, vec2 texSize, vec2 uv ) {
+
+			LuminanceData luminance = SampleLuminanceNeighborhood( tex2D, texSize, uv );
+			if ( ShouldSkipPixel( luminance ) ) {
+
+				return Sample( tex2D, uv );
+
+			}
+
+			float pixelBlend = DeterminePixelBlendFactor( luminance );
+			EdgeData edge = DetermineEdge( texSize, luminance );
+			float edgeBlend = DetermineEdgeBlendFactor( tex2D, texSize, luminance, edge, uv );
+			float finalBlend = max( pixelBlend, edgeBlend );
+
+			if (edge.isHorizontal) {
+
+				uv.y += edge.pixelStep * finalBlend;
+
+			} else {
+
+				uv.x += edge.pixelStep * finalBlend;
+
+			}
+
+			return Sample( tex2D, uv );
+
+		}
+
+		void main() {
+
+			gl_FragColor = ApplyFXAA( tDiffuse, resolution.xy, vUv );
+			
+		}`
+    )
   };
-  function mat(color, opts = {}) {
-    return new MeshStandardMaterial({
-      color,
-      roughness: 0.82,
-      metalness: 0.04,
-      ...opts
+
+  // src/render/postprocessing.js
+  function createPostChain(renderer2, scene2, camera2, w, h, quality, opts = {}) {
+    const pr = renderer2.getPixelRatio();
+    const mobile = !!opts.mobile;
+    const target = new WebGLRenderTarget(Math.floor(w * pr), Math.floor(h * pr), {
+      // HalfFloat bloom targets are a common iOS Safari black-screen / context-loss trigger
+      type: mobile ? UnsignedByteType : HalfFloatType,
+      samples: mobile ? 0 : quality.msaa,
+      colorSpace: LinearSRGBColorSpace
     });
-  }
-  function makeBodyLathe(bodyMat) {
-    const pts = [
-      new Vector2(0.015, -0.92),
-      new Vector2(0.18, -0.88),
-      new Vector2(0.3, -0.78),
-      new Vector2(0.38, -0.58),
-      new Vector2(0.42, -0.35),
-      new Vector2(0.44, -0.12),
-      new Vector2(0.43, 0.1),
-      new Vector2(0.4, 0.32),
-      new Vector2(0.36, 0.52),
-      new Vector2(0.3, 0.7),
-      new Vector2(0.22, 0.84),
-      new Vector2(0.1, 0.92),
-      new Vector2(0.04, 0.96)
-    ];
-    const geo = new LatheGeometry(pts, 20);
-    const mesh = new Mesh(geo, bodyMat);
-    mesh.rotation.x = Math.PI / 2;
-    mesh.scale.set(1.05, 1.08, 0.95);
-    return mesh;
-  }
-  function makeLeg(bodyMat, hoofMat) {
-    const g = new Group();
-    const upper = new Mesh(new CylinderGeometry(0.095, 0.082, 0.44, 8), bodyMat);
-    upper.position.y = -0.22;
-    upper.castShadow = true;
-    upper.receiveShadow = true;
-    g.add(upper);
-    const knee = new Group();
-    knee.position.y = -0.44;
-    g.add(knee);
-    const lower = new Mesh(new CylinderGeometry(0.072, 0.055, 0.4, 8), bodyMat);
-    lower.position.y = -0.2;
-    lower.castShadow = true;
-    knee.add(lower);
-    const fetlock = new Mesh(new SphereGeometry(0.06, 6, 5), bodyMat);
-    fetlock.position.set(0, -0.38, 0.01);
-    fetlock.scale.set(1, 0.7, 1.1);
-    knee.add(fetlock);
-    const hoof = new Mesh(new CylinderGeometry(0.055, 0.06, 0.09, 8), hoofMat);
-    hoof.position.set(0, -0.44, 0.02);
-    hoof.rotation.x = 0.08;
-    knee.add(hoof);
-    g.userData.upper = upper;
-    g.userData.knee = knee;
-    return g;
-  }
-  function makeRider(darkMat, coatMat, denimMat) {
-    const rider = new Group();
-    rider.name = "rider";
-    const legL = new Mesh(new BoxGeometry(0.16, 0.45, 0.18), denimMat);
-    legL.position.set(-0.16, 0.05, 0.02);
-    legL.rotation.z = 0.12;
-    rider.add(legL);
-    const legR = new Mesh(new BoxGeometry(0.16, 0.45, 0.18), denimMat);
-    legR.position.set(0.16, 0.05, 0.02);
-    legR.rotation.z = -0.12;
-    rider.add(legR);
-    const bootL = new Mesh(new BoxGeometry(0.14, 0.14, 0.24), darkMat);
-    bootL.position.set(-0.18, -0.22, 0.07);
-    rider.add(bootL);
-    const bootR = new Mesh(new BoxGeometry(0.14, 0.14, 0.24), darkMat);
-    bootR.position.set(0.18, -0.22, 0.07);
-    rider.add(bootR);
-    const torso = new Mesh(new BoxGeometry(0.4, 0.5, 0.28), coatMat);
-    torso.position.set(0, 0.44, -0.02);
-    torso.castShadow = true;
-    rider.add(torso);
-    const shoulders = new Mesh(new BoxGeometry(0.5, 0.15, 0.26), coatMat);
-    shoulders.position.set(0, 0.64, -0.02);
-    rider.add(shoulders);
-    const armL = new Mesh(new BoxGeometry(0.12, 0.38, 0.12), coatMat);
-    armL.position.set(-0.3, 0.4, 0.08);
-    armL.rotation.x = -0.55;
-    rider.add(armL);
-    const armR = new Mesh(new BoxGeometry(0.12, 0.38, 0.12), coatMat);
-    armR.position.set(0.3, 0.4, 0.08);
-    armR.rotation.x = -0.55;
-    rider.add(armR);
-    const neck = new Mesh(new CylinderGeometry(0.07, 0.085, 0.13, 8), coatMat);
-    neck.position.set(0, 0.74, -0.02);
-    rider.add(neck);
-    const head = new Mesh(new SphereGeometry(0.135, 10, 8), mat(12888194, { roughness: 0.7 }));
-    head.position.set(0, 0.9, -0.02);
-    head.scale.set(1, 1.1, 0.95);
-    rider.add(head);
-    const crown = new Mesh(new CylinderGeometry(0.145, 0.165, 0.17, 12), darkMat);
-    crown.position.set(0, 1.04, -0.02);
-    rider.add(crown);
-    const brim = new Mesh(new CylinderGeometry(0.29, 0.31, 0.035, 14), darkMat);
-    brim.position.set(0, 0.96, -0.02);
-    rider.add(brim);
-    const brimFront = new Mesh(new BoxGeometry(0.22, 0.03, 0.12), darkMat);
-    brimFront.position.set(0, 0.96, 0.2);
-    rider.add(brimFront);
-    return rider;
-  }
-  function createHorseMesh(profile) {
-    const root = new Group();
-    root.name = "horse";
-    const coatMap = makeCoatTexture(profile.color);
-    const leatherMap = makeLeatherTexture();
-    const bodyMat = mat(profile.color, { map: coatMap, roughness: 0.78, roughnessMap: coatMap });
-    const maneMat = mat(profile.mane, { roughness: 0.95 });
-    const dark = mat(1708040, { roughness: 0.75 });
-    const leather = mat(3809296, { map: leatherMap, roughness: 0.72, roughnessMap: leatherMap });
-    const hoofMat = mat(1708556, { roughness: 0.55, metalness: 0.08 });
-    const coatMat = mat(2758672, { roughness: 0.85 });
-    const denimMat = mat(2762808, { roughness: 0.9 });
-    const bodyRoot = new Group();
-    bodyRoot.position.y = 1.15;
-    root.add(bodyRoot);
-    const body = makeBodyLathe(bodyMat);
-    body.castShadow = true;
-    body.receiveShadow = true;
-    bodyRoot.add(body);
-    const chest = new Mesh(new SphereGeometry(0.34, 12, 10), bodyMat);
-    chest.position.set(0, -0.04, 0.58);
-    chest.scale.set(1.08, 0.98, 1.18);
-    chest.castShadow = true;
-    chest.receiveShadow = true;
-    bodyRoot.add(chest);
-    const haunch = new Mesh(new SphereGeometry(0.36, 12, 10), bodyMat);
-    haunch.position.set(0, 0.04, -0.58);
-    haunch.scale.set(1.12, 1.08, 1.02);
-    haunch.castShadow = true;
-    haunch.receiveShadow = true;
-    bodyRoot.add(haunch);
-    const belly = new Mesh(new SphereGeometry(0.28, 10, 8), bodyMat);
-    belly.position.set(0, -0.18, 0);
-    belly.scale.set(0.95, 0.7, 1.35);
-    bodyRoot.add(belly);
-    const neckGroup = new Group();
-    neckGroup.position.set(0, 0.18, 0.76);
-    neckGroup.rotation.x = -0.55;
-    bodyRoot.add(neckGroup);
-    const neck1 = new Mesh(new CylinderGeometry(0.17, 0.22, 0.4, 12), bodyMat);
-    neck1.position.y = 0.2;
-    neck1.castShadow = true;
-    neckGroup.add(neck1);
-    const neck2 = new Mesh(new CylinderGeometry(0.135, 0.17, 0.34, 12), bodyMat);
-    neck2.position.y = 0.52;
-    neck2.rotation.x = -0.28;
-    neck2.castShadow = true;
-    neckGroup.add(neck2);
-    const headGroup = new Group();
-    headGroup.position.set(0, 0.74, 0.1);
-    headGroup.rotation.x = 0.38;
-    neckGroup.add(headGroup);
-    const skull = new Mesh(new BoxGeometry(0.28, 0.26, 0.3), bodyMat);
-    skull.position.set(0, 0.02, 0);
-    skull.castShadow = true;
-    headGroup.add(skull);
-    const cheekL = new Mesh(new SphereGeometry(0.1, 8, 6), bodyMat);
-    cheekL.position.set(-0.12, -0.02, 0.02);
-    cheekL.scale.set(0.7, 1, 1.1);
-    headGroup.add(cheekL);
-    const cheekR = cheekL.clone();
-    cheekR.position.x = 0.12;
-    headGroup.add(cheekR);
-    const snout = new Mesh(new BoxGeometry(0.19, 0.17, 0.4), bodyMat);
-    snout.position.set(0, -0.04, 0.3);
-    snout.castShadow = true;
-    headGroup.add(snout);
-    const muzzle = new Mesh(new BoxGeometry(0.17, 0.11, 0.13), dark);
-    muzzle.position.set(0, -0.06, 0.5);
-    headGroup.add(muzzle);
-    const nostrilL = new Mesh(new SphereGeometry(0.025, 6, 4), dark);
-    nostrilL.position.set(-0.05, -0.02, 0.55);
-    headGroup.add(nostrilL);
-    const nostrilR = nostrilL.clone();
-    nostrilR.position.x = 0.05;
-    headGroup.add(nostrilR);
-    const earGeo = new ConeGeometry(0.055, 0.18, 6);
-    const earL = new Mesh(earGeo, bodyMat);
-    earL.position.set(-0.09, 0.2, -0.04);
-    earL.rotation.z = -0.22;
-    earL.rotation.x = -0.15;
-    headGroup.add(earL);
-    const earR = new Mesh(earGeo, bodyMat);
-    earR.position.set(0.09, 0.2, -0.04);
-    earR.rotation.z = 0.22;
-    earR.rotation.x = -0.15;
-    headGroup.add(earR);
-    const eyeMat = mat(657414, { roughness: 0.3 });
-    const eyeL = new Mesh(new SphereGeometry(0.038, 8, 6), eyeMat);
-    eyeL.position.set(-0.13, 0.06, 0.1);
-    headGroup.add(eyeL);
-    const eyeR = eyeL.clone();
-    eyeR.position.x = 0.13;
-    headGroup.add(eyeR);
-    for (let i = 0; i < 7; i++) {
-      const t = i / 6;
-      const strand = new Mesh(
-        new BoxGeometry(0.06 + i % 2 * 0.02, 0.14 + t * 0.12, 0.1),
-        maneMat
-      );
-      strand.position.set((i % 2 - 0.5) * 0.04, 0.22 + t * 0.42, -0.14 - t * 0.02);
-      strand.rotation.x = 0.2 + t * 0.15;
-      strand.castShadow = true;
-      neckGroup.add(strand);
+    const composer = new EffectComposer(renderer2, target);
+    composer.setSize(w, h);
+    composer.addPass(new RenderPass(scene2, camera2));
+    const bloom = quality.bloom ? new TextureBloomPass(new Vector2(w, h), 0.2, 0.38, 1) : null;
+    if (bloom) composer.addPass(bloom);
+    composer.addPass(createBloomOutput(bloom));
+    const fxaa = quality.msaa === 0 ? new ShaderPass(FXAAShader) : null;
+    if (fxaa) {
+      fxaa.material.uniforms.resolution.value.set(1 / (w * pr), 1 / (h * pr));
+      composer.addPass(fxaa);
     }
-    const maneCrest = new Mesh(new BoxGeometry(0.08, 0.2, 0.26), maneMat);
-    maneCrest.position.set(0, 0.14, -0.08);
-    headGroup.add(maneCrest);
-    const forelock = new Mesh(new BoxGeometry(0.06, 0.16, 0.1), maneMat);
-    forelock.position.set(0, 0.08, 0.12);
-    forelock.rotation.x = 0.6;
-    headGroup.add(forelock);
-    const tailGroup = new Group();
-    tailGroup.position.set(0, 0.18, -0.88);
-    bodyRoot.add(tailGroup);
-    const tail1 = new Mesh(new CylinderGeometry(0.07, 0.1, 0.48, 8), maneMat);
-    tail1.position.set(0, -0.12, -0.14);
-    tail1.rotation.x = 0.55;
-    tail1.castShadow = true;
-    tailGroup.add(tail1);
-    const tail2 = new Mesh(new CylinderGeometry(0.05, 0.08, 0.42, 8), maneMat);
-    tail2.position.set(0, -0.38, -0.36);
-    tail2.rotation.x = 0.35;
-    tailGroup.add(tail2);
-    const tail3 = new Mesh(new CylinderGeometry(0.03, 0.055, 0.28, 6), maneMat);
-    tail3.position.set(0, -0.58, -0.52);
-    tail3.rotation.x = 0.25;
-    tailGroup.add(tail3);
-    const saddle = new Mesh(new BoxGeometry(0.52, 0.16, 0.5), leather);
-    saddle.position.set(0, 0.4, 0.02);
-    saddle.castShadow = true;
-    bodyRoot.add(saddle);
-    const skirtL = new Mesh(new BoxGeometry(0.08, 0.28, 0.36), leather);
-    skirtL.position.set(-0.28, 0.22, 0.02);
-    bodyRoot.add(skirtL);
-    const skirtR = skirtL.clone();
-    skirtR.position.x = 0.28;
-    bodyRoot.add(skirtR);
-    const saddleHorn = new Mesh(new CylinderGeometry(0.045, 0.055, 0.14, 8), leather);
-    saddleHorn.position.set(0, 0.54, 0.2);
-    bodyRoot.add(saddleHorn);
-    const cantle = new Mesh(new BoxGeometry(0.44, 0.18, 0.12), leather);
-    cantle.position.set(0, 0.52, -0.2);
-    bodyRoot.add(cantle);
-    for (const sx of [-0.32, 0.32]) {
-      const strap = new Mesh(new BoxGeometry(0.04, 0.35, 0.04), leather);
-      strap.position.set(sx, 0.05, 0.08);
-      bodyRoot.add(strap);
-      const iron = new Mesh(new TorusGeometry(0.07, 0.015, 6, 10), dark);
-      iron.position.set(sx, -0.14, 0.08);
-      iron.rotation.y = Math.PI / 2;
-      bodyRoot.add(iron);
-    }
-    const blanket = new Mesh(new BoxGeometry(0.58, 0.04, 0.55), mat(6957088, { roughness: 0.9 }));
-    blanket.position.set(0, 0.32, 0.02);
-    bodyRoot.add(blanket);
-    const legDefs = [
-      { name: "fl", x: -0.22, z: 0.5 },
-      { name: "fr", x: 0.22, z: 0.5 },
-      { name: "bl", x: -0.24, z: -0.5 },
-      { name: "br", x: 0.24, z: -0.5 }
-    ];
-    const legs = [];
-    for (const def of legDefs) {
-      const leg = makeLeg(bodyMat, hoofMat);
-      leg.name = def.name;
-      leg.position.set(def.x, 1.15, def.z);
-      root.add(leg);
-      legs.push(leg);
-    }
-    const rider = makeRider(dark, coatMat, denimMat);
-    rider.position.set(0, 1.58, 0.02);
-    root.add(rider);
+    return { composer, bloom, fxaa };
+  }
+  function disposePostChain(composer) {
+    if (!composer) return;
+    for (const pass of composer.passes) pass.dispose?.();
+    composer.dispose();
+  }
+
+  // src/render/quality.js
+  function qualityPreset() {
     return {
-      root,
-      legs,
-      rider,
-      body: bodyRoot,
-      neck: neckGroup,
-      head: headGroup,
-      tail: tailGroup
+      shadow: 4096,
+      shadowRadius: 48,
+      msaa: 4,
+      bloom: true,
+      pixelRatio: 2
     };
   }
-  function createHorseController(profile, mesh) {
-    const state = {
-      mounted: true,
-      yaw: 0,
-      speed: 0,
-      stamina: profile.staminaMax,
-      gait: "idle",
-      bob: 0
-    };
-    const pos = mesh.root.position;
-    const tmp2 = new Vector3();
-    const restUpper = 0.08;
-    const restKnee = 0.12;
-    function update(dt, input2, groundY = 0) {
-      if (!state.mounted) {
-        state.speed = MathUtils.damp(state.speed, 0, 12, dt);
-        state.gait = "idle";
-        mesh.rider.visible = false;
-        mesh.legs.forEach((leg) => {
-          leg.rotation.x = MathUtils.damp(leg.rotation.x, 0, 8, dt);
-          leg.userData.knee.rotation.x = MathUtils.damp(leg.userData.knee.rotation.x, restKnee, 8, dt);
-        });
-        mesh.body.position.y = MathUtils.damp(mesh.body.position.y, 1.15, 8, dt);
-        mesh.body.rotation.x = MathUtils.damp(mesh.body.rotation.x, 0, 8, dt);
-        return;
+
+  // src/render/renderer.js
+  function isMobileGpu() {
+    try {
+      const q = new URLSearchParams(location.search);
+      if (q.get("phone") === "1" || q.get("touch") === "1") return true;
+    } catch {
+    }
+    const coarse = typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
+    const touch = (navigator.maxTouchPoints || 0) > 0 || "ontouchstart" in window;
+    const small = Math.min(screen.width || 9999, screen.height || 9999) <= 920;
+    return !!(coarse && touch) || touch && small;
+  }
+  function createRenderer(canvas3) {
+    const mobile = isMobileGpu();
+    const renderer2 = new WebGLRenderer({
+      canvas: canvas3,
+      antialias: false,
+      powerPreference: mobile ? "default" : "high-performance",
+      stencil: false,
+      depth: true,
+      alpha: false,
+      failIfMajorPerformanceCaveat: false
+    });
+    renderer2.outputColorSpace = SRGBColorSpace;
+    renderer2.toneMapping = ACESFilmicToneMapping;
+    renderer2.toneMappingExposure = 1.22;
+    renderer2.shadowMap.enabled = !mobile;
+    renderer2.shadowMap.type = PCFSoftShadowMap;
+    renderer2.setClearColor(2758672, 1);
+    const camera2 = new PerspectiveCamera(55, 1, 0.1, 900);
+    let composer = null, bloom = null, fxaa = null, size = { w: 1, h: 1 };
+    function buildComposer(scene2) {
+      const q = { ...qualityPreset() };
+      if (mobile) {
+        q.msaa = 0;
+        q.bloom = false;
+        q.pixelRatio = Math.min(q.pixelRatio, 1);
       }
-      mesh.rider.visible = true;
-      const wantSprint = input2.sprint && input2.forward > 0.15 && state.stamina > 5;
-      let target = 0;
-      if (input2.forward > 0.15) {
-        if (wantSprint) target = profile.gallop;
-        else if (Math.abs(input2.forward) > 0.55 || Math.hypot(input2.forward, input2.steer) > 0.7) target = profile.trot;
-        else target = profile.walk;
-      } else if (input2.forward < -0.15) {
-        target = -profile.walk * 0.55;
+      let pr = Math.min(window.devicePixelRatio || 1, q.pixelRatio);
+      if (mobile) pr = Math.min(pr, 1);
+      renderer2.setPixelRatio(pr);
+      let w = Math.max(1, Math.floor(size.w)), h = Math.max(1, Math.floor(size.h));
+      if (mobile) {
+        const maxEdge = 1280;
+        const edge = Math.max(w, h);
+        if (edge > maxEdge) {
+          const s = maxEdge / edge;
+          w = Math.max(1, Math.floor(w * s));
+          h = Math.max(1, Math.floor(h * s));
+        }
       }
-      const accelerating = Math.abs(target) > Math.abs(state.speed) + 0.05;
-      const rate = accelerating ? profile.accel : profile.brake;
-      state.speed = MathUtils.damp(state.speed, target, rate * 0.55, dt);
-      if (Math.abs(target) < 0.1 && Math.abs(state.speed) < 0.35) state.speed = 0;
-      const turnScale = MathUtils.clamp(1 - Math.abs(state.speed) / (profile.gallop * 1.4), 0.35, 1);
-      state.yaw -= input2.steer * profile.turn * turnScale * dt * (state.speed >= 0 ? 1 : -1);
-      const dx = Math.sin(state.yaw) * state.speed * dt;
-      const dz = Math.cos(state.yaw) * state.speed * dt;
-      pos.x += dx;
-      pos.z += dz;
-      pos.y = groundY;
-      mesh.root.rotation.y = state.yaw;
-      if (wantSprint && Math.abs(state.speed) > profile.trot * 0.8) {
-        state.stamina = Math.max(0, state.stamina - profile.staminaDrain * dt);
-        if (state.stamina <= 0) state.speed = Math.min(state.speed, profile.trot);
+      renderer2.setSize(w, h, false);
+      if (mobile) {
+        canvas3.style.width = "100%";
+        canvas3.style.height = "100%";
+      }
+      disposePostChain(composer);
+      if (mobile) {
+        composer = null;
+        bloom = null;
+        fxaa = null;
       } else {
-        state.stamina = Math.min(profile.staminaMax, state.stamina + profile.staminaRegen * dt);
+        ({ composer, bloom, fxaa } = createPostChain(renderer2, scene2, camera2, w, h, q, { mobile }));
       }
-      const abs = Math.abs(state.speed);
-      if (abs < 0.4) state.gait = "idle";
-      else if (abs < profile.walk * 1.15) state.gait = "walk";
-      else if (abs < profile.trot * 1.1) state.gait = "trot";
-      else state.gait = "gallop";
-      const freq = state.gait === "gallop" ? 11 : state.gait === "trot" ? 8.5 : state.gait === "walk" ? 5.2 : 0;
-      state.bob += freq * dt;
-      const speedN = MathUtils.clamp(abs / profile.gallop, 0, 1);
-      const amp = state.gait === "gallop" ? 0.55 : state.gait === "trot" ? 0.38 : state.gait === "walk" ? 0.28 : 0;
-      const phases = [0, Math.PI, Math.PI, 0];
-      mesh.legs.forEach((leg, i) => {
-        const phase2 = state.bob + phases[i];
-        const swing = Math.sin(phase2) * amp * (0.45 + speedN * 0.55);
-        const gallopBias = state.gait === "gallop" ? i < 2 ? 0.12 : -0.08 : 0;
-        leg.rotation.x = restUpper + swing + gallopBias * speedN;
-        const lift = Math.max(0, Math.sin(phase2));
-        leg.userData.knee.rotation.x = restKnee + lift * amp * 0.85;
-      });
-      const bobY = state.gait === "idle" ? 0 : Math.abs(Math.sin(state.bob * (state.gait === "gallop" ? 1 : 2))) * 0.06 * (0.5 + speedN);
-      mesh.body.position.y = 1.15 + bobY;
-      const pitch = state.gait === "gallop" ? Math.sin(state.bob) * 0.08 * speedN - 0.04 * speedN : state.gait === "trot" ? Math.sin(state.bob * 2) * 0.03 : 0;
-      mesh.body.rotation.x = pitch;
-      if (mesh.neck) {
-        mesh.neck.rotation.x = -0.55 + pitch * 0.6;
+      renderer2.shadowMap.needsUpdate = true;
+    }
+    const api = {
+      renderer: renderer2,
+      camera: camera2,
+      mobile,
+      get composer() {
+        return composer;
+      },
+      get bloom() {
+        return bloom;
+      },
+      setScene(scene2) {
+        api.scene = scene2;
+        buildComposer(scene2);
+      },
+      resize(w, h) {
+        size = { w, h };
+        camera2.aspect = w / Math.max(1, h);
+        camera2.updateProjectionMatrix();
+        if (api.scene) buildComposer(api.scene);
+      },
+      rebuild() {
+        if (api.scene) buildComposer(api.scene);
+      },
+      render() {
+        composer ? composer.render() : renderer2.render(api.scene, camera2);
+      },
+      setBloom(strength) {
+        if (bloom) bloom.strength = strength;
+      },
+      setExposure(e) {
+        renderer2.toneMappingExposure = e;
+      },
+      info() {
+        return renderer2.info;
       }
-      if (mesh.tail) {
-        mesh.tail.rotation.y = Math.sin(state.bob * 0.7) * 0.15 * speedN;
-        mesh.tail.rotation.x = 0.1 + Math.sin(state.bob) * 0.08 * speedN;
-      }
-    }
-    function getWorldPos(out = tmp2) {
-      return out.copy(pos);
-    }
-    return { state, profile, mesh, update, getWorldPos, pos };
-  }
-
-  // src/systems/camera.js
-  function createFollowCamera(camera2) {
-    const offset = new Vector3(0, 4.1, -6.2);
-    const look = new Vector3(0, 1.55, 2);
-    const cur = new Vector3();
-    const target = new Vector3();
-    const lookAt = new Vector3();
-    const worldOff = new Vector3();
-    const worldLook = new Vector3();
-    const quat = new Quaternion();
-    const up = new Vector3(0, 1, 0);
-    function update(dt, horseRoot, yaw) {
-      quat.setFromAxisAngle(up, yaw);
-      worldOff.copy(offset).applyQuaternion(quat);
-      worldLook.copy(look).applyQuaternion(quat);
-      target.copy(horseRoot.position).add(worldOff);
-      lookAt.copy(horseRoot.position).add(worldLook);
-      cur.lerp(target, 1 - Math.exp(-5.8 * dt));
-      camera2.position.copy(cur);
-      camera2.lookAt(lookAt);
-    }
-    function snap(horseRoot, yaw) {
-      quat.setFromAxisAngle(up, yaw);
-      worldOff.copy(offset).applyQuaternion(quat);
-      cur.copy(horseRoot.position).add(worldOff);
-      camera2.position.copy(cur);
-      lookAt.copy(horseRoot.position).add(look.clone().applyQuaternion(quat));
-      camera2.lookAt(lookAt);
-    }
-    return { update, snap };
-  }
-
-  // src/systems/heat.js
-  function createHeat() {
-    let heat2 = 0;
-    const max = 100;
-    function update(dt, { carrying: carrying2, inStreet, galloping, nearDrop }) {
-      let d = -6 * dt;
-      if (carrying2 && inStreet) d += 14 * dt;
-      if (carrying2 && galloping && inStreet) d += 10 * dt;
-      if (carrying2 && nearDrop) d -= 8 * dt;
-      if (!carrying2 && inStreet && galloping) d += 3 * dt;
-      heat2 = Math.max(0, Math.min(max, heat2 + d));
-    }
-    function reset() {
-      heat2 = 0;
-    }
-    function get() {
-      return heat2;
-    }
-    function ratio() {
-      return heat2 / max;
-    }
-    function isBotched() {
-      return heat2 >= max;
-    }
-    return { update, reset, get, ratio, isBotched, max };
-  }
-
-  // src/systems/ui.js
-  function createUI() {
-    const $ = (id) => document.getElementById(id);
-    const screens = {
-      title: $("screen-title"),
-      cinematic: $("screen-cinematic"),
-      prep: $("screen-prep"),
-      end: $("screen-end")
     };
-    const hud = $("hud");
-    const prompt = $("hud-prompt");
-    const obj = $("hud-obj");
-    const timer = $("hud-timer");
-    const stam = $("bar-stam");
-    const heat2 = $("bar-heat");
-    const cineSpeaker = $("cine-speaker");
-    const cineLine = $("cine-line");
-    const compass = $("hud-compass");
-    const compassArrow = $("compass-arrow");
-    const compassLabel = $("compass-label");
-    const playControls = $("hud-controls");
-    const playControlsBody = $("hud-controls-body");
-    const rideTip = $("hud-ride-tip");
-    function showScreen(name) {
-      for (const [k, el] of Object.entries(screens)) {
-        el.classList.toggle("active", k === name);
-      }
-      hud.classList.toggle("hidden", name !== null && name !== void 0 ? true : false);
-      if (compass) compass.classList.add("hidden");
-      if (playControls) playControls.classList.add("hidden");
-      if (rideTip) rideTip.classList.add("hidden");
-    }
-    function playMode() {
-      for (const el of Object.values(screens)) el.classList.remove("active");
-      hud.classList.remove("hidden");
-      if (compass) compass.classList.remove("hidden");
-    }
-    function setPrompt(text) {
-      if (!text) {
-        prompt.classList.remove("show");
-        prompt.textContent = "";
-        return;
-      }
-      prompt.textContent = text;
-      prompt.classList.add("show");
-    }
-    function setObjective(text) {
-      obj.textContent = text;
-    }
-    function setMeters(staminaRatio, heatRatio) {
-      stam.style.transform = `scaleX(${Math.max(0, Math.min(1, staminaRatio))})`;
-      heat2.style.transform = `scaleX(${Math.max(0, Math.min(1, heatRatio))})`;
-    }
-    function setTimer(sec) {
-      if (sec == null || sec < 0) {
-        timer.textContent = "\u2014";
-        return;
-      }
-      const s = Math.max(0, Math.ceil(sec));
-      const m = Math.floor(s / 60);
-      const r = s % 60;
-      timer.textContent = `${m}:${r.toString().padStart(2, "0")}`;
-      timer.style.color = s <= 20 ? "#c42828" : "";
-    }
-    function setCompass(deg, label) {
-      if (!compass) return;
-      if (label == null) {
-        compass.classList.add("hidden");
-        return;
-      }
-      compass.classList.remove("hidden");
-      if (compassArrow) compassArrow.style.transform = `rotate(${deg}deg)`;
-      if (compassLabel) compassLabel.textContent = label;
-    }
-    function setCine(speaker, line) {
-      cineSpeaker.textContent = speaker;
-      cineLine.textContent = line;
-    }
-    function showEnd({ clean, title, body, kicker }) {
-      showScreen("end");
-      hud.classList.add("hidden");
-      if (compass) compass.classList.add("hidden");
-      if (playControls) playControls.classList.add("hidden");
-      if (rideTip) rideTip.classList.add("hidden");
-      $("end-kicker").textContent = kicker || "Soft Open";
-      const t = $("end-title");
-      t.textContent = title;
-      t.className = clean ? "clean" : "botched";
-      $("end-body").textContent = body;
-    }
-    function showPlayControls(touch) {
-      if (!playControls) return;
-      playControls.classList.remove("hidden");
-      if (playControlsBody) {
-        playControlsBody.innerHTML = touch ? "<div><b>Stick</b> move</div><div><b>Gallop</b> \xB7 <b>Mount</b> \xB7 <b>Act</b></div>" : "<div><b>W/S</b> Move \xB7 <b>A/D</b> Steer</div><div><b>Shift</b> Gallop \xB7 <b>E</b> Mount \xB7 <b>Space</b> Act</div>";
-      }
-      if (rideTip) {
-        rideTip.classList.remove("hidden", "fade");
-        void rideTip.offsetWidth;
-        rideTip.classList.add("show");
-        clearTimeout(rideTip._fadeTimer);
-        rideTip._fadeTimer = setTimeout(() => {
-          rideTip.classList.add("fade");
-          setTimeout(() => rideTip.classList.add("hidden"), 700);
-        }, 6e3);
-      }
-    }
-    function hidePlayControls() {
-      if (playControls) playControls.classList.add("hidden");
-      if (rideTip) {
-        rideTip.classList.add("hidden");
-        rideTip.classList.remove("show", "fade");
-        clearTimeout(rideTip._fadeTimer);
-      }
-    }
-    return {
-      $,
-      showScreen,
-      playMode,
-      setPrompt,
-      setObjective,
-      setMeters,
-      setTimer,
-      setCompass,
-      setCine,
-      showEnd,
-      showPlayControls,
-      hidePlayControls,
-      screens,
-      hud
-    };
+    return api;
   }
 
-  // src/world/greenville.js
-  var COL = {
-    dirt: 8016436,
-    dirtDark: 4073496,
-    wood: 5913122,
-    woodDark: 3021326,
-    adobe: 10518616,
-    adobeDark: 8018488,
-    roof: 4858392,
-    rust: 10111012,
-    bone: 13680800,
-    blood: 12855336,
-    water: 2771528,
-    brush: 4872752,
-    falseFront: 3810324
+  // src/render/sky.js
+  var lerp2 = (a, b, t) => a + (b - a) * t;
+  var clamp2 = (v, a, b) => v < a ? a : v > b ? b : v;
+  var smoothstep2 = (a, b, x) => {
+    const t = clamp2((x - a) / (b - a), 0, 1);
+    return t * t * (3 - 2 * t);
   };
-  function std(color, extras = {}) {
-    return new MeshStandardMaterial({
-      color,
-      roughness: 0.88,
-      metalness: 0.02,
-      ...extras
-    });
-  }
-  function box(w, h, d, colorOrMat, x, y, z, matOpts = {}) {
-    const material = colorOrMat.isMaterial ? colorOrMat : std(colorOrMat, matOpts);
-    const mesh = new Mesh(new BoxGeometry(w, h, d), material);
-    mesh.position.set(x, y, z);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    return mesh;
-  }
-  function building(group, {
-    w,
-    h,
-    d,
-    x,
-    z,
-    color = COL.adobe,
-    adobeMap = null,
-    woodMap = null,
-    roofH = 0.4,
-    signTex = null,
-    porch = true
-  }) {
-    const wallMat = adobeMap ? std(color, { map: adobeMap, roughnessMap: adobeMap, roughness: 0.92 }) : std(color);
-    const base = box(w, h, d, wallMat, x, h / 2, z);
-    group.add(base);
-    const roof = box(w + 0.35, roofH, d + 0.35, COL.roof, x, h + roofH / 2, z);
-    group.add(roof);
-    const frontH = h * 0.52;
-    const frontZ = z + d / 2;
-    group.add(box(w + 0.3, frontH, 0.22, COL.falseFront, x, h + frontH * 0.12, frontZ + 0.05));
-    group.add(box(w + 0.2, frontH * 0.92, 0.1, 4861976, x, h + frontH * 0.14, frontZ + 0.16));
-    group.add(box(w + 0.4, 0.12, 0.2, COL.bone, x, h + frontH * 0.4, frontZ + 0.18, {
-      emissive: 2760720,
-      emissiveIntensity: 0.12
-    }));
-    for (const sx of [-w * 0.42, w * 0.42]) {
-      group.add(box(0.14, 0.35, 0.28, COL.woodDark, x + sx, h + 0.15, frontZ + 0.2));
+  var FOG = { fogColorSun: { value: new Float32Array([0.55, 0.45, 0.38]) }, fogDirParams: { value: new Float32Array([-1, 0, 0.45, 0]) } };
+  var fogPatched = false;
+  function patchFogChunks() {
+    if (fogPatched) return;
+    fogPatched = true;
+    const C = ShaderChunk;
+    C.fog_pars_vertex = /* glsl */
+    `
+#ifdef USE_FOG
+	varying float vFogDepth;
+	varying vec3 vFogDir;
+#endif`;
+    C.fog_vertex = /* glsl */
+    `
+#ifdef USE_FOG
+	vFogDepth = - mvPosition.z;
+	vFogDir = mvPosition.xyz * mat3( viewMatrix );
+#endif`;
+    C.fog_pars_fragment = /* glsl */
+    `
+#ifdef USE_FOG
+	uniform vec3 fogColor;
+	uniform vec3 fogColorSun;
+	uniform vec4 fogDirParams;
+	varying float vFogDepth;
+	varying vec3 vFogDir;
+	#ifdef FOG_EXP2
+		uniform float fogDensity;
+	#else
+		uniform float fogNear;
+		uniform float fogFar;
+	#endif
+	vec3 lsFogColor() {
+		float l = length( vFogDir.xz );
+		float az = l > 1e-4 ? dot( vFogDir.xz / l, fogDirParams.xy ) : 0.0;
+		return mix( fogColor, fogColorSun, pow( max( az, 0.0 ), 1.8 ) );
+	}
+	#define fogColor lsFogColor()
+	#ifdef FOG_EXP2
+		float lsFogDensity() {
+			float hm = cameraPosition.y + 0.5 * vFogDir.y;
+			return fogDensity * mix( 1.0, fogDirParams.z, smoothstep( 25.0, 170.0, hm ) );
+		}
+		#define fogDensity lsFogDensity()
+	#endif
+#endif`;
+    C.fog_fragment = /* glsl */
+    `
+#ifdef USE_FOG
+	#ifdef FOG_EXP2
+		float lsFogD = fogDensity;
+		float fogFactor = 1.0 - exp( - lsFogD * lsFogD * vFogDepth * vFogDepth );
+	#else
+		float fogFactor = smoothstep( fogNear, fogFar, vFogDepth );
+	#endif
+	gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor );
+#endif`;
+    for (const k of Object.keys(ShaderLib)) {
+      const u = ShaderLib[k].uniforms;
+      if (u && u.fogColor) {
+        u.fogColorSun = FOG.fogColorSun;
+        u.fogDirParams = FOG.fogDirParams;
+      }
     }
-    group.add(box(0.9, 1.85, 0.12, COL.woodDark, x, 0.92, frontZ + 0.1));
-    group.add(box(1.05, 0.1, 0.14, COL.wood, x, 1.9, frontZ + 0.12));
-    const winMat = {
-      emissive: 9062936,
-      emissiveIntensity: 0.65,
-      roughness: 0.45,
-      metalness: 0.05
+  }
+  patchFogChunks();
+  var vert = (
+    /* glsl */
+    `
+varying vec3 vDir;
+void main(){ vDir = normalize((modelMatrix * vec4(position,1.0)).xyz - cameraPosition); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`
+  );
+  var frag = (
+    /* glsl */
+    `
+precision highp float;
+varying vec3 vDir;
+uniform vec3 uSunDir; uniform vec3 uSunColor; uniform vec3 uZenith; uniform vec3 uHorizon; uniform vec3 uHorizonSun; uniform vec3 uGround;
+uniform vec3 uCloudLit; uniform vec3 uCloudShade; uniform vec3 uCloudDark; uniform vec3 uCirrus; uniform vec3 uCityDir; uniform vec3 uCityGlow;
+uniform float uTime; uniform float uNight; uniform float uStormEast; uniform float uExposure; uniform float uCoverage; uniform float uVenus; uniform float uStars; uniform float uSunGlow;
+
+float hash(vec2 p){ vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
+float hash3(vec3 p){ p = fract(p * 0.1031); p += dot(p, p.zyx + 31.32); return fract((p.x + p.y) * p.z); }
+// value noise with analytic derivative: (value, d/dx, d/dy)
+vec3 noised(vec2 p){
+  vec2 i = floor(p), f = fract(p);
+  vec2 u = f*f*(3.0-2.0*f), du = 6.0*f*(1.0-f);
+  float a = hash(i), b = hash(i+vec2(1.0,0.0)), c = hash(i+vec2(0.0,1.0)), d = hash(i+vec2(1.0,1.0));
+  float k1 = b-a, k2 = c-a, k3 = a-b-c+d;
+  return vec3(a + k1*u.x + k2*u.y + k3*u.x*u.y, du * vec2(k1 + k3*u.y, k2 + k3*u.x));
+}
+float noise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f); return mix(mix(hash(i),hash(i+vec2(1,0)),f.x), mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x), f.y); }
+// 4-octave fbm with gradient; the curl of the lower octaves warps the higher ones (billowy cauliflower edges).
+// d3/d4 (0..1) fade the third and fourth octave out toward the horizon, where the plane projection makes them alias.
+vec3 cumulusFbm(vec2 p, float d3, float d4){
+  vec3 n = noised(p);
+  float v = 0.5 * n.x; vec2 g = 0.5 * n.yz;
+  p = p * 2.02 + 0.45 * vec2(n.z, -n.y) + vec2(3.1, 7.7);
+  n = noised(p); v += 0.25 * n.x; g += 0.505 * n.yz;
+  if (d3 > 0.001) {
+    p = p * 2.03 + 0.22 * vec2(n.z, -n.y) + vec2(1.7, 9.2);
+    n = noised(p); v += 0.125 * d3 * n.x; g += 0.51 * d3 * n.yz;
+    if (d4 > 0.001) { p = p * 2.01 + vec2(8.3, 2.8); n = noised(p); v += 0.0625 * d4 * n.x; g += 0.515 * d4 * n.yz; }
+  }
+  return vec3(v, g) / (0.75 + 0.125 * d3 + 0.0625 * d4);
+}
+vec3 cumulusLow(vec2 p){
+  vec3 n = noised(p);
+  float v = 0.5 * n.x; vec2 g = 0.5 * n.yz;
+  p = p * 2.02 + 0.45 * vec2(n.z, -n.y) + vec2(3.1, 7.7);
+  n = noised(p); v += 0.25 * n.x; g += 0.505 * n.yz;
+  return vec3(v, g) / 0.75;
+}
+void main(){
+  vec3 d = normalize(vDir);
+  float h = d.y, hp = max(h, 0.0);
+  float sunDot = dot(d, uSunDir), sunDotP = max(sunDot, 0.0);
+  vec2 d2 = normalize(d.xz + vec2(1e-5, 0.0)), s2 = normalize(uSunDir.xz + vec2(1e-5, 0.0));
+  float az = dot(d2, s2);
+  float sunSide = pow(max(az, 0.0), 1.8), antiSide = pow(max(-az, 0.0), 2.0);
+  float lowSun = 1.0 - smoothstep(0.0, 0.35, hp);
+  float hz = exp(-hp * 11.0);                                          // horizon haze band
+  float east = smoothstep(-0.55, 0.85, d.x) * uStormEast;               // storm side: thicker deck, darker bases
+  float sunUp = 0.3 + 0.7 * smoothstep(-0.08, 0.06, uSunDir.y);        // below the horizon only the tops keep a glow
+  // ---- clear sky: Rayleigh-ish blue overhead, haze at the horizon, warm Mie scattering toward the sun
+  vec3 hor = mix(uHorizon, uHorizonSun, sunSide * (0.3 + 0.7 * hz));      // saturated at the horizon, grey-blue (not purple) higher up
+  vec3 col = mix(hor, uZenith, pow(hp, 0.5));
+  col = mix(col, hor, hz * 0.3);
+  col += uHorizonSun * sunSide * hz * 0.25 * uSunGlow;
+  // Belt of Venus (pink band) over the blue-grey earth shadow, opposite the sun, at dusk
+  float venusBand = exp(-pow((hp - 0.09) / 0.07, 2.0));
+  col += vec3(0.80, 0.38, 0.46) * venusBand * antiSide * uVenus * 0.18;
+  col = mix(col, mix(uZenith, uHorizon, 0.4) * 0.85, antiSide * (1.0 - smoothstep(0.0, 0.07, hp)) * uVenus * 0.5);
+  // city light dome over downtown (east) at night
+  float city = pow(max(dot(d2, normalize(uCityDir.xz + vec2(1e-5, 0.0))), 0.0), 5.0) * exp(-hp * 9.0);
+  col += uCityGlow * city;
+  // below the horizon: distant hazy ground, in the fog colour of that direction
+  if (h < 0.0) col = mix(hor * 0.94, mix(uGround, hor * 0.7, 0.5), smoothstep(0.0, -0.10, h));
+  // ---- sun disc and Mie corona (stronger through the thick low-angle air); the disc is capped so ACES keeps an orange core
+  float disc = smoothstep(0.99972, 0.99991, sunDot);
+  // tight corona in the sun colour; the broad low-angle glow takes the horizon orange so it does not wash to white
+  float mieT = 0.6 * pow(sunDotP, 400.0) + 0.22 * pow(sunDotP, 40.0), mieW = 0.10 * pow(sunDotP, 6.0) + 0.05 * pow(sunDotP, 1.5);
+  vec3 sunGlow = uSunColor * disc * 3.0 * (1.0 - uNight) + (uSunColor * mieT + mix(uSunColor, uHorizonSun, 0.6) * mieW) * 0.55 * (1.0 + 0.8 * lowSun) * uSunGlow;
+  col += sunGlow * smoothstep(-0.01, 0.0, h);
+  // ---- clouds
+  float cloudA = 0.0, cirA = 0.0; vec3 cloudC = vec3(0.0), cirC = vec3(0.0);
+  if (h > 0.002) {
+    vec2 drift = vec2(uTime * 0.010, uTime * 0.0025);
+    vec3 apCol = hor;                                                    // what the low deck fades into with distance
+    // ---- storm wall: the cumulonimbus receding east over downtown. A flat rain-dark base a few degrees up, a grey-blue
+    // body, turrets lit gold by the low sun behind the viewer and a thin anvil shelf spreading above them.
+    float eastAz = smoothstep(-0.15, 0.65, d.x) * uStormEast;
+    if (eastAz > 0.001) {
+      float ang = asin(clamp(d2.y, -1.0, 1.0));                          // bearing off due east, continuous across it
+      vec2 wuv = vec2(ang * 2.6, hp * 7.0) + vec2(uTime * 0.002, 0.0);
+      float wn = 0.55 * noise(wuv + vec2(2.0, 5.0)) + 0.30 * noise(wuv * 2.1 + vec2(7.0, 3.0)) + 0.15 * noise(wuv * 4.3 + vec2(1.0, 8.0));
+      float turret = 0.5 * noise(vec2(ang * 1.6 + 3.0, 1.5)) + 0.5 * noise(vec2(ang * 3.9 + 1.0, 2.5));
+      float topH = 0.17 + 0.16 * turret, baseH = 0.045 + 0.03 * noise(vec2(ang * 4.5, 9.0));
+      float tRel = clamp((hp - baseH) / max(topH - baseH, 0.02), 0.0, 1.0);
+      float topEdge = topH + 0.05 * (wn - 0.5);
+      float wallD = eastAz * smoothstep(baseH - 0.015, baseH + 0.015, hp) * (1.0 - smoothstep(topEdge - 0.03, topEdge + 0.01, hp));
+      wallD *= smoothstep(0.22, 0.42, wn * 0.6 + 0.4 * eastAz);       // ragged flanks north and south of the cell
+      float lit = smoothstep(0.35, 0.95, tRel + 0.3 * (wn - 0.5)) * sunUp;
+      vec3 wcol = mix(uCloudDark * 0.5, uCloudShade * 0.85, smoothstep(0.0, 0.85, tRel)) * (0.8 + 0.4 * wn);
+      wcol = mix(wcol, uCloudLit * (0.9 + 0.3 * wn), lit);
+      wcol = mix(wcol, hor, 0.10 + 0.12 * (1.0 - tRel));                // distance haze, strongest on the lower body
+      apCol = mix(hor, wcol, wallD * 0.7);                              // the deck in front fades toward the storm, not the clear horizon
+      float anvil = smoothstep(topEdge + 0.01, topEdge + 0.05, hp) * (1.0 - smoothstep(topEdge + 0.08, topEdge + 0.2, hp)) * eastAz * smoothstep(0.3, 0.7, noise(wuv * vec2(0.7, 1.4) + vec2(4.0, 2.0)));
+      vec3 acol = mix(mix(uCloudLit, uCirrus, 0.5), uCloudShade, 1.0 - sunUp);
+      col = mix(col, acol, anvil * 0.55);
+      col = mix(col, wcol, wallD);
+      // rain still falling under the wall: dark virga streaks down to the horizon
+      col = mix(col, uCloudDark * 0.9, eastAz * (1.0 - smoothstep(baseH - 0.03, baseH + 0.02, hp)) * 0.45 * (0.4 + 0.7 * wn));
+    }
+    // ---- low cumulus deck: bases on one plane, tops on a plane 25% higher. The parallax between the two reveals the
+    // cloud walls (front-lit gold when the sun is behind you, backlit when you look toward it).
+    float pl = 1.0 / (h + 0.1);
+    vec2 puv = d.xz * pl;
+    float det3 = smoothstep(0.03, 0.16, hp), det4 = smoothstep(0.07, 0.30, hp);
+    vec3 cb = cumulusFbm(puv + drift, det3, det4);
+    vec3 ct = cumulusLow(puv * 1.5 + drift);
+    // raw fbm sits in ~0.35..0.8 (p50 0.5, p99 0.79): stretch it so the thick/belly thresholds below actually bite
+    cb.x = clamp((cb.x - 0.32) * 2.1, 0.0, 1.0); cb.yz *= 2.1;
+    ct.x = clamp((ct.x - 0.32) * 2.1, 0.0, 1.0);
+    // coverage: broken field in the west (clear at the sun-side horizon), denser deck over the storm in the east
+    float cluster = noise(puv * 0.22 + drift * 0.3 + vec2(11.0, 5.0));     // big/small cloud groups
+    float thr = mix(0.64, 0.50, east) - (uCoverage - 0.5) * 0.4 + 0.18 * (1.0 - east) * (1.0 - smoothstep(0.0, 0.3, hp)) + (cluster - 0.5) * 0.22;
+    float dBase = smoothstep(thr, thr + 0.08, cb.x);
+    float thick = smoothstep(thr + 0.03, thr + 0.22, cb.x);
+    float dTop = smoothstep(thr + 0.05, thr + 0.22, ct.x);
+    float wall = dTop * (1.0 - dBase);
+    float dens = dBase + wall;
+    // lighting: base flanks toward the sun (density gradient), walls that face both the viewer and the sun
+    vec2 sunUV = uSunDir.xz / max(uSunDir.y, 0.03);
+    vec2 toSun = normalize(sunUV - puv);
+    vec2 gn = cb.yz / (length(cb.yz) + 0.3);
+    float facing = dot(gn, -toSun);
+    vec2 nWall = -normalize(puv + vec2(1e-4, 0.0));
+    float fwd = pow(sunDotP, 5.0);                                       // looking toward the sun: backlit
+    float wallLit = smoothstep(-0.25, 0.6, dot(nWall, s2)) * (1.0 - 0.6 * fwd) * (0.55 + 0.45 * smoothstep(-0.3, 0.6, facing)) * sunUp;
+    float belly = thick * (0.7 + 0.3 * hp);                               // looking up = undersides in shadow
+    vec3 base = mix(uCloudShade, uCloudDark, belly * (0.45 + 0.55 * east));
+    float litB = smoothstep(0.2, 0.8, facing) * (1.0 - 0.85 * belly) * (1.0 - 0.7 * fwd) * (0.45 + 0.55 * (1.0 - hp)) * sunUp;
+    vec3 cBase = mix(base, uCloudLit, litB);
+    vec3 cWall = mix(uCloudShade * 0.9, uCloudLit, wallLit);
+    vec3 c = (cBase * dBase + cWall * wall) / max(dens, 1e-3);
+    float edge = dens * (1.0 - thick);                                   // thin margins
+    c += uSunColor * edge * (0.3 * pow(sunDotP, 3.0) + 1.6 * pow(sunDotP, 24.0)) * uSunGlow;    // silver lining
+    c += uSunColor * (1.0 - thick) * pow(sunDotP, 40.0) * 0.5 * uSunGlow;                       // glow through thin cloud
+    c += uCityGlow * city * 1.5 * belly;                                                          // bellies lit by the city at night
+    c = mix(apCol, c, 1.0 - exp(-hp * 10.0));                                                    // aerial perspective
+    cloudA = dens * smoothstep(0.0, 0.015, hp);
+    cloudC = c;
+    // high cirrus: thin, wind-stretched, warmed by the sun; thinner near the sun so the gold there is not veiled
+    vec2 uv2 = d.xz / (h + 0.22) * 0.9;
+    uv2 = mat2(0.87, -0.5, 0.5, 0.87) * uv2 * vec2(0.45, 2.2) + vec2(uTime * 0.003, 0.0);
+    float cv = 0.65 * noise(uv2) + 0.35 * noise(uv2 * 2.7 + vec2(4.2, 1.3));
+    float nearSun = smoothstep(0.64, 0.85, sunDot);
+    float cir = smoothstep(0.54, 0.80, cv) * mix(0.26, 0.12, nearSun);
+    vec3 cc = mix(uCirrus, uSunColor * 0.95, pow(sunDotP, 3.0) * 0.6);
+    cirC = mix(hor, cc, 1.0 - exp(-hp * 6.0));
+    cirA = cir * smoothstep(0.0, 0.08, hp);
+  }
+  // ---- stars (hidden behind cloud)
+  if (uStars > 0.01 && h > 0.02) {
+    vec3 sp = d * 120.0; vec3 ci = floor(sp); vec3 fp = fract(sp) - 0.5;
+    float r = hash3(ci);
+    vec3 off = (vec3(hash3(ci + 1.7), hash3(ci + 4.3), hash3(ci + 9.1)) - 0.5) * 0.6;
+    float dd = dot(fp - off, fp - off);
+    float star = smoothstep(0.972, 1.0, r) * exp(-dd * 40.0) * mix(0.25, 1.0, hash3(ci + 2.2));
+    float tw = 0.8 + 0.2 * sin(uTime * 2.5 + r * 60.0);
+    col += vec3(0.85, 0.9, 1.0) * star * tw * uStars * smoothstep(0.02, 0.3, h) * 0.9;
+  }
+  col = mix(col, cirC, cirA);
+  col = mix(col, cloudC, cloudA);
+  col *= uExposure;
+  gl_FragColor = vec4(col, 1.0);
+}`
+  );
+  function createSky(scene2) {
+    const uniforms = {
+      uSunDir: { value: new Vector3(0, 1, 0) },
+      uSunColor: { value: new Color(1, 0.8, 0.55) },
+      uZenith: { value: new Color(0.16, 0.34, 0.68) },
+      uHorizon: { value: new Color(0.62, 0.64, 0.7) },
+      uHorizonSun: { value: new Color(1, 0.62, 0.3) },
+      uGround: { value: new Color(0.3, 0.29, 0.28) },
+      uCloudLit: { value: new Color(1, 0.82, 0.58) },
+      uCloudShade: { value: new Color(0.42, 0.44, 0.52) },
+      uCloudDark: { value: new Color(0.22, 0.23, 0.28) },
+      uCirrus: { value: new Color(0.85, 0.8, 0.8) },
+      uCityDir: { value: new Vector3(0.95, 0, 0.3).normalize() },
+      uCityGlow: { value: new Color(0, 0, 0) },
+      uTime: { value: 0 },
+      uNight: { value: 0 },
+      uStormEast: { value: 1 },
+      uExposure: { value: 1 },
+      uCoverage: { value: 0.5 },
+      uVenus: { value: 0 },
+      uStars: { value: 0 },
+      uSunGlow: { value: 1 }
     };
-    group.add(box(0.58, 0.58, 0.08, 2758672, x - w * 0.28, 1.6, frontZ + 0.1, winMat));
-    group.add(box(0.58, 0.58, 0.08, 2758672, x + w * 0.28, 1.6, frontZ + 0.1, winMat));
-    for (const wx of [-w * 0.28, w * 0.28]) {
-      group.add(box(0.68, 0.06, 0.1, COL.bone, x + wx, 1.92, frontZ + 0.12));
-      group.add(box(0.68, 0.06, 0.1, COL.bone, x + wx, 1.28, frontZ + 0.12));
-    }
-    if (porch) {
-      const porchZ = frontZ + 1.15;
-      const woodMat = woodMap ? std(COL.wood, { map: woodMap, roughnessMap: woodMap }) : std(COL.wood);
-      group.add(box(w * 0.85, 0.1, 1.6, woodMat, x, 0.12, porchZ - 0.3));
-      for (const sx of [-w * 0.38, w * 0.38]) {
-        group.add(box(0.14, 2.4, 0.14, COL.woodDark, x + sx, 1.2, porchZ));
+    const mat2 = new ShaderMaterial({ uniforms, vertexShader: vert, fragmentShader: frag, side: BackSide, depthWrite: false, fog: false });
+    const R_DOME = 720;
+    const mesh = new Mesh(new SphereGeometry(R_DOME, 48, 24), mat2);
+    mesh.name = "sky";
+    mesh.frustumCulled = false;
+    mesh.renderOrder = -10;
+    const camPos = new Vector3();
+    mesh.onBeforeRender = (renderer2, sc, camera2) => {
+      camPos.setFromMatrixPosition(camera2.matrixWorld);
+      const s = Math.min(1, (camera2.far || 1e9) * 0.92 / R_DOME);
+      if (!mesh.position.equals(camPos) || mesh.scale.x !== s) {
+        mesh.position.copy(camPos);
+        mesh.scale.setScalar(s);
+        mesh.updateMatrixWorld(true);
       }
-      group.add(box(w * 0.9, 0.08, 1.7, COL.woodDark, x, 2.45, porchZ - 0.2));
-    }
-    if (signTex) {
-      const sign = new Mesh(
-        new PlaneGeometry(Math.min(w * 0.7, 4.2), 1),
-        new MeshStandardMaterial({
-          map: signTex,
-          roughness: 0.7,
-          metalness: 0.05,
-          emissive: 3807248,
-          emissiveIntensity: 0.2
-        })
-      );
-      sign.position.set(x, h + 0.55, frontZ + 0.28);
-      sign.castShadow = true;
-      group.add(sign);
-    }
-    return base;
-  }
-  function makeBeacon({ color, emissive, lightColor, height = 5.2 }) {
-    const g = new Group();
-    g.name = "beacon";
-    const post = box(0.12, height, 0.12, COL.bone, 0, height / 2, 0);
-    post.castShadow = false;
-    g.add(post);
-    const tip = box(0.28, 0.45, 0.28, color, 0, height + 0.1, 0, {
-      emissive,
-      emissiveIntensity: 0.85,
-      roughness: 0.45
-    });
-    tip.castShadow = false;
-    g.add(tip);
-    const orb = new Mesh(
-      new SphereGeometry(0.22, 10, 8),
-      new MeshStandardMaterial({
-        color,
-        emissive,
-        emissiveIntensity: 1.2,
-        roughness: 0.35,
-        metalness: 0.1
-      })
-    );
-    orb.position.set(0, height + 0.55, 0);
-    orb.castShadow = false;
-    g.add(orb);
-    const light = new PointLight(lightColor, 1.4, 26, 1.6);
-    light.position.set(0, height + 0.4, 0);
-    g.add(light);
-    g.userData.orb = orb;
-    g.userData.tip = tip;
-    g.userData.light = light;
-    g.userData.baseIntensity = 1.4;
-    return g;
-  }
-  function hitchRope(group, x0, y0, z0, x1, y1, z1, mat2) {
-    const curve = new CatmullRomCurve3([
-      new Vector3(x0, y0, z0),
-      new Vector3((x0 + x1) / 2, Math.min(y0, y1) - 0.18, (z0 + z1) / 2),
-      new Vector3(x1, y1, z1)
-    ]);
-    const geo = new TubeGeometry(curve, 12, 0.025, 5, false);
-    const rope = new Mesh(geo, mat2);
-    rope.castShadow = true;
-    group.add(rope);
-  }
-  function buildGreenville(scene2) {
-    const root = new Group();
-    root.name = "greenville";
-    const dirtMap = makeDirtTexture();
-    const streetMap = makeStreetTexture();
-    const woodMap = makeWoodTexture();
-    const adobeMap = makeAdobeTexture();
-    const adobeMapB = makeAdobeTexture(192);
-    const waterMap = makeWaterTexture();
-    const crateMap = makeCrateWoodTexture();
-    const saloonSign = makeSignTexture("SALOON", "#7a3018", "#e8dcc8");
-    const hotelSign = makeSignTexture("HOTEL", "#5a3020", "#d0c0a0");
-    const ground = new Mesh(
-      new PlaneGeometry(90, 130),
-      std(COL.dirt, { map: dirtMap, roughnessMap: dirtMap, roughness: 0.96 })
-    );
-    ground.rotation.x = -Math.PI / 2;
-    ground.receiveShadow = true;
-    root.add(ground);
-    for (const [px2, pz2, s, col] of [
-      [-12, 15, 8, 6965296],
-      [14, -8, 7, 5913640],
-      [8, 30, 9, 8017208],
-      [-18, -12, 6, 4861984],
-      [0, 55, 14, 5914664]
-    ]) {
-      const patch = new Mesh(
-        new CircleGeometry(s, 10),
-        std(col, { roughness: 0.98 })
-      );
-      patch.rotation.x = -Math.PI / 2;
-      patch.position.set(px2, 8e-3, pz2);
-      patch.receiveShadow = true;
-      root.add(patch);
-    }
-    const street = new Mesh(
-      new PlaneGeometry(10, 90),
-      std(COL.dirtDark, { map: streetMap, roughnessMap: streetMap, roughness: 1 })
-    );
-    street.rotation.x = -Math.PI / 2;
-    street.position.set(0, 0.018, 10);
-    street.receiveShadow = true;
-    root.add(street);
-    for (const x of [-4.9, 4.9]) {
-      const rut = new Mesh(
-        new PlaneGeometry(0.2, 88),
-        std(5914672, { roughness: 0.98 })
-      );
-      rut.rotation.x = -Math.PI / 2;
-      rut.position.set(x, 0.025, 10);
-      rut.receiveShadow = true;
-      root.add(rut);
-    }
-    const walkMat = std(COL.wood, { map: woodMap, roughnessMap: woodMap, roughness: 0.9 });
-    for (const side of [-1, 1]) {
-      const walk = box(2.5, 0.22, 55, walkMat, side * 6.35, 0.11, 5);
-      root.add(walk);
-      root.add(box(0.14, 0.3, 55, COL.woodDark, side * 5.12, 0.15, 5));
-      for (let i = 0; i < 18; i++) {
-        root.add(box(2.4, 0.02, 0.04, 2758672, side * 6.35, 0.23, -20 + i * 3));
+    };
+    scene2.add(mesh);
+    const P = {
+      golden: {
+        zenith: [0.045, 0.13, 0.42],
+        horizon: [0.3, 0.33, 0.44],
+        horizonSun: [0.92, 0.38, 0.12],
+        sun: [1, 0.55, 0.28],
+        elev: 12,
+        cloudLit: [1.05, 0.48, 0.22],
+        cloudShade: [0.25, 0.28, 0.37],
+        cloudDark: [0.1, 0.11, 0.15],
+        cirrus: [0.8, 0.62, 0.42],
+        cityGlow: [0, 0, 0],
+        fogDensity: 35e-4,
+        fogHeightK: 0.4,
+        hemiSky: [0.4, 0.52, 0.8],
+        hemiGround: [0.42, 0.34, 0.24],
+        fill: [0.5, 0.58, 0.8],
+        sunI: 5.5,
+        hemiI: 0.22,
+        fillI: 0.12,
+        envI: 0.35,
+        night: 0,
+        exposure: 1,
+        coverage: 0.5,
+        stormEast: 0.35,
+        venus: 0.15,
+        stars: 0,
+        sunGlow: 1
+      },
+      late: {
+        zenith: [0.04, 0.1, 0.36],
+        horizon: [0.28, 0.25, 0.38],
+        horizonSun: [0.9, 0.3, 0.07],
+        sun: [1, 0.52, 0.26],
+        elev: 5,
+        cloudLit: [0.95, 0.42, 0.18],
+        cloudShade: [0.17, 0.15, 0.25],
+        cloudDark: [0.06, 0.055, 0.1],
+        cirrus: [0.85, 0.45, 0.4],
+        cityGlow: [0, 0, 0],
+        fogDensity: 4e-3,
+        fogHeightK: 0.45,
+        hemiSky: [0.34, 0.36, 0.62],
+        hemiGround: [0.32, 0.24, 0.17],
+        fill: [0.4, 0.4, 0.66],
+        sunI: 3.4,
+        hemiI: 0.42,
+        fillI: 0.16,
+        envI: 0.5,
+        night: 0.1,
+        exposure: 1,
+        coverage: 0.48,
+        stormEast: 0.3,
+        venus: 0.6,
+        stars: 0,
+        sunGlow: 1
+      },
+      dusk: {
+        zenith: [0.018, 0.028, 0.1],
+        horizon: [0.14, 0.12, 0.2],
+        horizonSun: [0.8, 0.3, 0.12],
+        sun: [1, 0.5, 0.3],
+        elev: -4,
+        cloudLit: [0.17, 0.085, 0.1],
+        cloudShade: [0.05, 0.045, 0.085],
+        cloudDark: [0.02, 0.02, 0.04],
+        cirrus: [0.55, 0.26, 0.26],
+        cityGlow: [0.06, 0.035, 0.02],
+        fogDensity: 45e-4,
+        fogHeightK: 0.55,
+        hemiSky: [0.22, 0.24, 0.4],
+        hemiGround: [0.18, 0.14, 0.12],
+        fill: [0.32, 0.3, 0.48],
+        sunI: 0,
+        hemiI: 0.95,
+        fillI: 0.32,
+        envI: 0.65,
+        night: 0.8,
+        exposure: 1.12,
+        coverage: 0.42,
+        stormEast: 0.7,
+        venus: 1,
+        stars: 0.35,
+        sunGlow: 0.7
+      },
+      night: {
+        zenith: [0.012, 0.016, 0.045],
+        horizon: [0.07, 0.07, 0.11],
+        horizonSun: [0.12, 0.08, 0.09],
+        sun: [0.6, 0.4, 0.3],
+        elev: -12,
+        cloudLit: [0.045, 0.045, 0.06],
+        cloudShade: [0.03, 0.03, 0.05],
+        cloudDark: [0.015, 0.015, 0.025],
+        cirrus: [0.04, 0.04, 0.055],
+        cityGlow: [0.12, 0.07, 0.04],
+        fogDensity: 455e-5,
+        fogHeightK: 0.55,
+        hemiSky: [0.22, 0.26, 0.4],
+        hemiGround: [0.14, 0.12, 0.12],
+        fill: [0.22, 0.24, 0.38],
+        sunI: 0,
+        hemiI: 1.15,
+        fillI: 0.42,
+        envI: 0.7,
+        night: 1,
+        exposure: 1.2,
+        coverage: 0.38,
+        stormEast: 0.5,
+        venus: 0,
+        stars: 1,
+        sunGlow: 0
       }
+    };
+    const keys = ["golden", "late", "dusk", "night"];
+    const cur = {};
+    const mixc = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+    function domeClear(s, sunSide, hp) {
+      const hz = Math.exp(-hp * 11);
+      const hor = mixc(s.horizon, s.horizonSun, sunSide * (0.3 + 0.7 * hz));
+      let c = mixc(hor, s.zenith, Math.sqrt(hp));
+      c = mixc(c, hor, hz * 0.3);
+      c = c.map((v, i) => v + s.horizonSun[i] * sunSide * hz * 0.25 * s.sunGlow);
+      return { hor, c };
     }
-    building(root, {
-      w: 8,
-      h: 4.2,
-      d: 7,
-      x: -11,
-      z: 8,
-      color: COL.adobe,
-      adobeMap,
-      woodMap,
-      signTex: saloonSign
-    });
-    building(root, {
-      w: 6,
-      h: 3.4,
-      d: 6,
-      x: -10,
-      z: -4,
-      color: COL.adobeDark,
-      adobeMap: adobeMapB,
-      woodMap,
-      porch: true
-    });
-    building(root, {
-      w: 5,
-      h: 3.2,
-      d: 5,
-      x: -9.5,
-      z: 20,
-      color: 8020036,
-      adobeMap,
-      woodMap
-    });
-    building(root, {
-      w: 7,
-      h: 4.5,
-      d: 8,
-      x: 11,
-      z: 6,
-      color: 9071176,
-      adobeMap: adobeMapB,
-      woodMap,
-      signTex: hotelSign
-    });
-    building(root, {
-      w: 5.5,
-      h: 3.3,
-      d: 5.5,
-      x: 10.5,
-      z: -6,
-      color: COL.adobe,
-      adobeMap,
-      woodMap
-    });
-    building(root, {
-      w: 5,
-      h: 2.8,
-      d: 4,
-      x: 10,
-      z: -18,
-      color: COL.wood,
-      adobeMap: woodMap,
-      woodMap,
-      porch: false
-    });
-    const alleyZ = 2.2;
-    const alleyX = -7.2;
-    const alleyFill = new PointLight(12875840, 0.7, 16, 1.8);
-    alleyFill.position.set(-5.2, 2.4, alleyZ);
-    root.add(alleyFill);
-    const alleyWarm = new PointLight(10504232, 0.45, 12, 2);
-    alleyWarm.position.set(alleyX, 1.8, alleyZ);
-    root.add(alleyWarm);
-    root.add(box(0.18, 2.4, 0.18, COL.woodDark, -5.4, 1.2, alleyZ + 1.6));
-    root.add(box(0.18, 2.4, 0.18, COL.woodDark, -5.4, 1.2, alleyZ - 1.6));
-    root.add(box(0.14, 0.14, 3.4, COL.bone, -5.4, 2.35, alleyZ, {
-      emissive: 3811344,
-      emissiveIntensity: 0.15
-    }));
-    const crateMat = std(COL.wood, { map: crateMap, roughnessMap: crateMap });
-    root.add(box(0.95, 0.95, 0.95, crateMat, alleyX - 1.2, 0.48, alleyZ));
-    root.add(box(0.75, 1.15, 0.75, crateMat, alleyX - 0.3, 0.58, alleyZ - 1.1));
-    root.add(box(0.7, 0.7, 0.7, crateMat, alleyX - 1.5, 0.35, alleyZ + 1.2));
-    root.add(box(0.65, 0.55, 0.65, crateMat, alleyX - 1.2, 1.2, alleyZ));
-    const barrelMat = std(COL.rust, { map: crateMap, roughness: 0.7, metalness: 0.15 });
-    const barrel = new Mesh(new CylinderGeometry(0.42, 0.42, 0.9, 14), barrelMat);
-    barrel.position.set(alleyX + 0.5, 0.45, alleyZ + 0.8);
-    barrel.castShadow = true;
-    barrel.receiveShadow = true;
-    root.add(barrel);
-    const barrel2 = new Mesh(new CylinderGeometry(0.38, 0.38, 0.8, 14), barrelMat);
-    barrel2.position.set(alleyX + 0.9, 0.4, alleyZ - 0.6);
-    barrel2.castShadow = true;
-    root.add(barrel2);
-    const caseMesh = box(0.7, 0.36, 0.5, 3809300, alleyX, 0.55, alleyZ + 0.2);
-    caseMesh.name = "case";
-    root.add(caseMesh);
-    const caseLid = box(0.72, 0.06, 0.52, COL.bone, alleyX, 0.76, alleyZ + 0.2, {
-      emissive: 4855824,
-      emissiveIntensity: 0.35
-    });
-    caseLid.name = "caseLid";
-    root.add(caseLid);
-    const caseGlow = new PointLight(12855336, 1, 10);
-    caseGlow.position.copy(caseMesh.position).add(new Vector3(0, 0.7, 0));
-    root.add(caseGlow);
-    const caseBeacon = makeBeacon({
-      color: COL.blood,
-      emissive: 9116186,
-      lightColor: 12855336,
-      height: 5.4
-    });
-    caseBeacon.position.set(alleyX, 0, alleyZ + 0.2);
-    root.add(caseBeacon);
-    const hitch = new Group();
-    hitch.name = "hitch";
-    hitch.position.set(-4.5, 0, -2);
-    hitch.add(box(0.18, 1.3, 0.18, COL.woodDark, -1.35, 0.65, 0));
-    hitch.add(box(0.18, 1.3, 0.18, COL.woodDark, 1.35, 0.65, 0));
-    hitch.add(box(2.9, 0.14, 0.14, COL.wood, 0, 1.18, 0));
-    hitch.add(box(0.24, 0.12, 0.24, COL.bone, -1.35, 1.32, 0, { emissive: 2760720, emissiveIntensity: 0.15 }));
-    hitch.add(box(0.24, 0.12, 0.24, COL.bone, 1.35, 1.32, 0, { emissive: 2760720, emissiveIntensity: 0.15 }));
-    hitch.add(box(3.1, 0.06, 0.55, COL.woodDark, 0, 0.03, 0));
-    const ropeMat = std(9072720, { roughness: 0.95 });
-    hitchRope(hitch, -1.3, 1.05, 0.02, 1.3, 1.05, 0.02, ropeMat);
-    hitchRope(hitch, -1.3, 0.95, -0.04, 1.3, 0.95, -0.04, ropeMat);
-    root.add(hitch);
-    for (let z = -25; z < 40; z += 4) {
-      for (const x of [-5.2, 5.2]) {
-        root.add(box(0.12, 1.05, 0.12, COL.woodDark, x, 0.52, z));
-        if (z % 8 === 0) {
-          root.add(box(0.06, 0.06, 3.8, COL.wood, x, 0.85, z + 2));
+    function fogColors(s) {
+      const hp = 0.04, east = s.stormEast;
+      let { hor, c } = domeClear(s, 0, hp);
+      const vb = Math.exp(-Math.pow((hp - 0.09) / 0.07, 2)) * s.venus * 0.18;
+      c = [c[0] + 0.8 * vb, c[1] + 0.38 * vb, c[2] + 0.46 * vb];
+      c = mixc(c, mixc(s.zenith, s.horizon, 0.4).map((v) => v * 0.85), (1 - smoothstep2(0, 0.07, hp)) * s.venus * 0.5);
+      c = c.map((v, i) => v + s.cityGlow[i] * 0.6);
+      c = mixc(c, s.cloudDark.map((v) => v * 0.9), east * (1 - smoothstep2(0.03, 0.08, hp)) * 0.45 * 0.75);
+      let cl = mixc(s.cloudShade, s.cloudDark, 0.6 * (0.45 + 0.55 * east));
+      cl = mixc(hor, cl, 1 - Math.exp(-hp * 10));
+      const fog = mixc(c, cl, 0.15 + 0.35 * east).map((v) => v * s.exposure);
+      const S = domeClear(s, 1, hp);
+      let cs = S.c.map((v, i) => v + s.sun[i] * 0.05 * s.sunGlow);
+      cs = mixc(cs, mixc(S.hor, mixc(s.cloudShade, s.cloudLit, 0.5), 1 - Math.exp(-hp * 10)), 0.1);
+      return { fog, fogSun: cs.map((v) => v * s.exposure) };
+    }
+    function evalPhase(phase2) {
+      const p = clamp2(phase2, 0, 3), i = Math.min(2, Math.floor(p)), t = smoothstep2(0, 1, p - i), A = P[keys[i]], B = P[keys[i + 1]];
+      for (const k of Object.keys(A)) cur[k] = Array.isArray(A[k]) ? A[k].map((v, j) => lerp2(v, B[k][j], t)) : lerp2(A[k], B[k], t);
+      const f = fogColors(cur);
+      cur.fog = f.fog;
+      cur.fogSun = f.fogSun;
+      cur.ground = cur.fog.map((v) => v * 0.9);
+      return cur;
+    }
+    const sunDir = new Vector3();
+    const api = {
+      mesh,
+      uniforms,
+      sunDir,
+      phase: 0,
+      azimuthDeg: 255,
+      state: cur,
+      setPhase(phase2) {
+        api.phase = phase2;
+        const s = evalPhase(phase2);
+        const el = s.elev * Math.PI / 180, az = api.azimuthDeg * Math.PI / 180;
+        sunDir.set(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el)).normalize();
+        uniforms.uSunDir.value.copy(sunDir);
+        uniforms.uSunColor.value.setRGB(...s.sun);
+        uniforms.uZenith.value.setRGB(...s.zenith);
+        uniforms.uHorizon.value.setRGB(...s.horizon);
+        uniforms.uHorizonSun.value.setRGB(...s.horizonSun);
+        uniforms.uGround.value.setRGB(...s.ground);
+        uniforms.uCloudLit.value.setRGB(...s.cloudLit);
+        uniforms.uCloudShade.value.setRGB(...s.cloudShade);
+        uniforms.uCloudDark.value.setRGB(...s.cloudDark);
+        uniforms.uCirrus.value.setRGB(...s.cirrus);
+        uniforms.uCityGlow.value.setRGB(...s.cityGlow);
+        uniforms.uNight.value = s.night;
+        uniforms.uExposure.value = s.exposure;
+        uniforms.uStormEast.value = s.stormEast;
+        uniforms.uCoverage.value = s.coverage;
+        uniforms.uVenus.value = s.venus;
+        uniforms.uStars.value = s.stars;
+        uniforms.uSunGlow.value = s.sunGlow;
+        const l = Math.hypot(sunDir.x, sunDir.z) || 1;
+        FOG.fogDirParams.value[0] = sunDir.x / l;
+        FOG.fogDirParams.value[1] = sunDir.z / l;
+        FOG.fogDirParams.value[2] = s.fogHeightK;
+        FOG.fogColorSun.value[0] = s.fogSun[0];
+        FOG.fogColorSun.value[1] = s.fogSun[1];
+        FOG.fogColorSun.value[2] = s.fogSun[2];
+        return s;
+      },
+      update(dt) {
+        uniforms.uTime.value += dt;
+      }
+    };
+    api.setPhase(0);
+    return api;
+  }
+
+  // src/render/sky-pmrem.js
+  var ReusableSkyPMREMGenerator = class extends PMREMGenerator {
+    _allocateTargets() {
+      if (REVISION !== "170" || this._cubeSize !== 256) return super._allocateTargets();
+      if (!this._skyOutputTarget) this._skyOutputTarget = super._allocateTargets();
+      this._skyOutputTarget.scissorTest = true;
+      return this._skyOutputTarget;
+    }
+    dispose() {
+      this._skyOutputTarget = null;
+      super.dispose();
+    }
+  };
+
+  // src/render/lighting.js
+  function casterSphere(mesh, target = new Sphere()) {
+    if (!mesh.isMesh || mesh.isInstancedMesh || mesh.isBatchedMesh || mesh.isSkinnedMesh) return null;
+    if (!mesh.geometry.boundingSphere) mesh.geometry.computeBoundingSphere();
+    mesh.updateWorldMatrix(true, false);
+    return target.copy(mesh.geometry.boundingSphere).applyMatrix4(mesh.matrixWorld);
+  }
+  function syncSunShadow(sun, refresh = false) {
+    const enabled = sun.intensity > 0, wasEnabled = sun.shadow.autoUpdate;
+    sun.shadow.autoUpdate = enabled;
+    if (!enabled) sun.shadow.needsUpdate = false;
+    else if (!wasEnabled || refresh) sun.shadow.needsUpdate = true;
+  }
+  function createLighting(scene2, renderer2, sky2) {
+    const q = qualityPreset();
+    const sun = new DirectionalLight(16777215, 4);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(q.shadow, q.shadow);
+    sun.shadow.camera.near = 1;
+    sun.shadow.camera.far = 200;
+    sun.shadow.bias = -4e-4;
+    sun.shadow.normalBias = 0.35;
+    sun.shadow.radius = 2;
+    const target = new Object3D();
+    scene2.add(target);
+    sun.target = target;
+    scene2.add(sun);
+    const hemi = new HemisphereLight(12886144, 5912616, 0.45);
+    scene2.add(hemi);
+    const playAmb = new AmbientLight(12099728, 0);
+    scene2.add(playAmb);
+    const fill = new DirectionalLight(9081008, 0.28);
+    fill.position.set(40, 28, -20);
+    scene2.add(fill);
+    scene2.fog = new FogExp2(12093544, 45e-4);
+    const pmrem = new ReusableSkyPMREMGenerator(renderer2);
+    pmrem.compileEquirectangularShader();
+    const envScene = new Scene();
+    envScene.add(sky2.mesh.clone());
+    let envTarget = null, envPhase = -1;
+    function updateEnv(force) {
+      if (!force && Math.abs(sky2.phase - envPhase) < 0.08) return;
+      envPhase = sky2.phase;
+      envScene.children[0].material = sky2.mesh.material;
+      const rt = pmrem.fromScene(envScene, 0.04, 1, 2e3);
+      const oldTarget = envTarget;
+      envTarget = rt;
+      scene2.environment = rt.texture;
+      scene2.environmentIntensity = api.envI;
+      api.envRevision++;
+      if (oldTarget && oldTarget !== rt) oldTarget.dispose();
+    }
+    const casters = [];
+    let castersScanned = false;
+    const api = {
+      sun,
+      hemi,
+      fill,
+      playAmb,
+      target,
+      phase: 0,
+      envRevision: 0,
+      envI: 0.7,
+      cullCasters(px2, pz2) {
+        const sphere = new Sphere();
+        if (!castersScanned) {
+          castersScanned = true;
+          scene2.traverse((o) => {
+            if (o.isMesh && o.castShadow) {
+              const bounds = casterSphere(o, sphere);
+              if (bounds && bounds.radius < 80) casters.push(o);
+            }
+          });
         }
-      }
-    }
-    root.add(box(2.2, 0.5, 0.7, COL.wood, 4.5, 0.25, -2));
-    const troughWater = new Mesh(
-      new BoxGeometry(1.9, 0.08, 0.5),
-      new MeshStandardMaterial({
-        color: 3824216,
-        roughness: 0.25,
-        metalness: 0.15,
-        transparent: true,
-        opacity: 0.75
-      })
-    );
-    troughWater.position.set(4.5, 0.48, -2);
-    root.add(troughWater);
-    const creekBed = new Mesh(
-      new PlaneGeometry(28, 18),
-      std(4863008, { map: dirtMap, roughness: 1 })
-    );
-    creekBed.rotation.x = -Math.PI / 2;
-    creekBed.position.set(0, -0.35, 48);
-    creekBed.receiveShadow = true;
-    root.add(creekBed);
-    const water = new Mesh(
-      new PlaneGeometry(22, 8),
-      new MeshStandardMaterial({
-        color: COL.water,
-        map: waterMap,
-        roughness: 0.28,
-        metalness: 0.25,
-        transparent: true,
-        opacity: 0.82
-      })
-    );
-    water.rotation.x = -Math.PI / 2;
-    water.position.set(0, -0.26, 50);
-    water.receiveShadow = true;
-    root.add(water);
-    root.userData.water = water;
-    for (let i = 0; i < 10; i++) {
-      const stone = box(
-        0.5 + i % 3 * 0.25,
-        0.25,
-        0.4 + i % 2 * 0.2,
-        5916728,
-        -8 + i * 1.8,
-        0.05,
-        46 + i % 3 * 0.4
-      );
-      root.add(stone);
-    }
-    const drop = new Group();
-    drop.name = "drop";
-    drop.position.set(2, 0, 46);
-    drop.add(box(2.4, 0.9, 1.2, crateMat, 0, 0.45, 0));
-    drop.add(box(0.3, 0.3, 0.3, COL.bone, -0.6, 1, 0.2));
-    const dropLight = new PointLight(11033130, 0.55, 12);
-    dropLight.position.set(0, 2, 0);
-    drop.add(dropLight);
-    root.add(drop);
-    const dropBeacon = makeBeacon({
-      color: COL.rust,
-      emissive: 6959120,
-      lightColor: 11033130,
-      height: 5
-    });
-    dropBeacon.position.copy(drop.position);
-    dropBeacon.visible = false;
-    root.add(dropBeacon);
-    for (let i = 0; i < 14; i++) {
-      const bx = Math.sin(i * 2.7) * 10;
-      const bz = 42 + i % 5 * 2.2;
-      root.add(box(0.6 + i % 3 * 0.3, 0.4, 0.5, COL.brush, bx, 0.2, bz));
-    }
-    for (const [x, z, s] of [[-35, 30, 12], [38, 55, 16], [-28, 70, 10], [30, -20, 9], [-40, 50, 8]]) {
-      root.add(box(s, s * 0.55, s * 0.45, 6965296, x, s * 0.22, z));
-      root.add(box(s * 0.6, s * 0.25, s * 0.35, 5913640, x + s * 0.15, s * 0.55, z));
-    }
-    const lamp = (x, z) => {
-      const l = new PointLight(12613696, 0.4, 18);
-      l.position.set(x, 3.2, z);
-      root.add(l);
-      root.add(box(0.15, 2.8, 0.15, COL.woodDark, x, 1.4, z));
-      root.add(box(0.38, 0.28, 0.38, COL.rust, x, 3, z, {
-        emissive: 9060384,
-        emissiveIntensity: 0.7
-      }));
-    };
-    lamp(-6.5, 8);
-    lamp(6.5, 8);
-    lamp(-6.5, -8);
-    lamp(6.5, 20);
-    scene2.add(root);
-    const points = {
-      spawn: new Vector3(-3.5, 0, -3),
-      hitch: hitch.position.clone(),
-      alleyCase: caseMesh.position.clone(),
-      drop: drop.position.clone(),
-      streetMinX: -5,
-      streetMaxX: 5,
-      streetMinZ: -20,
-      streetMaxZ: 38
-    };
-    function pulseBeacon(beacon, t, amp = 0.55) {
-      if (!beacon.visible) return;
-      const pulse = 0.65 + Math.sin(t * 3.2) * amp;
-      const light = beacon.userData.light;
-      const orb = beacon.userData.orb;
-      const tip = beacon.userData.tip;
-      if (light) light.intensity = beacon.userData.baseIntensity * pulse;
-      if (orb?.material) orb.material.emissiveIntensity = 0.7 + pulse * 0.7;
-      if (tip?.material) tip.material.emissiveIntensity = 0.45 + pulse * 0.5;
-    }
-    return {
-      root,
-      caseMesh,
-      caseGlow,
-      caseBeacon,
-      dropBeacon,
-      hitch,
-      drop,
-      points,
-      hideCase() {
-        caseMesh.visible = false;
-        caseLid.visible = false;
-        caseGlow.visible = false;
-        caseBeacon.visible = false;
-      },
-      showCase() {
-        caseMesh.visible = true;
-        caseLid.visible = true;
-        caseGlow.visible = true;
-        caseBeacon.visible = true;
-        dropBeacon.visible = false;
-      },
-      setCarrying(carrying2) {
-        dropBeacon.visible = !!carrying2;
-        if (carrying2) {
-          caseMesh.visible = false;
-          caseLid.visible = false;
-          caseGlow.visible = false;
-          caseBeacon.visible = false;
+        const R = 55;
+        for (const o of casters) {
+          const s = casterSphere(o, sphere);
+          if (!s) continue;
+          o.castShadow = Math.hypot(s.center.x - px2, s.center.z - pz2) - s.radius < R;
         }
       },
-      updateBeacons(t) {
-        pulseBeacon(caseBeacon, t, 0.6);
-        pulseBeacon(dropBeacon, t, 0.5);
-        if (caseGlow.visible) {
-          caseGlow.intensity = 0.75 + Math.sin(t * 3.2) * 0.4;
+      setQuality() {
+        const qq = qualityPreset();
+        sun.shadow.mapSize.set(qq.shadow, qq.shadow);
+        if (sun.shadow.map) {
+          sun.shadow.map.dispose();
+          sun.shadow.map = null;
         }
-        const w = root.userData.water;
-        if (w?.material?.map) {
-          w.material.map.offset.x = Math.sin(t * 0.15) * 0.02;
-          w.material.map.offset.y = t * 0.02;
-        }
+        syncSunShadow(sun, true);
+      },
+      follow(px2, py2, pz2, fx, fz) {
+        const qq = qualityPreset();
+        const R = qq.shadowRadius;
+        const cam = sun.shadow.camera;
+        cam.left = -R;
+        cam.right = R;
+        cam.top = R;
+        cam.bottom = -R;
+        cam.updateProjectionMatrix();
+        const cx = px2 + fx * R * 0.35, cz = pz2 + fz * R * 0.35;
+        const texel = 2 * R / qq.shadow;
+        const sx = Math.round(cx / texel) * texel, sz = Math.round(cz / texel) * texel;
+        target.position.set(sx, py2, sz);
+        sun.position.set(
+          sx + sky2.sunDir.x * 80,
+          py2 + Math.max(0.12, sky2.sunDir.y) * 80,
+          sz + sky2.sunDir.z * 80
+        );
+        sun.updateMatrixWorld();
+        target.updateMatrixWorld();
+      },
+      setPhase(phase2) {
+        api.phase = phase2;
+        const s = sky2.setPhase(phase2);
+        sun.color.setRGB(...s.sun);
+        sun.intensity = s.sunI;
+        syncSunShadow(sun);
+        hemi.color.setRGB(...s.hemiSky);
+        hemi.groundColor.setRGB(...s.hemiGround);
+        hemi.intensity = s.hemiI;
+        fill.color.setRGB(...s.fill);
+        fill.intensity = s.fillI;
+        playAmb.intensity = Math.max(0, (s.night - 0.15) / 0.85) * 0.55;
+        if (playAmb.intensity < 0.18) playAmb.intensity = 0.18 + s.night * 0.12;
+        scene2.fog.color.setRGB(...s.fog);
+        scene2.fog.density = s.fogDensity;
+        api.envI = s.envI;
+        scene2.environmentIntensity = s.envI;
+        updateEnv(false);
+        return s;
+      },
+      updateEnv,
+      dispose() {
+        if (scene2.environment === envTarget?.texture) scene2.environment = null;
+        envTarget?.dispose();
+        envTarget = null;
+        pmrem.dispose();
       }
     };
+    api.setPhase(0.55);
+    return api;
   }
-  function isInStreet(pos, points) {
-    return pos.x > points.streetMinX && pos.x < points.streetMaxX && pos.z > points.streetMinZ && pos.z < points.streetMaxZ;
-  }
-  function dist2(a, b) {
-    const dx = a.x - b.x;
-    const dz = a.z - b.z;
-    return Math.hypot(dx, dz);
-  }
-
-  // src/scenes/dialogue.js
-  var COLD_OPEN = [
-    { speaker: "RAE", line: "Greenville's quiet tonight. That's the lie they sell." },
-    { speaker: "RAE", line: "Case is in the alley behind the saloon. Soft wash at the creek. No guns if we can help it." },
-    { speaker: "RAE", line: "You pick the horse. Quiet approach. Window's tight \u2014 don't make heat on the street." },
-    { speaker: "RAE", line: "Ride clean, we eat. Botch it\u2026 we don't talk about that." }
-  ];
-  var END_CLEAN = {
-    clean: true,
-    title: "Clean",
-    kicker: "Soft Open \xB7 Quiet",
-    body: "Case hits the wash. Rae doesn\u2019t smile \u2014 she never does \u2014 but the heat dies in the dust. Greenville looks the other way."
-  };
-  var END_BOTCHED = {
-    clean: false,
-    title: "Botched",
-    kicker: "Soft Open \xB7 Quiet",
-    body: "Heat cooked the strip. Whistles, boots, bad luck. The case is gone or worse \u2014 and Rae already knows."
-  };
-  var END_TIMEOUT = {
-    clean: false,
-    title: "Window Closed",
-    kicker: "Soft Open \xB7 Quiet",
-    body: "Time burned out. The alley\u2019s empty and the wash is watched. Try again before Greenville wakes up."
-  };
 
   // src/main.js
   var WINDOW_SEC = 150;
@@ -23730,65 +24774,16 @@ void main() {
   var RAE_HINT_EVERY = 12;
   var ui = createUI();
   var canvas2 = document.getElementById("c");
-  var renderer = new WebGLRenderer({ canvas: canvas2, antialias: true, powerPreference: "high-performance" });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.setSize(window.innerWidth, window.innerHeight, false);
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = PCFSoftShadowMap;
-  renderer.outputColorSpace = SRGBColorSpace;
-  renderer.toneMapping = ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.48;
+  var gfx = createRenderer(canvas2);
+  var { renderer, camera } = gfx;
   var scene = new Scene();
-  var skyMap = makeSkyTexture(512);
-  scene.background = skyMap;
-  scene.environment = skyMap;
-  scene.fog = new Fog(12093544, 52, 145);
-  var camera = new PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 220);
+  var sky = createSky(scene);
+  var lighting = createLighting(scene, renderer, sky);
+  gfx.setScene(scene);
+  gfx.setBloom(0.32);
   var followCam = createFollowCamera(camera);
-  var hemi = new HemisphereLight(13938832, 5912616, 1.35);
-  scene.add(hemi);
-  var sun = new DirectionalLight(15245424, 2.15);
-  sun.position.set(-42, 22, 18);
-  sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
-  sun.shadow.camera.near = 4;
-  sun.shadow.camera.far = 130;
-  sun.shadow.camera.left = -45;
-  sun.shadow.camera.right = 45;
-  sun.shadow.camera.top = 45;
-  sun.shadow.camera.bottom = -45;
-  sun.shadow.bias = -4e-4;
-  sun.shadow.normalBias = 0.025;
-  sun.shadow.radius = 2.5;
-  scene.add(sun);
-  scene.add(sun.target);
-  sun.target.position.set(0, 0, 10);
-  var fill = new DirectionalLight(9072768, 0.55);
-  fill.position.set(28, 16, -22);
-  scene.add(fill);
-  var rim = new DirectionalLight(12624016, 0.4);
-  rim.position.set(-50, 12, 30);
-  scene.add(rim);
-  var amb = new AmbientLight(6967360, 0.42);
-  scene.add(amb);
-  var skyDome = new Mesh(
-    new SphereGeometry(180, 32, 16),
-    new MeshBasicMaterial({ map: skyMap, side: BackSide, depthWrite: false })
-  );
-  scene.add(skyDome);
   var world = buildGreenville(scene);
   var heat = createHeat();
-  var composer = null;
-  function buildComposer() {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    composer = new EffectComposer(renderer);
-    composer.addPass(new RenderPass(scene, camera));
-    const bloom = new UnrealBloomPass(new Vector2(w, h), 0.28, 0.45, 0.82);
-    composer.addPass(bloom);
-    composer.addPass(new OutputPass());
-  }
-  buildComposer();
   var horseCtrl = null;
   var horseProfile = null;
   var phase = "title";
@@ -23817,11 +24812,7 @@ void main() {
   function resize() {
     const w = window.innerWidth;
     const h = window.innerHeight;
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setSize(w, h, false);
-    if (composer) composer.setSize(w, h);
+    gfx.resize(w, h);
   }
   window.addEventListener("resize", resize);
   function yawToward(from, to) {
@@ -24043,8 +25034,16 @@ void main() {
       const sample = input.sample();
       updatePlay(dt, sample, now2 / 1e3);
     }
-    if (composer) composer.render();
-    else renderer.render(scene, camera);
+    if (phase === "play" && horseCtrl) {
+      const p = horseCtrl.pos;
+      const yaw = horseCtrl.state.yaw;
+      lighting.follow(p.x, 0, p.z, Math.sin(yaw), Math.cos(yaw));
+      lighting.cullCasters(p.x, p.z);
+    } else {
+      lighting.follow(titlePivot.x, 0, titlePivot.z, 0, 1);
+    }
+    sky.update(dt);
+    gfx.render();
     requestAnimationFrame(frame);
   }
   ui.showScreen("title");
@@ -24055,7 +25054,7 @@ void main() {
   }
   resize();
   requestAnimationFrame(frame);
-  console.info(`[RED COUNTY] Soft Open Quiet  tip=${true ? "d5b6d94" : "dev"}  build=${true ? "0.1.0-24d01871" : "?"}`);
+  console.info(`[RED COUNTY] Soft Open Quiet  tip=${true ? "5ba1b0e" : "dev"}  build=${true ? "0.1.0-bc52d71e" : "?"}`);
 })();
 /*! Bundled license information:
 

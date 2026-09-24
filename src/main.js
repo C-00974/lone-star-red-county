@@ -1,20 +1,14 @@
-/**
- * RED COUNTY — Soft Open Quiet vertical slice.
- * Black / blood / rust / bone. Horses. Heist. Not Golden Hour.
- */
 import * as THREE from 'three';
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { createInput } from './systems/input.js';
 import { HORSE_PROFILES, createHorseMesh, createHorseController } from './systems/horse.js';
 import { createFollowCamera } from './systems/camera.js';
 import { createHeat } from './systems/heat.js';
 import { createUI } from './systems/ui.js';
-import { makeSkyTexture } from './systems/textures.js';
 import { buildGreenville, isInStreet, dist2 } from './world/greenville.js';
 import { COLD_OPEN, END_CLEAN, END_BOTCHED, END_TIMEOUT } from './scenes/dialogue.js';
+import { createRenderer } from './render/renderer.js';
+import { createSky } from './render/sky.js';
+import { createLighting } from './render/lighting.js';
 
 const WINDOW_SEC = 150;
 const CASE_RADIUS = 3.0;
@@ -25,86 +19,19 @@ const RAE_HINT_EVERY = 12; // seconds between distance nudges
 const ui = createUI();
 const canvas = document.getElementById('c');
 
-// Renderer
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-renderer.setSize(window.innerWidth, window.innerHeight, false);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.48;
-
+// —— Render stack (GH craft, western dusk reskin) ——
+const gfx = createRenderer(canvas);
+const { renderer, camera } = gfx;
 const scene = new THREE.Scene();
-// Late-afternoon / early-dusk western sky — NOT a near-black cave
-const skyMap = makeSkyTexture(512);
-scene.background = skyMap;
-scene.environment = skyMap;
-// Fog only for far depth; near field stays crystal clear
-scene.fog = new THREE.Fog(0xb88868, 52, 145);
-
-const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 220);
+const sky = createSky(scene);
+const lighting = createLighting(scene, renderer, sky);
+gfx.setScene(scene);
+gfx.setBloom(0.32);
 const followCam = createFollowCamera(camera);
-
-// —— Lighting rewrite: readable late-afternoon / early dusk western strip ——
-// Hemisphere — warm sky / dusty ground bounce
-const hemi = new THREE.HemisphereLight(0xd4b090, 0x5a3828, 1.35);
-scene.add(hemi);
-
-// Strong warm key sun from low western angle (rust/amber — not gold UI chrome)
-const sun = new THREE.DirectionalLight(0xe8a070, 2.15);
-sun.position.set(-42, 22, 18);
-sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
-sun.shadow.camera.near = 4;
-sun.shadow.camera.far = 130;
-sun.shadow.camera.left = -45;
-sun.shadow.camera.right = 45;
-sun.shadow.camera.top = 45;
-sun.shadow.camera.bottom = -45;
-sun.shadow.bias = -0.0004;
-sun.shadow.normalBias = 0.025;
-sun.shadow.radius = 2.5;
-scene.add(sun);
-scene.add(sun.target);
-sun.target.position.set(0, 0, 10);
-
-// Soft fill from east so shadows don't crush adobe / horse / hitch
-const fill = new THREE.DirectionalLight(0x8a7080, 0.55);
-fill.position.set(28, 16, -22);
-scene.add(fill);
-
-// Rim for silhouette separation against dusk sky
-const rim = new THREE.DirectionalLight(0xc0a090, 0.4);
-rim.position.set(-50, 12, 30);
-scene.add(rim);
-
-// Ambient lift — dirt, adobe, leather all read outdoors on phone
-const amb = new THREE.AmbientLight(0x6a5040, 0.42);
-scene.add(amb);
-
-// Sky dome so title orbit / edges stay warm (inside-facing)
-const skyDome = new THREE.Mesh(
-  new THREE.SphereGeometry(180, 32, 16),
-  new THREE.MeshBasicMaterial({ map: skyMap, side: THREE.BackSide, depthWrite: false }),
-);
-scene.add(skyDome);
 
 const world = buildGreenville(scene);
 const heat = createHeat();
 
-// Cheap bloom — high threshold so mostly lamps / windows / beacons bloom
-let composer = null;
-function buildComposer() {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  composer = new EffectComposer(renderer);
-  composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.28, 0.45, 0.82);
-  composer.addPass(bloom);
-  composer.addPass(new OutputPass());
-}
-buildComposer();
 
 let horseCtrl = null;
 let horseProfile = null;
@@ -137,11 +64,7 @@ function wantTouch() {
 function resize() {
   const w = window.innerWidth;
   const h = window.innerHeight;
-  camera.aspect = w / h;
-  camera.updateProjectionMatrix();
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.setSize(w, h, false);
-  if (composer) composer.setSize(w, h);
+  gfx.resize(w, h);
 }
 window.addEventListener('resize', resize);
 
@@ -407,8 +330,17 @@ function frame(now) {
     updatePlay(dt, sample, now / 1000);
   }
 
-  if (composer) composer.render();
-  else renderer.render(scene, camera);
+  // Follow sun shadow / cull casters while riding
+  if (phase === 'play' && horseCtrl) {
+    const p = horseCtrl.pos;
+    const yaw = horseCtrl.state.yaw;
+    lighting.follow(p.x, 0, p.z, Math.sin(yaw), Math.cos(yaw));
+    lighting.cullCasters(p.x, p.z);
+  } else {
+    lighting.follow(titlePivot.x, 0, titlePivot.z, 0, 1);
+  }
+  sky.update(dt);
+  gfx.render();
   requestAnimationFrame(frame);
 }
 

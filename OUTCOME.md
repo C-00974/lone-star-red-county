@@ -6,7 +6,7 @@
 
 **Repo:** https://github.com/C-00974/lone-star-red-county
 
-**Tip SHA:** `1760c81` (CT America/Chicago build window Sep 24, 2026)
+**Tip SHA:** `fea5522` (CT America/Chicago build window Sep 24, 2026)
 
 ## What works (Quiet path)
 

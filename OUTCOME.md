@@ -6,7 +6,7 @@
 
 **Repo:** https://github.com/C-00974/lone-star-red-county
 
-**Tip SHA:** `(pending rebuild)` — Quiet reachability pass
+**Tip SHA:** `2f531c5` (Quiet reachability pass · CT America/Chicago Sep 24, 2026)
 
 ## What works (Quiet path)
 

@@ -119,6 +119,32 @@ h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); color: var(--bone); letter-spacing: 
   letter-spacing: 0.08em; color: var(--rust); text-transform: uppercase;
 }
 
+
+/* HUD compass — bone chevron + rust distance */
+.hud-compass {
+  position: absolute; top: 3.4rem; right: 1rem;
+  display: flex; flex-direction: column; align-items: center; gap: 0.35rem;
+  pointer-events: none;
+}
+.compass-ring {
+  width: 3.2rem; height: 3.2rem; border-radius: 50%;
+  background: rgba(12, 6, 6, 0.82); border: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 12px rgba(139, 26, 26, 0.35);
+}
+.compass-arrow {
+  font-size: 1.35rem; line-height: 1; color: var(--bone);
+  text-shadow: 0 0 8px rgba(196, 40, 40, 0.7);
+  transform-origin: 50% 55%;
+  transition: transform 0.08s linear;
+}
+.compass-label {
+  font-family: system-ui, sans-serif; font-size: 0.68rem; letter-spacing: 0.14em;
+  color: var(--rust); text-transform: uppercase;
+  background: var(--panel); border: 1px solid var(--line);
+  padding: 0.2rem 0.45rem; border-radius: 2px; white-space: nowrap;
+}
+
 /* Touch */
 #touch {
   position: absolute; inset: 0; z-index: 6; pointer-events: none;

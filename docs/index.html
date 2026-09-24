@@ -127,6 +127,32 @@ h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); color: var(--bone); letter-spacing: 
   letter-spacing: 0.08em; color: var(--rust); text-transform: uppercase;
 }
 
+
+/* HUD compass — bone chevron + rust distance */
+.hud-compass {
+  position: absolute; top: 3.4rem; right: 1rem;
+  display: flex; flex-direction: column; align-items: center; gap: 0.35rem;
+  pointer-events: none;
+}
+.compass-ring {
+  width: 3.2rem; height: 3.2rem; border-radius: 50%;
+  background: rgba(12, 6, 6, 0.82); border: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 12px rgba(139, 26, 26, 0.35);
+}
+.compass-arrow {
+  font-size: 1.35rem; line-height: 1; color: var(--bone);
+  text-shadow: 0 0 8px rgba(196, 40, 40, 0.7);
+  transform-origin: 50% 55%;
+  transition: transform 0.08s linear;
+}
+.compass-label {
+  font-family: system-ui, sans-serif; font-size: 0.68rem; letter-spacing: 0.14em;
+  color: var(--rust); text-transform: uppercase;
+  background: var(--panel); border: 1px solid var(--line);
+  padding: 0.2rem 0.45rem; border-radius: 2px; white-space: nowrap;
+}
+
 /* Touch */
 #touch {
   position: absolute; inset: 0; z-index: 6; pointer-events: none;
@@ -167,7 +193,7 @@ h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); color: var(--bone); letter-spacing: 
   <!-- TITLE -->
   <div id="screen-title" class="screen active">
     <div class="brand">
-      <div class="kicker">Soft Open · Quiet · tip 6fa9dd5</div>
+      <div class="kicker">Soft Open · Quiet · tip 13d353c</div>
       <h1>RED COUNTY</h1>
       <p class="tag">Horses. Heist. Blood on the dust.</p>
       <p class="sub">Greenville strip — Quiet approach. You ride for Rae.</p>
@@ -232,6 +258,12 @@ h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); color: var(--bone); letter-spacing: 
       <div class="meter"><label>STAMINA</label><div class="bar"><i id="bar-stam"></i></div></div>
       <div class="meter heat"><label>HEAT</label><div class="bar"><i id="bar-heat"></i></div></div>
       <div class="timer" id="hud-timer">—</div>
+    </div>
+    <div class="hud-compass" id="hud-compass">
+      <div class="compass-ring">
+        <div class="compass-arrow" id="compass-arrow">▲</div>
+      </div>
+      <div class="compass-label" id="compass-label">CASE —</div>
     </div>
     <div class="hud-prompt" id="hud-prompt"></div>
     <div class="hud-obj" id="hud-obj">Follow Rae's mark</div>
@@ -18747,6 +18779,76 @@ void main() {
       return new _CylinderGeometry(data.radiusTop, data.radiusBottom, data.height, data.radialSegments, data.heightSegments, data.openEnded, data.thetaStart, data.thetaLength);
     }
   };
+  var SphereGeometry = class _SphereGeometry extends BufferGeometry {
+    constructor(radius = 1, widthSegments = 32, heightSegments = 16, phiStart = 0, phiLength = Math.PI * 2, thetaStart = 0, thetaLength = Math.PI) {
+      super();
+      this.type = "SphereGeometry";
+      this.parameters = {
+        radius,
+        widthSegments,
+        heightSegments,
+        phiStart,
+        phiLength,
+        thetaStart,
+        thetaLength
+      };
+      widthSegments = Math.max(3, Math.floor(widthSegments));
+      heightSegments = Math.max(2, Math.floor(heightSegments));
+      const thetaEnd = Math.min(thetaStart + thetaLength, Math.PI);
+      let index = 0;
+      const grid = [];
+      const vertex2 = new Vector3();
+      const normal = new Vector3();
+      const indices = [];
+      const vertices = [];
+      const normals = [];
+      const uvs = [];
+      for (let iy = 0; iy <= heightSegments; iy++) {
+        const verticesRow = [];
+        const v = iy / heightSegments;
+        let uOffset = 0;
+        if (iy === 0 && thetaStart === 0) {
+          uOffset = 0.5 / widthSegments;
+        } else if (iy === heightSegments && thetaEnd === Math.PI) {
+          uOffset = -0.5 / widthSegments;
+        }
+        for (let ix = 0; ix <= widthSegments; ix++) {
+          const u = ix / widthSegments;
+          vertex2.x = -radius * Math.cos(phiStart + u * phiLength) * Math.sin(thetaStart + v * thetaLength);
+          vertex2.y = radius * Math.cos(thetaStart + v * thetaLength);
+          vertex2.z = radius * Math.sin(phiStart + u * phiLength) * Math.sin(thetaStart + v * thetaLength);
+          vertices.push(vertex2.x, vertex2.y, vertex2.z);
+          normal.copy(vertex2).normalize();
+          normals.push(normal.x, normal.y, normal.z);
+          uvs.push(u + uOffset, 1 - v);
+          verticesRow.push(index++);
+        }
+        grid.push(verticesRow);
+      }
+      for (let iy = 0; iy < heightSegments; iy++) {
+        for (let ix = 0; ix < widthSegments; ix++) {
+          const a = grid[iy][ix + 1];
+          const b = grid[iy][ix];
+          const c = grid[iy + 1][ix];
+          const d = grid[iy + 1][ix + 1];
+          if (iy !== 0 || thetaStart > 0) indices.push(a, b, d);
+          if (iy !== heightSegments - 1 || thetaEnd < Math.PI) indices.push(b, c, d);
+        }
+      }
+      this.setIndex(indices);
+      this.setAttribute("position", new Float32BufferAttribute(vertices, 3));
+      this.setAttribute("normal", new Float32BufferAttribute(normals, 3));
+      this.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
+    }
+    copy(source) {
+      super.copy(source);
+      this.parameters = Object.assign({}, source.parameters);
+      return this;
+    }
+    static fromJSON(data) {
+      return new _SphereGeometry(data.radius, data.widthSegments, data.heightSegments, data.phiStart, data.phiLength, data.thetaStart, data.thetaLength);
+    }
+  };
   var MeshStandardMaterial = class extends Material {
     static get type() {
       return "MeshStandardMaterial";
@@ -20398,15 +20500,20 @@ void main() {
     const heat2 = $("bar-heat");
     const cineSpeaker = $("cine-speaker");
     const cineLine = $("cine-line");
+    const compass = $("hud-compass");
+    const compassArrow = $("compass-arrow");
+    const compassLabel = $("compass-label");
     function showScreen(name) {
       for (const [k, el] of Object.entries(screens)) {
         el.classList.toggle("active", k === name);
       }
       hud.classList.toggle("hidden", name !== null && name !== void 0 ? true : false);
+      if (compass) compass.classList.add("hidden");
     }
     function playMode() {
       for (const el of Object.values(screens)) el.classList.remove("active");
       hud.classList.remove("hidden");
+      if (compass) compass.classList.remove("hidden");
     }
     function setPrompt(text) {
       if (!text) {
@@ -20435,6 +20542,16 @@ void main() {
       timer.textContent = `${m}:${r.toString().padStart(2, "0")}`;
       timer.style.color = s <= 20 ? "#c42828" : "";
     }
+    function setCompass(deg, label) {
+      if (!compass) return;
+      if (label == null) {
+        compass.classList.add("hidden");
+        return;
+      }
+      compass.classList.remove("hidden");
+      if (compassArrow) compassArrow.style.transform = `rotate(${deg}deg)`;
+      if (compassLabel) compassLabel.textContent = label;
+    }
     function setCine(speaker, line) {
       cineSpeaker.textContent = speaker;
       cineLine.textContent = line;
@@ -20442,6 +20559,7 @@ void main() {
     function showEnd({ clean, title, body, kicker }) {
       showScreen("end");
       hud.classList.add("hidden");
+      if (compass) compass.classList.add("hidden");
       $("end-kicker").textContent = kicker || "Soft Open";
       const t = $("end-title");
       t.textContent = title;
@@ -20456,6 +20574,7 @@ void main() {
       setObjective,
       setMeters,
       setTimer,
+      setCompass,
       setCine,
       showEnd,
       screens,
@@ -20474,6 +20593,7 @@ void main() {
     roof: 3807762,
     rust: 9060384,
     bone: 13154456,
+    blood: 12855336,
     water: 2771528,
     brush: 3820072,
     night: 657420
@@ -20499,6 +20619,41 @@ void main() {
     group.add(box(0.55, 0.55, 0.06, 1708056, x - w * 0.28, 1.5, z + d / 2 + 0.06));
     group.add(box(0.55, 0.55, 0.06, 1708056, x + w * 0.28, 1.5, z + d / 2 + 0.06));
     return base;
+  }
+  function makeBeacon({ color, emissive, lightColor, height = 5.2 }) {
+    const g = new Group();
+    g.name = "beacon";
+    const post = box(0.12, height, 0.12, COL.bone, 0, height / 2, 0);
+    post.castShadow = false;
+    g.add(post);
+    const tip = box(0.28, 0.45, 0.28, color, 0, height + 0.1, 0, {
+      emissive,
+      emissiveIntensity: 0.85,
+      roughness: 0.45
+    });
+    tip.castShadow = false;
+    g.add(tip);
+    const orb = new Mesh(
+      new SphereGeometry(0.22, 10, 8),
+      new MeshStandardMaterial({
+        color,
+        emissive,
+        emissiveIntensity: 1.2,
+        roughness: 0.35,
+        metalness: 0.1
+      })
+    );
+    orb.position.set(0, height + 0.55, 0);
+    orb.castShadow = false;
+    g.add(orb);
+    const light = new PointLight(lightColor, 1.6, 28, 1.6);
+    light.position.set(0, height + 0.4, 0);
+    g.add(light);
+    g.userData.orb = orb;
+    g.userData.tip = tip;
+    g.userData.light = light;
+    g.userData.baseIntensity = 1.6;
+    return g;
   }
   function buildGreenville(scene2) {
     const root = new Group();
@@ -20541,12 +20696,26 @@ void main() {
     barrel.position.set(alleyX + 0.5, 0.42, alleyZ + 0.8);
     barrel.castShadow = true;
     root.add(barrel);
-    const caseMesh = box(0.55, 0.28, 0.4, 2758672, alleyX, 0.55, alleyZ + 0.2);
+    const caseMesh = box(0.7, 0.36, 0.5, 3809300, alleyX, 0.55, alleyZ + 0.2);
     caseMesh.name = "case";
     root.add(caseMesh);
-    const caseGlow = new PointLight(12855336, 0.55, 6);
-    caseGlow.position.copy(caseMesh.position).add(new Vector3(0, 0.5, 0));
+    const caseLid = box(0.72, 0.06, 0.52, COL.bone, alleyX, 0.76, alleyZ + 0.2, {
+      emissive: 4855824,
+      emissiveIntensity: 0.35
+    });
+    caseLid.name = "caseLid";
+    root.add(caseLid);
+    const caseGlow = new PointLight(12855336, 1.1, 10);
+    caseGlow.position.copy(caseMesh.position).add(new Vector3(0, 0.7, 0));
     root.add(caseGlow);
+    const caseBeacon = makeBeacon({
+      color: COL.blood,
+      emissive: 9116186,
+      lightColor: 12855336,
+      height: 5.4
+    });
+    caseBeacon.position.set(alleyX, 0, alleyZ + 0.2);
+    root.add(caseBeacon);
     const hitch = new Group();
     hitch.name = "hitch";
     hitch.position.set(-4.5, 0, -2);
@@ -20584,6 +20753,15 @@ void main() {
     dropLight.position.set(0, 2, 0);
     drop.add(dropLight);
     root.add(drop);
+    const dropBeacon = makeBeacon({
+      color: COL.rust,
+      emissive: 6959120,
+      lightColor: 11033130,
+      height: 5
+    });
+    dropBeacon.position.copy(drop.position);
+    dropBeacon.visible = false;
+    root.add(dropBeacon);
     for (let i = 0; i < 14; i++) {
       const bx = Math.sin(i * 2.7) * 10;
       const bz = 42 + i % 5 * 2.2;
@@ -20613,20 +20791,53 @@ void main() {
       streetMinZ: -20,
       streetMaxZ: 38
     };
+    function pulseBeacon(beacon, t, amp = 0.55) {
+      if (!beacon.visible) return;
+      const pulse = 0.65 + Math.sin(t * 3.2) * amp;
+      const light = beacon.userData.light;
+      const orb = beacon.userData.orb;
+      const tip = beacon.userData.tip;
+      if (light) light.intensity = beacon.userData.baseIntensity * pulse;
+      if (orb?.material) orb.material.emissiveIntensity = 0.7 + pulse * 0.7;
+      if (tip?.material) tip.material.emissiveIntensity = 0.45 + pulse * 0.5;
+    }
     return {
       root,
       caseMesh,
       caseGlow,
+      caseBeacon,
+      dropBeacon,
       hitch,
       drop,
       points,
       hideCase() {
         caseMesh.visible = false;
+        caseLid.visible = false;
         caseGlow.visible = false;
+        caseBeacon.visible = false;
       },
       showCase() {
         caseMesh.visible = true;
+        caseLid.visible = true;
         caseGlow.visible = true;
+        caseBeacon.visible = true;
+        dropBeacon.visible = false;
+      },
+      setCarrying(carrying2) {
+        dropBeacon.visible = !!carrying2;
+        if (carrying2) {
+          caseMesh.visible = false;
+          caseLid.visible = false;
+          caseGlow.visible = false;
+          caseBeacon.visible = false;
+        }
+      },
+      updateBeacons(t) {
+        pulseBeacon(caseBeacon, t, 0.6);
+        pulseBeacon(dropBeacon, t, 0.5);
+        if (caseGlow.visible) {
+          caseGlow.intensity = 0.85 + Math.sin(t * 3.2) * 0.45;
+        }
       }
     };
   }
@@ -20666,10 +20877,11 @@ void main() {
   };
 
   // src/main.js
-  var WINDOW_SEC = 105;
-  var CASE_RADIUS = 2.2;
+  var WINDOW_SEC = 150;
+  var CASE_RADIUS = 3;
   var DROP_RADIUS = 3.5;
   var HITCH_RADIUS = 3;
+  var RAE_HINT_EVERY = 12;
   var ui = createUI();
   var canvas = document.getElementById("c");
   var renderer = new WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
@@ -20712,6 +20924,8 @@ void main() {
   var dismountedNearHitch = false;
   var promptCool = 0;
   var raeBeat = 0;
+  var raeHintCool = 0;
+  var playElapsed = 0;
   var input = createInput({
     touchRoot: document.getElementById("touch"),
     stickEl: document.getElementById("stick"),
@@ -20735,6 +20949,35 @@ void main() {
     renderer.setSize(w, h, false);
   }
   window.addEventListener("resize", resize);
+  function yawToward(from, to) {
+    return Math.atan2(to.x - from.x, to.z - from.z);
+  }
+  function updateCompass(pos, yaw) {
+    const target = carrying ? world.points.drop : world.points.alleyCase;
+    const dx = target.x - pos.x;
+    const dz = target.z - pos.z;
+    const dist = Math.hypot(dx, dz);
+    const worldBearing = Math.atan2(dx, dz);
+    let rel = worldBearing - yaw;
+    while (rel > Math.PI) rel -= Math.PI * 2;
+    while (rel < -Math.PI) rel += Math.PI * 2;
+    const deg = rel * 180 / Math.PI;
+    const meters = Math.max(0, Math.round(dist));
+    const tag = carrying ? "DROP" : "CASE";
+    ui.setCompass(deg, `${tag} ${meters}m`);
+    return { dist, meters };
+  }
+  function grabCase() {
+    if (carrying) return;
+    carrying = true;
+    world.hideCase();
+    world.setCarrying(true);
+    ui.setObjective("Ride the creek drop \u2014 watch the heat");
+    ui.setPrompt("Rae: Got it. Soft wash at the creek. Don't cook the street.");
+    promptCool = 3;
+    raeBeat = 1;
+    raeHintCool = RAE_HINT_EVERY;
+  }
   document.getElementById("btn-start").addEventListener("click", () => startColdOpen());
   document.getElementById("btn-controls").addEventListener("click", () => {
     document.getElementById("panel-controls").classList.remove("hidden");
@@ -20792,55 +21035,53 @@ void main() {
     scene.add(mesh.root);
     horseCtrl = createHorseController(horseProfile, mesh);
     horseCtrl.pos.copy(world.points.spawn);
-    horseCtrl.state.yaw = 0.15;
+    horseCtrl.state.yaw = yawToward(world.points.spawn, world.points.alleyCase);
     followCam.snap(mesh.root, horseCtrl.state.yaw);
     carrying = false;
     windowLeft = WINDOW_SEC;
     heat.reset();
     world.showCase();
+    world.setCarrying(false);
     dismountedNearHitch = false;
     raeBeat = 0;
     promptCool = 0;
+    raeHintCool = 4;
+    playElapsed = 0;
     phase = "play";
     ui.playMode();
     ui.setObjective("Reach the alley \u2014 grab the case");
-    ui.setPrompt("Rae: Alley behind the saloon. Keep it quiet.");
+    ui.setPrompt("Rae: Alley west of hitch \u2014 case glows blood.");
     input.setTouchVisible(wantTouch());
   }
   function finish(end) {
     phase = "end";
     input.setTouchVisible(false);
+    ui.setCompass(0, null);
     ui.showEnd(end);
   }
-  function updatePlay(dt, sample) {
+  function updatePlay(dt, sample, nowSec) {
     horseCtrl.update(dt, sample, 0);
     followCam.update(dt, horseCtrl.mesh.root, horseCtrl.state.yaw);
+    playElapsed += dt;
     const pos = horseCtrl.pos;
     const nearHitch = dist2(pos, world.points.hitch) < HITCH_RADIUS;
     const nearCase = dist2(pos, world.points.alleyCase) < CASE_RADIUS;
     const nearDrop = dist2(pos, world.points.drop) < DROP_RADIUS;
     const inStreet = isInStreet(pos, world.points);
     const galloping = horseCtrl.state.gait === "gallop";
+    world.updateBeacons(nowSec);
+    const { meters: objMeters } = updateCompass(pos, horseCtrl.state.yaw);
     if (sample.mount && nearHitch) {
       horseCtrl.state.mounted = !horseCtrl.state.mounted;
       dismountedNearHitch = !horseCtrl.state.mounted;
       ui.setPrompt(horseCtrl.state.mounted ? "Remounted." : "Dismounted at hitch.");
       promptCool = 1.5;
     }
-    if (!carrying && nearCase && (sample.act || !horseCtrl.state.mounted && nearCase)) {
-      if (sample.act || !horseCtrl.state.mounted) {
-        carrying = true;
-        world.hideCase();
-        ui.setObjective("Ride the creek drop \u2014 watch the heat");
-        ui.setPrompt("Rae: Got it. Soft wash at the creek. Don't cook the street.");
-        promptCool = 3;
-        raeBeat = 1;
-      }
+    if (!carrying && nearCase && sample.act) {
+      grabCase();
     }
     if (!carrying && nearCase && !horseCtrl.state.mounted) {
-      carrying = true;
-      world.hideCase();
-      ui.setObjective("Ride the creek drop \u2014 watch the heat");
+      grabCase();
       ui.setPrompt("Rae: Case is yours. Mount up. Creek drop.");
       promptCool = 3;
     }
@@ -20872,19 +21113,27 @@ void main() {
       return;
     }
     promptCool = Math.max(0, promptCool - dt);
+    raeHintCool = Math.max(0, raeHintCool - dt);
     if (promptCool <= 0) {
       if (!carrying && nearCase) {
-        ui.setPrompt(horseCtrl.state.mounted ? "ACT \u2014 grab case (or dismount at hitch)" : "ACT \u2014 grab the case");
+        ui.setPrompt(horseCtrl.state.mounted ? "ACT \u2014 grab the case (mounted OK)" : "ACT \u2014 grab the case");
       } else if (carrying && nearDrop) {
         ui.setPrompt("ACT \u2014 drop the case in the wash");
-      } else if (nearHitch && horseCtrl.state.mounted) {
+      } else if (!carrying && nearHitch) {
+        ui.setPrompt(horseCtrl.state.mounted ? "Rae: Alley behind the saloon \u2014 west of this hitch." : "MOUNT \u2014 remount \xB7 alley is behind the saloon");
+        promptCool = 2.5;
+      } else if (nearHitch && horseCtrl.state.mounted && carrying) {
         ui.setPrompt("MOUNT \u2014 dismount at hitch");
-      } else if (nearHitch && !horseCtrl.state.mounted) {
-        ui.setPrompt("MOUNT \u2014 remount");
       } else if (carrying && inStreet && heat.ratio() > 0.55) {
         ui.setPrompt("Rae: Heat's climbing \u2014 cut off the street.");
-      } else if (!carrying && raeBeat === 0 && windowLeft < WINDOW_SEC - 8) {
-        ui.setPrompt("");
+      } else if (!carrying && raeHintCool <= 0) {
+        ui.setPrompt(`Rae: Alley west of hitch \u2014 case glows blood. (${objMeters}m)`);
+        promptCool = 3.5;
+        raeHintCool = RAE_HINT_EVERY;
+      } else if (carrying && raeHintCool <= 0) {
+        ui.setPrompt(`Rae: Soft wash ahead \u2014 drop at the rust beacon. (${objMeters}m)`);
+        promptCool = 3.5;
+        raeHintCool = RAE_HINT_EVERY;
       } else {
         ui.setPrompt("");
       }
@@ -20913,7 +21162,7 @@ void main() {
       updateTitle(now / 1e3);
     } else if (phase === "play" && horseCtrl) {
       const sample = input.sample();
-      updatePlay(dt, sample);
+      updatePlay(dt, sample, now / 1e3);
     }
     renderer.render(scene, camera);
     requestAnimationFrame(frame);
@@ -20925,7 +21174,7 @@ void main() {
   }
   resize();
   requestAnimationFrame(frame);
-  console.info(`[RED COUNTY] Soft Open Quiet  tip=${true ? "6fa9dd5" : "dev"}  build=${true ? "0.1.0-c61de3b5" : "?"}`);
+  console.info(`[RED COUNTY] Soft Open Quiet  tip=${true ? "13d353c" : "dev"}  build=${true ? "0.1.0-f47c2350" : "?"}`);
 })();
 /*! Bundled license information:
 

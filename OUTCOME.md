@@ -6,7 +6,7 @@
 
 **Repo:** https://github.com/C-00974/lone-star-red-county
 
-**Tip SHA:** `fea5522` (CT America/Chicago build window Sep 24, 2026)
+**Tip SHA:** `(pending rebuild)` — Quiet reachability pass
 
 ## What works (Quiet path)
 
@@ -15,7 +15,7 @@
 3. **Prep** — Dun (steady / stamina) or Bay (sharp / burst). Quiet approach locked.
 4. **World** — Authored Greenville strip: dirt street, saloon / mercantile / hotel blocks, alley crates + case, hitch rail, creek soft-wash drop, buttes, dusk lighting (black/blood/rust/bone).
 5. **Horse** — Third-person walk/trot/gallop, steer, stamina, mount/dismount near hitch.
-6. **Quiet loop** — Window timer (~105s) + heat meter; alley case grab → ride to creek drop; Clean / Botched / Window Closed end cards → Ride again or Title.
+6. **Quiet loop** — Window timer (~150s) + compass + case/drop beacons + heat meter; alley case grab → ride to creek drop; Clean / Botched / Window Closed end cards → Ride again or Title.
 7. **Touch** — `?touch=1` or Settings: on-screen stick, Gallop, Mount, Act.
 
 ## Stubs / later
@@ -38,6 +38,19 @@ cd ~/LoneStar-RedCounty && npm run build
 ```
 
 Pages serves `docs/` from `main`. Curl public URL returned **200**.
+
+
+## Quiet reachability pass (Sep 24, 2026 CT)
+
+Playtest fix so Clean/Botched are reachable — not only Window Closed:
+
+- **World beacons** — tall bone/blood post + pulsing PointLight at alley case; rust beacon at creek drop once carrying.
+- **HUD compass** — bone chevron + distance (`CASE 18m` / `DROP 40m`) toward current objective.
+- **Tuning** — window **150s** (was 105); `CASE_RADIUS` **3.0** (was 2.2); mounted Act grab verified.
+- **Prompts** — periodic Rae distance lines; hitch reminder that alley is behind saloon.
+- **Spawn** — horse yaw aimed at alley case so first look isn't empty desert.
+
+Success: from spawn, case beacon readable within ~10s riding toward alley; competent player can Clean without a map.
 
 ## Blockers
 

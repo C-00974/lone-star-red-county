@@ -11,10 +11,11 @@ import { createUI } from './systems/ui.js';
 import { buildGreenville, isInStreet, dist2 } from './world/greenville.js';
 import { COLD_OPEN, END_CLEAN, END_BOTCHED, END_TIMEOUT } from './scenes/dialogue.js';
 
-const WINDOW_SEC = 105;
-const CASE_RADIUS = 2.2;
+const WINDOW_SEC = 150;
+const CASE_RADIUS = 3.0;
 const DROP_RADIUS = 3.5;
 const HITCH_RADIUS = 3.0;
+const RAE_HINT_EVERY = 12; // seconds between distance nudges
 
 const ui = createUI();
 const canvas = document.getElementById('c');
@@ -66,6 +67,8 @@ let windowLeft = WINDOW_SEC;
 let dismountedNearHitch = false;
 let promptCool = 0;
 let raeBeat = 0;
+let raeHintCool = 0;
+let playElapsed = 0;
 
 const input = createInput({
   touchRoot: document.getElementById('touch'),
@@ -92,6 +95,40 @@ function resize() {
   renderer.setSize(w, h, false);
 }
 window.addEventListener('resize', resize);
+
+/** Yaw that faces spawn toward the alley case (horse: yaw 0 = +Z). */
+function yawToward(from, to) {
+  return Math.atan2(to.x - from.x, to.z - from.z);
+}
+
+/** Compass relative deg (0 = ahead) + distance label. */
+function updateCompass(pos, yaw) {
+  const target = carrying ? world.points.drop : world.points.alleyCase;
+  const dx = target.x - pos.x;
+  const dz = target.z - pos.z;
+  const dist = Math.hypot(dx, dz);
+  const worldBearing = Math.atan2(dx, dz);
+  let rel = worldBearing - yaw;
+  while (rel > Math.PI) rel -= Math.PI * 2;
+  while (rel < -Math.PI) rel += Math.PI * 2;
+  const deg = (rel * 180) / Math.PI;
+  const meters = Math.max(0, Math.round(dist));
+  const tag = carrying ? 'DROP' : 'CASE';
+  ui.setCompass(deg, `${tag} ${meters}m`);
+  return { dist, meters };
+}
+
+function grabCase() {
+  if (carrying) return;
+  carrying = true;
+  world.hideCase();
+  world.setCarrying(true);
+  ui.setObjective('Ride the creek drop — watch the heat');
+  ui.setPrompt("Rae: Got it. Soft wash at the creek. Don't cook the street.");
+  promptCool = 3;
+  raeBeat = 1;
+  raeHintCool = RAE_HINT_EVERY;
+}
 
 // —— Title / menus ——
 document.getElementById('btn-start').addEventListener('click', () => startColdOpen());
@@ -157,33 +194,39 @@ function beginPlay(horseId) {
   scene.add(mesh.root);
   horseCtrl = createHorseController(horseProfile, mesh);
   horseCtrl.pos.copy(world.points.spawn);
-  horseCtrl.state.yaw = 0.15;
+  // Face the alley case so first look isn't empty desert
+  horseCtrl.state.yaw = yawToward(world.points.spawn, world.points.alleyCase);
   followCam.snap(mesh.root, horseCtrl.state.yaw);
 
   carrying = false;
   windowLeft = WINDOW_SEC;
   heat.reset();
   world.showCase();
+  world.setCarrying(false);
   dismountedNearHitch = false;
   raeBeat = 0;
   promptCool = 0;
+  raeHintCool = 4; // first distance hint soon
+  playElapsed = 0;
 
   phase = 'play';
   ui.playMode();
   ui.setObjective('Reach the alley — grab the case');
-  ui.setPrompt("Rae: Alley behind the saloon. Keep it quiet.");
+  ui.setPrompt("Rae: Alley west of hitch — case glows blood.");
   input.setTouchVisible(wantTouch());
 }
 
 function finish(end) {
   phase = 'end';
   input.setTouchVisible(false);
+  ui.setCompass(0, null);
   ui.showEnd(end);
 }
 
-function updatePlay(dt, sample) {
+function updatePlay(dt, sample, nowSec) {
   horseCtrl.update(dt, sample, 0);
   followCam.update(dt, horseCtrl.mesh.root, horseCtrl.state.yaw);
+  playElapsed += dt;
 
   const pos = horseCtrl.pos;
   const nearHitch = dist2(pos, world.points.hitch) < HITCH_RADIUS;
@@ -191,6 +234,9 @@ function updatePlay(dt, sample) {
   const nearDrop = dist2(pos, world.points.drop) < DROP_RADIUS;
   const inStreet = isInStreet(pos, world.points);
   const galloping = horseCtrl.state.gait === 'gallop';
+
+  world.updateBeacons(nowSec);
+  const { meters: objMeters } = updateCompass(pos, horseCtrl.state.yaw);
 
   // Mount / dismount near hitch
   if (sample.mount && nearHitch) {
@@ -200,22 +246,13 @@ function updatePlay(dt, sample) {
     promptCool = 1.5;
   }
 
-  // Grab case (on foot or mounted — pinch: prefer near hitch dismount but allow mounted grab)
-  if (!carrying && nearCase && (sample.act || (!horseCtrl.state.mounted && nearCase))) {
-    if (sample.act || !horseCtrl.state.mounted) {
-      carrying = true;
-      world.hideCase();
-      ui.setObjective('Ride the creek drop — watch the heat');
-      ui.setPrompt("Rae: Got it. Soft wash at the creek. Don't cook the street.");
-      promptCool = 3;
-      raeBeat = 1;
-    }
+  // Grab case — Act within CASE_RADIUS works mounted OR on foot (one clear path)
+  if (!carrying && nearCase && sample.act) {
+    grabCase();
   }
-  // Also allow auto-grab when dismounted and standing on case
+  // Auto-grab when dismounted and standing on case
   if (!carrying && nearCase && !horseCtrl.state.mounted) {
-    carrying = true;
-    world.hideCase();
-    ui.setObjective('Ride the creek drop — watch the heat');
+    grabCase();
     ui.setPrompt("Rae: Case is yours. Mount up. Creek drop.");
     promptCool = 3;
   }
@@ -253,21 +290,34 @@ function updatePlay(dt, sample) {
     return;
   }
 
-  // Contextual prompts
+  // Contextual prompts + periodic Rae distance hints
   promptCool = Math.max(0, promptCool - dt);
+  raeHintCool = Math.max(0, raeHintCool - dt);
+
   if (promptCool <= 0) {
     if (!carrying && nearCase) {
-      ui.setPrompt(horseCtrl.state.mounted ? 'ACT — grab case (or dismount at hitch)' : 'ACT — grab the case');
+      ui.setPrompt(horseCtrl.state.mounted
+        ? 'ACT — grab the case (mounted OK)'
+        : 'ACT — grab the case');
     } else if (carrying && nearDrop) {
       ui.setPrompt('ACT — drop the case in the wash');
-    } else if (nearHitch && horseCtrl.state.mounted) {
+    } else if (!carrying && nearHitch) {
+      ui.setPrompt(horseCtrl.state.mounted
+        ? "Rae: Alley behind the saloon — west of this hitch."
+        : 'MOUNT — remount · alley is behind the saloon');
+      promptCool = 2.5;
+    } else if (nearHitch && horseCtrl.state.mounted && carrying) {
       ui.setPrompt('MOUNT — dismount at hitch');
-    } else if (nearHitch && !horseCtrl.state.mounted) {
-      ui.setPrompt('MOUNT — remount');
     } else if (carrying && inStreet && heat.ratio() > 0.55) {
       ui.setPrompt("Rae: Heat's climbing — cut off the street.");
-    } else if (!carrying && raeBeat === 0 && windowLeft < WINDOW_SEC - 8) {
-      ui.setPrompt('');
+    } else if (!carrying && raeHintCool <= 0) {
+      ui.setPrompt(`Rae: Alley west of hitch — case glows blood. (${objMeters}m)`);
+      promptCool = 3.5;
+      raeHintCool = RAE_HINT_EVERY;
+    } else if (carrying && raeHintCool <= 0) {
+      ui.setPrompt(`Rae: Soft wash ahead — drop at the rust beacon. (${objMeters}m)`);
+      promptCool = 3.5;
+      raeHintCool = RAE_HINT_EVERY;
     } else {
       ui.setPrompt('');
     }
@@ -301,7 +351,7 @@ function frame(now) {
     updateTitle(now / 1000);
   } else if (phase === 'play' && horseCtrl) {
     const sample = input.sample();
-    updatePlay(dt, sample);
+    updatePlay(dt, sample, now / 1000);
   }
 
   renderer.render(scene, camera);

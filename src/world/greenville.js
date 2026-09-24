@@ -15,6 +15,7 @@ const COL = {
   roof: 0x3a1a12,
   rust: 0x8a4020,
   bone: 0xc8b898,
+  blood: 0xc42828,
   water: 0x2a4a48,
   brush: 0x3a4a28,
   night: 0x0a080c,
@@ -45,6 +46,48 @@ function building(group, { w, h, d, x, z, color = COL.adobe, roofH = 0.4 }) {
   group.add(box(0.55, 0.55, 0.06, 0x1a1018, x - w * 0.28, 1.5, z + d / 2 + 0.06));
   group.add(box(0.55, 0.55, 0.06, 0x1a1018, x + w * 0.28, 1.5, z + d / 2 + 0.06));
   return base;
+}
+
+/** Tall thin world beacon — bone post + blood/rust tip + emissive orb + point light. */
+function makeBeacon({ color, emissive, lightColor, height = 5.2 }) {
+  const g = new THREE.Group();
+  g.name = 'beacon';
+
+  const post = box(0.12, height, 0.12, COL.bone, 0, height / 2, 0);
+  post.castShadow = false;
+  g.add(post);
+
+  const tip = box(0.28, 0.45, 0.28, color, 0, height + 0.1, 0, {
+    emissive,
+    emissiveIntensity: 0.85,
+    roughness: 0.45,
+  });
+  tip.castShadow = false;
+  g.add(tip);
+
+  const orb = new THREE.Mesh(
+    new THREE.SphereGeometry(0.22, 10, 8),
+    new THREE.MeshStandardMaterial({
+      color,
+      emissive,
+      emissiveIntensity: 1.2,
+      roughness: 0.35,
+      metalness: 0.1,
+    }),
+  );
+  orb.position.set(0, height + 0.55, 0);
+  orb.castShadow = false;
+  g.add(orb);
+
+  const light = new THREE.PointLight(lightColor, 1.6, 28, 1.6);
+  light.position.set(0, height + 0.4, 0);
+  g.add(light);
+
+  g.userData.orb = orb;
+  g.userData.tip = tip;
+  g.userData.light = light;
+  g.userData.baseIntensity = 1.6;
+  return g;
 }
 
 export function buildGreenville(scene) {
@@ -108,13 +151,29 @@ export function buildGreenville(scene) {
   barrel.castShadow = true;
   root.add(barrel);
 
-  // Case (pickup) — visual marker
-  const caseMesh = box(0.55, 0.28, 0.4, 0x2a1810, alleyX, 0.55, alleyZ + 0.2);
+  // Case (pickup) — slightly larger + bone rim so it reads in dusk
+  const caseMesh = box(0.7, 0.36, 0.5, 0x3a2014, alleyX, 0.55, alleyZ + 0.2);
   caseMesh.name = 'case';
   root.add(caseMesh);
-  const caseGlow = new THREE.PointLight(0xc42828, 0.55, 6);
-  caseGlow.position.copy(caseMesh.position).add(new THREE.Vector3(0, 0.5, 0));
+  const caseLid = box(0.72, 0.06, 0.52, COL.bone, alleyX, 0.76, alleyZ + 0.2, {
+    emissive: 0x4a1810,
+    emissiveIntensity: 0.35,
+  });
+  caseLid.name = 'caseLid';
+  root.add(caseLid);
+  const caseGlow = new THREE.PointLight(0xc42828, 1.1, 10);
+  caseGlow.position.copy(caseMesh.position).add(new THREE.Vector3(0, 0.7, 0));
   root.add(caseGlow);
+
+  // Case world beacon — tall bone/blood post readable from the street
+  const caseBeacon = makeBeacon({
+    color: COL.blood,
+    emissive: 0x8b1a1a,
+    lightColor: 0xc42828,
+    height: 5.4,
+  });
+  caseBeacon.position.set(alleyX, 0, alleyZ + 0.2);
+  root.add(caseBeacon);
 
   // Hitch rail near alley mouth / street edge
   const hitch = new THREE.Group();
@@ -164,6 +223,17 @@ export function buildGreenville(scene) {
   drop.add(dropLight);
   root.add(drop);
 
+  // Drop world beacon — rust, only while carrying
+  const dropBeacon = makeBeacon({
+    color: COL.rust,
+    emissive: 0x6a3010,
+    lightColor: 0xa85a2a,
+    height: 5.0,
+  });
+  dropBeacon.position.copy(drop.position);
+  dropBeacon.visible = false;
+  root.add(dropBeacon);
+
   // Brush / rocks near creek
   for (let i = 0; i < 14; i++) {
     const bx = (Math.sin(i * 2.7) * 10);
@@ -202,20 +272,54 @@ export function buildGreenville(scene) {
     streetMaxZ: 38,
   };
 
+  function pulseBeacon(beacon, t, amp = 0.55) {
+    if (!beacon.visible) return;
+    const pulse = 0.65 + Math.sin(t * 3.2) * amp;
+    const light = beacon.userData.light;
+    const orb = beacon.userData.orb;
+    const tip = beacon.userData.tip;
+    if (light) light.intensity = beacon.userData.baseIntensity * pulse;
+    if (orb?.material) orb.material.emissiveIntensity = 0.7 + pulse * 0.7;
+    if (tip?.material) tip.material.emissiveIntensity = 0.45 + pulse * 0.5;
+  }
+
   return {
     root,
     caseMesh,
     caseGlow,
+    caseBeacon,
+    dropBeacon,
     hitch,
     drop,
     points,
     hideCase() {
       caseMesh.visible = false;
+      caseLid.visible = false;
       caseGlow.visible = false;
+      caseBeacon.visible = false;
     },
     showCase() {
       caseMesh.visible = true;
+      caseLid.visible = true;
       caseGlow.visible = true;
+      caseBeacon.visible = true;
+      dropBeacon.visible = false;
+    },
+    setCarrying(carrying) {
+      dropBeacon.visible = !!carrying;
+      if (carrying) {
+        caseMesh.visible = false;
+        caseLid.visible = false;
+        caseGlow.visible = false;
+        caseBeacon.visible = false;
+      }
+    },
+    updateBeacons(t) {
+      pulseBeacon(caseBeacon, t, 0.6);
+      pulseBeacon(dropBeacon, t, 0.5);
+      if (caseGlow.visible) {
+        caseGlow.intensity = 0.85 + Math.sin(t * 3.2) * 0.45;
+      }
     },
   };
 }

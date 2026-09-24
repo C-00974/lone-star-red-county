@@ -193,7 +193,7 @@ h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); color: var(--bone); letter-spacing: 
   <!-- TITLE -->
   <div id="screen-title" class="screen active">
     <div class="brand">
-      <div class="kicker">Soft Open · Quiet · tip 2f531c5</div>
+      <div class="kicker">Soft Open · Quiet · tip 8a984de</div>
       <h1>RED COUNTY</h1>
       <p class="tag">Horses. Heist. Blood on the dust.</p>
       <p class="sub">Greenville strip — Quiet approach. You ride for Rae.</p>
@@ -18587,22 +18587,24 @@ void main() {
       gl.unpackColorSpace = ColorManagement._getUnpackColorSpace();
     }
   };
-  var FogExp2 = class _FogExp2 {
-    constructor(color, density = 25e-5) {
-      this.isFogExp2 = true;
+  var Fog = class _Fog {
+    constructor(color, near = 1, far = 1e3) {
+      this.isFog = true;
       this.name = "";
       this.color = new Color(color);
-      this.density = density;
+      this.near = near;
+      this.far = far;
     }
     clone() {
-      return new _FogExp2(this.color, this.density);
+      return new _Fog(this.color, this.near, this.far);
     }
     toJSON() {
       return {
-        type: "FogExp2",
+        type: "Fog",
         name: this.name,
         color: this.color.getHex(),
-        density: this.density
+        near: this.near,
+        far: this.far
       };
     }
   };
@@ -18647,6 +18649,104 @@ void main() {
       if (this.environmentIntensity !== 1) data.object.environmentIntensity = this.environmentIntensity;
       data.object.environmentRotation = this.environmentRotation.toArray();
       return data;
+    }
+  };
+  var LatheGeometry = class _LatheGeometry extends BufferGeometry {
+    constructor(points = [new Vector2(0, -0.5), new Vector2(0.5, 0), new Vector2(0, 0.5)], segments = 12, phiStart = 0, phiLength = Math.PI * 2) {
+      super();
+      this.type = "LatheGeometry";
+      this.parameters = {
+        points,
+        segments,
+        phiStart,
+        phiLength
+      };
+      segments = Math.floor(segments);
+      phiLength = clamp(phiLength, 0, Math.PI * 2);
+      const indices = [];
+      const vertices = [];
+      const uvs = [];
+      const initNormals = [];
+      const normals = [];
+      const inverseSegments = 1 / segments;
+      const vertex2 = new Vector3();
+      const uv = new Vector2();
+      const normal = new Vector3();
+      const curNormal = new Vector3();
+      const prevNormal = new Vector3();
+      let dx = 0;
+      let dy = 0;
+      for (let j = 0; j <= points.length - 1; j++) {
+        switch (j) {
+          case 0:
+            dx = points[j + 1].x - points[j].x;
+            dy = points[j + 1].y - points[j].y;
+            normal.x = dy * 1;
+            normal.y = -dx;
+            normal.z = dy * 0;
+            prevNormal.copy(normal);
+            normal.normalize();
+            initNormals.push(normal.x, normal.y, normal.z);
+            break;
+          case points.length - 1:
+            initNormals.push(prevNormal.x, prevNormal.y, prevNormal.z);
+            break;
+          default:
+            dx = points[j + 1].x - points[j].x;
+            dy = points[j + 1].y - points[j].y;
+            normal.x = dy * 1;
+            normal.y = -dx;
+            normal.z = dy * 0;
+            curNormal.copy(normal);
+            normal.x += prevNormal.x;
+            normal.y += prevNormal.y;
+            normal.z += prevNormal.z;
+            normal.normalize();
+            initNormals.push(normal.x, normal.y, normal.z);
+            prevNormal.copy(curNormal);
+        }
+      }
+      for (let i = 0; i <= segments; i++) {
+        const phi = phiStart + i * inverseSegments * phiLength;
+        const sin = Math.sin(phi);
+        const cos = Math.cos(phi);
+        for (let j = 0; j <= points.length - 1; j++) {
+          vertex2.x = points[j].x * sin;
+          vertex2.y = points[j].y;
+          vertex2.z = points[j].x * cos;
+          vertices.push(vertex2.x, vertex2.y, vertex2.z);
+          uv.x = i / segments;
+          uv.y = j / (points.length - 1);
+          uvs.push(uv.x, uv.y);
+          const x = initNormals[3 * j + 0] * sin;
+          const y = initNormals[3 * j + 1];
+          const z = initNormals[3 * j + 0] * cos;
+          normals.push(x, y, z);
+        }
+      }
+      for (let i = 0; i < segments; i++) {
+        for (let j = 0; j < points.length - 1; j++) {
+          const base = j + i * points.length;
+          const a = base;
+          const b = base + points.length;
+          const c = base + points.length + 1;
+          const d = base + 1;
+          indices.push(a, b, d);
+          indices.push(c, d, b);
+        }
+      }
+      this.setIndex(indices);
+      this.setAttribute("position", new Float32BufferAttribute(vertices, 3));
+      this.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
+      this.setAttribute("normal", new Float32BufferAttribute(normals, 3));
+    }
+    copy(source) {
+      super.copy(source);
+      this.parameters = Object.assign({}, source.parameters);
+      return this;
+    }
+    static fromJSON(data) {
+      return new _LatheGeometry(data.points, data.segments, data.phiStart, data.phiLength);
     }
   };
   var CylinderGeometry = class _CylinderGeometry extends BufferGeometry {
@@ -18777,6 +18877,24 @@ void main() {
     }
     static fromJSON(data) {
       return new _CylinderGeometry(data.radiusTop, data.radiusBottom, data.height, data.radialSegments, data.heightSegments, data.openEnded, data.thetaStart, data.thetaLength);
+    }
+  };
+  var ConeGeometry = class _ConeGeometry extends CylinderGeometry {
+    constructor(radius = 1, height = 1, radialSegments = 32, heightSegments = 1, openEnded = false, thetaStart = 0, thetaLength = Math.PI * 2) {
+      super(0, radius, height, radialSegments, heightSegments, openEnded, thetaStart, thetaLength);
+      this.type = "ConeGeometry";
+      this.parameters = {
+        radius,
+        height,
+        radialSegments,
+        heightSegments,
+        openEnded,
+        thetaStart,
+        thetaLength
+      };
+    }
+    static fromJSON(data) {
+      return new _ConeGeometry(data.radius, data.height, data.radialSegments, data.heightSegments, data.openEnded, data.thetaStart, data.thetaLength);
     }
   };
   var SphereGeometry = class _SphereGeometry extends BufferGeometry {
@@ -19780,6 +19898,13 @@ void main() {
       return this;
     }
   };
+  var AmbientLight = class extends Light {
+    constructor(color, intensity) {
+      super(color, intensity);
+      this.isAmbientLight = true;
+      this.type = "AmbientLight";
+    }
+  };
   var _RESERVED_CHARS_RE = "\\[\\]\\.:\\/";
   var _reservedRe = new RegExp("[" + _RESERVED_CHARS_RE + "]", "g");
   var _wordChar = "[^" + _RESERVED_CHARS_RE + "]";
@@ -20277,14 +20402,14 @@ void main() {
     dun: {
       id: "dun",
       name: "Dun",
-      color: 9071162,
+      color: 10123332,
       mane: 3811864,
       walk: 4.2,
       trot: 7.5,
       gallop: 12.5,
       turn: 1.55,
-      accel: 6.5,
-      brake: 10,
+      accel: 9.5,
+      brake: 14,
       staminaMax: 100,
       staminaDrain: 18,
       staminaRegen: 14
@@ -20292,73 +20417,238 @@ void main() {
     bay: {
       id: "bay",
       name: "Bay",
-      color: 5909016,
+      color: 6959644,
       mane: 1707016,
       walk: 4.5,
       trot: 8.2,
       gallop: 14.2,
       turn: 2.15,
-      accel: 8.5,
-      brake: 11,
+      accel: 12,
+      brake: 16,
       staminaMax: 82,
       staminaDrain: 26,
       staminaRegen: 12
     }
   };
+  function mat(color, opts = {}) {
+    return new MeshStandardMaterial({
+      color,
+      roughness: 0.82,
+      metalness: 0.04,
+      ...opts
+    });
+  }
+  function makeBodyLathe(bodyMat) {
+    const pts = [
+      new Vector2(0.02, -0.85),
+      new Vector2(0.28, -0.75),
+      new Vector2(0.38, -0.45),
+      new Vector2(0.42, -0.1),
+      new Vector2(0.4, 0.25),
+      new Vector2(0.34, 0.55),
+      new Vector2(0.26, 0.78),
+      new Vector2(0.08, 0.9)
+    ];
+    const geo = new LatheGeometry(pts, 12);
+    const mesh = new Mesh(geo, bodyMat);
+    mesh.rotation.x = Math.PI / 2;
+    mesh.scale.set(1, 1.05, 0.92);
+    return mesh;
+  }
+  function makeLeg(bodyMat, hoofMat) {
+    const g = new Group();
+    const upper = new Mesh(new CylinderGeometry(0.09, 0.08, 0.42, 6), bodyMat);
+    upper.position.y = -0.21;
+    upper.castShadow = true;
+    g.add(upper);
+    const knee = new Group();
+    knee.position.y = -0.42;
+    g.add(knee);
+    const lower = new Mesh(new CylinderGeometry(0.07, 0.055, 0.38, 6), bodyMat);
+    lower.position.y = -0.19;
+    lower.castShadow = true;
+    knee.add(lower);
+    const hoof = new Mesh(new BoxGeometry(0.1, 0.08, 0.14), hoofMat);
+    hoof.position.set(0, -0.4, 0.02);
+    knee.add(hoof);
+    g.userData.upper = upper;
+    g.userData.knee = knee;
+    return g;
+  }
+  function makeRider(darkMat, coatMat, denimMat) {
+    const rider = new Group();
+    rider.name = "rider";
+    const legL = new Mesh(new BoxGeometry(0.16, 0.45, 0.18), denimMat);
+    legL.position.set(-0.16, 0.05, 0.02);
+    legL.rotation.z = 0.12;
+    rider.add(legL);
+    const legR = new Mesh(new BoxGeometry(0.16, 0.45, 0.18), denimMat);
+    legR.position.set(0.16, 0.05, 0.02);
+    legR.rotation.z = -0.12;
+    rider.add(legR);
+    const bootL = new Mesh(new BoxGeometry(0.14, 0.14, 0.22), darkMat);
+    bootL.position.set(-0.18, -0.22, 0.06);
+    rider.add(bootL);
+    const bootR = new Mesh(new BoxGeometry(0.14, 0.14, 0.22), darkMat);
+    bootR.position.set(0.18, -0.22, 0.06);
+    rider.add(bootR);
+    const torso = new Mesh(new BoxGeometry(0.38, 0.48, 0.26), coatMat);
+    torso.position.set(0, 0.42, -0.02);
+    torso.castShadow = true;
+    rider.add(torso);
+    const shoulders = new Mesh(new BoxGeometry(0.48, 0.14, 0.24), coatMat);
+    shoulders.position.set(0, 0.62, -0.02);
+    rider.add(shoulders);
+    const armL = new Mesh(new BoxGeometry(0.12, 0.36, 0.12), coatMat);
+    armL.position.set(-0.28, 0.4, 0.08);
+    armL.rotation.x = -0.55;
+    rider.add(armL);
+    const armR = new Mesh(new BoxGeometry(0.12, 0.36, 0.12), coatMat);
+    armR.position.set(0.28, 0.4, 0.08);
+    armR.rotation.x = -0.55;
+    rider.add(armR);
+    const neck = new Mesh(new CylinderGeometry(0.07, 0.08, 0.12, 6), coatMat);
+    neck.position.set(0, 0.72, -0.02);
+    rider.add(neck);
+    const head = new Mesh(new SphereGeometry(0.13, 8, 6), mat(12888194, { roughness: 0.7 }));
+    head.position.set(0, 0.88, -0.02);
+    head.scale.set(1, 1.1, 0.95);
+    rider.add(head);
+    const crown = new Mesh(new CylinderGeometry(0.14, 0.16, 0.16, 10), darkMat);
+    crown.position.set(0, 1.02, -0.02);
+    rider.add(crown);
+    const brim = new Mesh(new CylinderGeometry(0.28, 0.3, 0.035, 12), darkMat);
+    brim.position.set(0, 0.94, -0.02);
+    rider.add(brim);
+    const brimFront = new Mesh(new BoxGeometry(0.22, 0.03, 0.12), darkMat);
+    brimFront.position.set(0, 0.94, 0.2);
+    rider.add(brimFront);
+    return rider;
+  }
   function createHorseMesh(profile) {
     const root = new Group();
     root.name = "horse";
-    const bodyMat = new MeshStandardMaterial({ color: profile.color, roughness: 0.85, metalness: 0.05 });
-    const maneMat = new MeshStandardMaterial({ color: profile.mane, roughness: 0.9 });
-    const dark = new MeshStandardMaterial({ color: 1708040, roughness: 0.7 });
-    const body = new Mesh(new BoxGeometry(0.7, 0.85, 1.7), bodyMat);
-    body.position.y = 1.05;
+    const bodyMat = mat(profile.color);
+    const maneMat = mat(profile.mane, { roughness: 0.95 });
+    const dark = mat(1708040, { roughness: 0.75 });
+    const hoofMat = mat(1708556, { roughness: 0.65 });
+    const coatMat = mat(2758672, { roughness: 0.85 });
+    const denimMat = mat(2762808, { roughness: 0.9 });
+    const bodyRoot = new Group();
+    bodyRoot.position.y = 1.15;
+    root.add(bodyRoot);
+    const body = makeBodyLathe(bodyMat);
     body.castShadow = true;
-    root.add(body);
-    const neck = new Mesh(new BoxGeometry(0.35, 0.7, 0.45), bodyMat);
-    neck.position.set(0, 1.55, 0.85);
-    neck.rotation.x = -0.35;
-    neck.castShadow = true;
-    root.add(neck);
-    const head = new Mesh(new BoxGeometry(0.28, 0.32, 0.55), bodyMat);
-    head.position.set(0, 1.85, 1.2);
-    head.castShadow = true;
-    root.add(head);
-    const mane = new Mesh(new BoxGeometry(0.12, 0.5, 0.7), maneMat);
-    mane.position.set(0, 1.55, 0.55);
-    root.add(mane);
-    const saddle = new Mesh(new BoxGeometry(0.55, 0.18, 0.55), dark);
-    saddle.position.set(0, 1.5, 0.05);
-    root.add(saddle);
-    const legs = [];
-    const legGeo = new BoxGeometry(0.14, 0.75, 0.14);
-    const offsets = [
-      [-0.22, 0.38, 0.55],
-      [0.22, 0.38, 0.55],
-      [-0.22, 0.38, -0.55],
-      [0.22, 0.38, -0.55]
+    body.receiveShadow = true;
+    bodyRoot.add(body);
+    const chest = new Mesh(new SphereGeometry(0.32, 8, 6), bodyMat);
+    chest.position.set(0, -0.05, 0.55);
+    chest.scale.set(1.05, 0.95, 1.15);
+    chest.castShadow = true;
+    bodyRoot.add(chest);
+    const haunch = new Mesh(new SphereGeometry(0.34, 8, 6), bodyMat);
+    haunch.position.set(0, 0.02, -0.55);
+    haunch.scale.set(1.1, 1.05, 1);
+    haunch.castShadow = true;
+    bodyRoot.add(haunch);
+    const neckGroup = new Group();
+    neckGroup.position.set(0, 0.15, 0.72);
+    neckGroup.rotation.x = -0.55;
+    bodyRoot.add(neckGroup);
+    const neck1 = new Mesh(new CylinderGeometry(0.16, 0.2, 0.38, 8), bodyMat);
+    neck1.position.y = 0.18;
+    neck1.castShadow = true;
+    neckGroup.add(neck1);
+    const neck2 = new Mesh(new CylinderGeometry(0.13, 0.16, 0.32, 8), bodyMat);
+    neck2.position.y = 0.48;
+    neck2.rotation.x = -0.25;
+    neck2.castShadow = true;
+    neckGroup.add(neck2);
+    const headGroup = new Group();
+    headGroup.position.set(0, 0.7, 0.08);
+    headGroup.rotation.x = 0.35;
+    neckGroup.add(headGroup);
+    const skull = new Mesh(new BoxGeometry(0.26, 0.24, 0.28), bodyMat);
+    skull.position.set(0, 0.02, 0);
+    skull.castShadow = true;
+    headGroup.add(skull);
+    const snout = new Mesh(new BoxGeometry(0.18, 0.16, 0.38), bodyMat);
+    snout.position.set(0, -0.04, 0.28);
+    snout.castShadow = true;
+    headGroup.add(snout);
+    const muzzle = new Mesh(new BoxGeometry(0.16, 0.1, 0.12), dark);
+    muzzle.position.set(0, -0.06, 0.48);
+    headGroup.add(muzzle);
+    const earGeo = new ConeGeometry(0.05, 0.16, 5);
+    const earL = new Mesh(earGeo, bodyMat);
+    earL.position.set(-0.08, 0.18, -0.04);
+    earL.rotation.z = -0.2;
+    headGroup.add(earL);
+    const earR = new Mesh(earGeo, bodyMat);
+    earR.position.set(0.08, 0.18, -0.04);
+    earR.rotation.z = 0.2;
+    headGroup.add(earR);
+    const eyeMat = mat(657414);
+    const eyeL = new Mesh(new SphereGeometry(0.035, 6, 4), eyeMat);
+    eyeL.position.set(-0.12, 0.05, 0.08);
+    headGroup.add(eyeL);
+    const eyeR = new Mesh(new SphereGeometry(0.035, 6, 4), eyeMat);
+    eyeR.position.set(0.12, 0.05, 0.08);
+    headGroup.add(eyeR);
+    const mane = new Mesh(new BoxGeometry(0.08, 0.55, 0.14), maneMat);
+    mane.position.set(0, 0.42, -0.12);
+    mane.rotation.x = 0.15;
+    neckGroup.add(mane);
+    const maneCrest = new Mesh(new BoxGeometry(0.07, 0.18, 0.22), maneMat);
+    maneCrest.position.set(0, 0.12, -0.06);
+    headGroup.add(maneCrest);
+    const tailGroup = new Group();
+    tailGroup.position.set(0, 0.15, -0.85);
+    bodyRoot.add(tailGroup);
+    const tail1 = new Mesh(new CylinderGeometry(0.06, 0.09, 0.45, 6), maneMat);
+    tail1.position.set(0, -0.1, -0.12);
+    tail1.rotation.x = 0.55;
+    tail1.castShadow = true;
+    tailGroup.add(tail1);
+    const tail2 = new Mesh(new CylinderGeometry(0.04, 0.07, 0.4, 6), maneMat);
+    tail2.position.set(0, -0.35, -0.32);
+    tail2.rotation.x = 0.35;
+    tailGroup.add(tail2);
+    const saddle = new Mesh(new BoxGeometry(0.5, 0.14, 0.48), dark);
+    saddle.position.set(0, 0.38, 0.02);
+    bodyRoot.add(saddle);
+    const saddleHorn = new Mesh(new CylinderGeometry(0.04, 0.05, 0.12, 6), dark);
+    saddleHorn.position.set(0, 0.5, 0.18);
+    bodyRoot.add(saddleHorn);
+    const cantle = new Mesh(new BoxGeometry(0.42, 0.16, 0.1), dark);
+    cantle.position.set(0, 0.48, -0.18);
+    bodyRoot.add(cantle);
+    const legDefs = [
+      { name: "fl", x: -0.2, z: 0.48 },
+      { name: "fr", x: 0.2, z: 0.48 },
+      { name: "bl", x: -0.22, z: -0.48 },
+      { name: "br", x: 0.22, z: -0.48 }
     ];
-    for (const [x, y, z] of offsets) {
-      const leg = new Mesh(legGeo, bodyMat);
-      leg.position.set(x, y, z);
-      leg.castShadow = true;
+    const legs = [];
+    for (const def of legDefs) {
+      const leg = makeLeg(bodyMat, hoofMat);
+      leg.name = def.name;
+      leg.position.set(def.x, 1.15, def.z);
       root.add(leg);
       legs.push(leg);
     }
-    const rider = new Group();
-    rider.name = "rider";
-    const torso = new Mesh(new BoxGeometry(0.35, 0.45, 0.28), new MeshStandardMaterial({ color: 2758672, roughness: 0.8 }));
-    torso.position.y = 0.35;
-    rider.add(torso);
-    const hat = new Mesh(new CylinderGeometry(0.22, 0.22, 0.12, 8), dark);
-    hat.position.y = 0.72;
-    rider.add(hat);
-    const brim = new Mesh(new CylinderGeometry(0.32, 0.32, 0.04, 8), dark);
-    brim.position.y = 0.66;
-    rider.add(brim);
-    rider.position.set(0, 1.55, 0.05);
+    const rider = makeRider(dark, coatMat, denimMat);
+    rider.position.set(0, 1.55, 0.02);
     root.add(rider);
-    return { root, legs, rider, body };
+    return {
+      root,
+      legs,
+      rider,
+      body: bodyRoot,
+      neck: neckGroup,
+      head: headGroup,
+      tail: tailGroup
+    };
   }
   function createHorseController(profile, mesh) {
     const state = {
@@ -20367,16 +20657,23 @@ void main() {
       speed: 0,
       stamina: profile.staminaMax,
       gait: "idle",
-      // idle | walk | trot | gallop
       bob: 0
     };
     const pos = mesh.root.position;
     const tmp = new Vector3();
+    const restUpper = 0.08;
+    const restKnee = 0.12;
     function update(dt, input2, groundY = 0) {
       if (!state.mounted) {
-        state.speed = MathUtils.damp(state.speed, 0, 8, dt);
+        state.speed = MathUtils.damp(state.speed, 0, 12, dt);
         state.gait = "idle";
         mesh.rider.visible = false;
+        mesh.legs.forEach((leg) => {
+          leg.rotation.x = MathUtils.damp(leg.rotation.x, 0, 8, dt);
+          leg.userData.knee.rotation.x = MathUtils.damp(leg.userData.knee.rotation.x, restKnee, 8, dt);
+        });
+        mesh.body.position.y = MathUtils.damp(mesh.body.position.y, 1.15, 8, dt);
+        mesh.body.rotation.x = MathUtils.damp(mesh.body.rotation.x, 0, 8, dt);
         return;
       }
       mesh.rider.visible = true;
@@ -20389,8 +20686,10 @@ void main() {
       } else if (input2.forward < -0.15) {
         target = -profile.walk * 0.55;
       }
-      const rate = Math.abs(target) > Math.abs(state.speed) ? profile.accel : profile.brake;
-      state.speed = MathUtils.damp(state.speed, target, rate * 0.35, dt);
+      const accelerating = Math.abs(target) > Math.abs(state.speed) + 0.05;
+      const rate = accelerating ? profile.accel : profile.brake;
+      state.speed = MathUtils.damp(state.speed, target, rate * 0.55, dt);
+      if (Math.abs(target) < 0.1 && Math.abs(state.speed) < 0.35) state.speed = 0;
       const turnScale = MathUtils.clamp(1 - Math.abs(state.speed) / (profile.gallop * 1.4), 0.35, 1);
       state.yaw -= input2.steer * profile.turn * turnScale * dt * (state.speed >= 0 ? 1 : -1);
       const dx = Math.sin(state.yaw) * state.speed * dt;
@@ -20410,14 +20709,30 @@ void main() {
       else if (abs < profile.walk * 1.15) state.gait = "walk";
       else if (abs < profile.trot * 1.1) state.gait = "trot";
       else state.gait = "gallop";
-      const freq = state.gait === "gallop" ? 12 : state.gait === "trot" ? 8 : state.gait === "walk" ? 5 : 0;
+      const freq = state.gait === "gallop" ? 11 : state.gait === "trot" ? 8.5 : state.gait === "walk" ? 5.2 : 0;
       state.bob += freq * dt;
-      const amp = state.gait === "idle" ? 0 : 0.12;
+      const speedN = MathUtils.clamp(abs / profile.gallop, 0, 1);
+      const amp = state.gait === "gallop" ? 0.55 : state.gait === "trot" ? 0.38 : state.gait === "walk" ? 0.28 : 0;
+      const phases = [0, Math.PI, Math.PI, 0];
       mesh.legs.forEach((leg, i) => {
-        const phase2 = state.bob + (i % 2 === 0 ? 0 : Math.PI);
-        leg.rotation.x = Math.sin(phase2) * amp * (abs / profile.gallop + 0.3);
+        const phase2 = state.bob + phases[i];
+        const swing = Math.sin(phase2) * amp * (0.45 + speedN * 0.55);
+        const gallopBias = state.gait === "gallop" ? i < 2 ? 0.12 : -0.08 : 0;
+        leg.rotation.x = restUpper + swing + gallopBias * speedN;
+        const lift = Math.max(0, Math.sin(phase2));
+        leg.userData.knee.rotation.x = restKnee + lift * amp * 0.85;
       });
-      mesh.body.position.y = 1.05 + Math.abs(Math.sin(state.bob * 2)) * amp * 0.35;
+      const bobY = state.gait === "idle" ? 0 : Math.abs(Math.sin(state.bob * (state.gait === "gallop" ? 1 : 2))) * 0.06 * (0.5 + speedN);
+      mesh.body.position.y = 1.15 + bobY;
+      const pitch = state.gait === "gallop" ? Math.sin(state.bob) * 0.08 * speedN - 0.04 * speedN : state.gait === "trot" ? Math.sin(state.bob * 2) * 0.03 : 0;
+      mesh.body.rotation.x = pitch;
+      if (mesh.neck) {
+        mesh.neck.rotation.x = -0.55 + pitch * 0.6;
+      }
+      if (mesh.tail) {
+        mesh.tail.rotation.y = Math.sin(state.bob * 0.7) * 0.15 * speedN;
+        mesh.tail.rotation.x = 0.1 + Math.sin(state.bob) * 0.08 * speedN;
+      }
     }
     function getWorldPos(out = tmp) {
       return out.copy(pos);
@@ -20427,26 +20742,27 @@ void main() {
 
   // src/systems/camera.js
   function createFollowCamera(camera2) {
-    const offset = new Vector3(0, 3.2, -7.5);
-    const look = new Vector3(0, 1.4, 2.2);
+    const offset = new Vector3(0, 4.1, -6.2);
+    const look = new Vector3(0, 1.55, 2);
     const cur = new Vector3();
     const target = new Vector3();
     const lookAt = new Vector3();
     const worldOff = new Vector3();
     const worldLook = new Vector3();
     const quat = new Quaternion();
+    const up = new Vector3(0, 1, 0);
     function update(dt, horseRoot, yaw) {
-      quat.setFromAxisAngle(new Vector3(0, 1, 0), yaw);
+      quat.setFromAxisAngle(up, yaw);
       worldOff.copy(offset).applyQuaternion(quat);
       worldLook.copy(look).applyQuaternion(quat);
       target.copy(horseRoot.position).add(worldOff);
       lookAt.copy(horseRoot.position).add(worldLook);
-      cur.lerp(target, 1 - Math.exp(-4.5 * dt));
+      cur.lerp(target, 1 - Math.exp(-5.8 * dt));
       camera2.position.copy(cur);
       camera2.lookAt(lookAt);
     }
     function snap(horseRoot, yaw) {
-      quat.setFromAxisAngle(new Vector3(0, 1, 0), yaw);
+      quat.setFromAxisAngle(up, yaw);
       worldOff.copy(offset).applyQuaternion(quat);
       cur.copy(horseRoot.position).add(worldOff);
       camera2.position.copy(cur);
@@ -20584,40 +20900,56 @@ void main() {
 
   // src/world/greenville.js
   var COL = {
-    dirt: 5913122,
-    dirtDark: 3810324,
-    wood: 4861464,
-    woodDark: 2758668,
-    adobe: 9071178,
-    adobeDark: 6965808,
-    roof: 3807762,
-    rust: 9060384,
-    bone: 13154456,
+    dirt: 8016436,
+    // shoulders — lighter dusty
+    dirtDark: 4073496,
+    // street bed — darker value separation
+    wood: 5913122,
+    woodDark: 3021326,
+    adobe: 10518616,
+    // brighter dusty adobe (still western, not washed)
+    adobeDark: 8018488,
+    roof: 4858392,
+    rust: 10111012,
+    bone: 13680800,
     blood: 12855336,
     water: 2771528,
-    brush: 3820072,
-    night: 657420
+    brush: 4872752,
+    night: 657420,
+    falseFront: 3810324
   };
   function box(w, h, d, color, x, y, z, matOpts = {}) {
     const mesh = new Mesh(
       new BoxGeometry(w, h, d),
-      new MeshStandardMaterial({ color, roughness: 0.9, metalness: 0.02, ...matOpts })
+      new MeshStandardMaterial({ color, roughness: 0.88, metalness: 0.02, ...matOpts })
     );
     mesh.position.set(x, y, z);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     return mesh;
   }
-  function building(group, { w, h, d, x, z, color = COL.adobe, roofH = 0.4 }) {
+  function building(group, { w, h, d, x, z, color = COL.adobe, roofH = 0.4, signColor = null }) {
     const base = box(w, h, d, color, x, h / 2, z);
     group.add(base);
     const roof = box(w + 0.3, roofH, d + 0.3, COL.roof, x, h + roofH / 2, z);
     group.add(roof);
-    const front = box(w + 0.15, h * 0.35, 0.12, COL.woodDark, x, h + 0.1, z + d / 2 + 0.05);
+    const frontH = h * 0.48;
+    const front = box(w + 0.25, frontH, 0.16, COL.falseFront, x, h + frontH * 0.15, z + d / 2 + 0.08);
     group.add(front);
-    group.add(box(0.7, 1.6, 0.08, COL.woodDark, x, 0.8, z + d / 2 + 0.06));
-    group.add(box(0.55, 0.55, 0.06, 1708056, x - w * 0.28, 1.5, z + d / 2 + 0.06));
-    group.add(box(0.55, 0.55, 0.06, 1708056, x + w * 0.28, 1.5, z + d / 2 + 0.06));
+    group.add(box(w + 0.35, 0.1, 0.18, COL.bone, x, h + frontH * 0.38, z + d / 2 + 0.1, {
+      emissive: 2760720,
+      emissiveIntensity: 0.15
+    }));
+    group.add(box(0.75, 1.7, 0.1, COL.woodDark, x, 0.85, z + d / 2 + 0.08));
+    const winMat = { emissive: 6961688, emissiveIntensity: 0.45, roughness: 0.55 };
+    group.add(box(0.55, 0.55, 0.08, 2758672, x - w * 0.28, 1.55, z + d / 2 + 0.08, winMat));
+    group.add(box(0.55, 0.55, 0.08, 2758672, x + w * 0.28, 1.55, z + d / 2 + 0.08, winMat));
+    if (signColor != null) {
+      group.add(box(Math.min(w * 0.55, 3.8), 0.75, 0.18, signColor, x, h + 0.35, z + d / 2 + 0.2, {
+        emissive: signColor,
+        emissiveIntensity: 0.25
+      }));
+    }
     return base;
   }
   function makeBeacon({ color, emissive, lightColor, height = 5.2 }) {
@@ -20660,7 +20992,7 @@ void main() {
     root.name = "greenville";
     const ground = new Mesh(
       new PlaneGeometry(80, 120),
-      new MeshStandardMaterial({ color: COL.dirt, roughness: 1 })
+      new MeshStandardMaterial({ color: COL.dirt, roughness: 0.95 })
     );
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
@@ -20670,23 +21002,44 @@ void main() {
       new MeshStandardMaterial({ color: COL.dirtDark, roughness: 1 })
     );
     street.rotation.x = -Math.PI / 2;
-    street.position.set(0, 0.01, 10);
+    street.position.set(0, 0.015, 10);
     street.receiveShadow = true;
     root.add(street);
-    for (const side of [-1, 1]) {
-      const walk = box(2.2, 0.18, 55, COL.wood, side * 6.2, 0.09, 5);
-      root.add(walk);
+    for (const x of [-4.9, 4.9]) {
+      const rut = new Mesh(
+        new PlaneGeometry(0.18, 88),
+        new MeshStandardMaterial({ color: 5914672, roughness: 0.98 })
+      );
+      rut.rotation.x = -Math.PI / 2;
+      rut.position.set(x, 0.02, 10);
+      rut.receiveShadow = true;
+      root.add(rut);
     }
-    building(root, { w: 8, h: 4.2, d: 7, x: -11, z: 8, color: COL.adobe });
-    const saloonSign = box(3.5, 0.7, 0.15, COL.rust, -11, 4.6, 11.6);
-    root.add(saloonSign);
+    for (const side of [-1, 1]) {
+      const walk = box(2.4, 0.22, 55, COL.wood, side * 6.3, 0.11, 5);
+      root.add(walk);
+      root.add(box(0.12, 0.28, 55, COL.woodDark, side * 5.15, 0.14, 5));
+    }
+    building(root, { w: 8, h: 4.2, d: 7, x: -11, z: 8, color: COL.adobe, signColor: COL.rust });
     building(root, { w: 6, h: 3.4, d: 6, x: -10, z: -4, color: COL.adobeDark });
-    building(root, { w: 5, h: 3.2, d: 5, x: -9.5, z: 20, color: 6967352 });
-    building(root, { w: 7, h: 4.5, d: 8, x: 11, z: 6, color: 8018496 });
+    building(root, { w: 5, h: 3.2, d: 5, x: -9.5, z: 20, color: 8020036 });
+    building(root, { w: 7, h: 4.5, d: 8, x: 11, z: 6, color: 9071176 });
     building(root, { w: 5.5, h: 3.3, d: 5.5, x: 10.5, z: -6, color: COL.adobe });
     building(root, { w: 5, h: 2.8, d: 4, x: 10, z: -18, color: COL.wood });
     const alleyZ = 2.2;
     const alleyX = -7.2;
+    const alleyFill = new PointLight(12871744, 0.85, 16, 1.8);
+    alleyFill.position.set(-5.2, 2.4, alleyZ);
+    root.add(alleyFill);
+    const alleyWarm = new PointLight(10502184, 0.55, 12, 2);
+    alleyWarm.position.set(alleyX, 1.8, alleyZ);
+    root.add(alleyWarm);
+    root.add(box(0.18, 2.4, 0.18, COL.woodDark, -5.4, 1.2, alleyZ + 1.6));
+    root.add(box(0.18, 2.4, 0.18, COL.woodDark, -5.4, 1.2, alleyZ - 1.6));
+    root.add(box(0.14, 0.14, 3.4, COL.bone, -5.4, 2.35, alleyZ, {
+      emissive: 3811344,
+      emissiveIntensity: 0.2
+    }));
     root.add(box(0.9, 0.9, 0.9, COL.wood, alleyX - 1.2, 0.45, alleyZ));
     root.add(box(0.7, 1.1, 0.7, COL.woodDark, alleyX - 0.3, 0.55, alleyZ - 1.1));
     const barrel = new Mesh(
@@ -20719,19 +21072,22 @@ void main() {
     const hitch = new Group();
     hitch.name = "hitch";
     hitch.position.set(-4.5, 0, -2);
-    hitch.add(box(0.12, 1.1, 0.12, COL.woodDark, -1.2, 0.55, 0));
-    hitch.add(box(0.12, 1.1, 0.12, COL.woodDark, 1.2, 0.55, 0));
-    hitch.add(box(2.6, 0.1, 0.1, COL.wood, 0, 1, 0));
+    hitch.add(box(0.16, 1.25, 0.16, COL.woodDark, -1.3, 0.62, 0));
+    hitch.add(box(0.16, 1.25, 0.16, COL.woodDark, 1.3, 0.62, 0));
+    hitch.add(box(2.8, 0.12, 0.12, COL.wood, 0, 1.15, 0));
+    hitch.add(box(0.22, 0.12, 0.22, COL.bone, -1.3, 1.28, 0, { emissive: 2760720, emissiveIntensity: 0.2 }));
+    hitch.add(box(0.22, 0.12, 0.22, COL.bone, 1.3, 1.28, 0, { emissive: 2760720, emissiveIntensity: 0.2 }));
+    hitch.add(box(3, 0.06, 0.5, COL.woodDark, 0, 0.03, 0));
     root.add(hitch);
     for (let z = -25; z < 40; z += 4) {
       for (const x of [-5.2, 5.2]) {
-        root.add(box(0.12, 1, 0.12, COL.woodDark, x, 0.5, z));
+        root.add(box(0.12, 1.05, 0.12, COL.woodDark, x, 0.52, z));
       }
     }
     root.add(box(2.2, 0.5, 0.7, COL.wood, 4.5, 0.25, -2));
     const creekBed = new Mesh(
       new PlaneGeometry(28, 18),
-      new MeshStandardMaterial({ color: 3811864, roughness: 1 })
+      new MeshStandardMaterial({ color: 4863008, roughness: 1 })
     );
     creekBed.rotation.x = -Math.PI / 2;
     creekBed.position.set(0, -0.35, 48);
@@ -20768,13 +21124,17 @@ void main() {
       root.add(box(0.6 + i % 3 * 0.3, 0.4, 0.5, COL.brush, bx, 0.2, bz));
     }
     for (const [x, z, s] of [[-35, 30, 12], [38, 55, 16], [-28, 70, 10], [30, -20, 9]]) {
-      root.add(box(s, s * 0.6, s * 0.5, 4861984, x, s * 0.25, z));
+      root.add(box(s, s * 0.6, s * 0.5, 5913640, x, s * 0.25, z));
     }
     const lamp = (x, z) => {
-      const l = new PointLight(11033130, 0.35, 18);
+      const l = new PointLight(12613696, 0.55, 20);
       l.position.set(x, 3.2, z);
       root.add(l);
       root.add(box(0.15, 2.8, 0.15, COL.woodDark, x, 1.4, z));
+      root.add(box(0.35, 0.25, 0.35, COL.rust, x, 3, z, {
+        emissive: 9060384,
+        emissiveIntensity: 0.55
+      }));
     };
     lamp(-6.5, 8);
     lamp(6.5, 8);
@@ -20891,15 +21251,15 @@ void main() {
   renderer.shadowMap.type = PCFSoftShadowMap;
   renderer.outputColorSpace = SRGBColorSpace;
   renderer.toneMapping = ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = 1.22;
   var scene = new Scene();
-  scene.background = new Color(656648);
-  scene.fog = new FogExp2(1181704, 0.018);
+  scene.background = new Color(1707538);
+  scene.fog = new Fog(2758680, 28, 95);
   var camera = new PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
   var followCam = createFollowCamera(camera);
-  var hemi = new HemisphereLight(6963280, 1708040, 0.55);
+  var hemi = new HemisphereLight(9068656, 2758672, 1.05);
   scene.add(hemi);
-  var sun = new DirectionalLight(12880480, 0.85);
+  var sun = new DirectionalLight(13934704, 1.35);
   sun.position.set(-30, 40, 10);
   sun.castShadow = true;
   sun.shadow.mapSize.set(1024, 1024);
@@ -20909,10 +21269,16 @@ void main() {
   sun.shadow.camera.right = 40;
   sun.shadow.camera.top = 40;
   sun.shadow.camera.bottom = -40;
+  sun.shadow.bias = -8e-4;
   scene.add(sun);
-  var fill = new DirectionalLight(4202544, 0.25);
+  var fill = new DirectionalLight(6307920, 0.45);
   fill.position.set(20, 10, -20);
   scene.add(fill);
+  var rim = new DirectionalLight(12880496, 0.35);
+  rim.position.set(-40, 18, 25);
+  scene.add(rim);
+  var amb = new AmbientLight(3811360, 0.28);
+  scene.add(amb);
   var world = buildGreenville(scene);
   var heat = createHeat();
   var horseCtrl = null;
@@ -21174,7 +21540,7 @@ void main() {
   }
   resize();
   requestAnimationFrame(frame);
-  console.info(`[RED COUNTY] Soft Open Quiet  tip=${true ? "2f531c5" : "dev"}  build=${true ? "0.1.0-f47c2350" : "?"}`);
+  console.info(`[RED COUNTY] Soft Open Quiet  tip=${true ? "8a984de" : "dev"}  build=${true ? "0.1.0-17b93bcf" : "?"}`);
 })();
 /*! Bundled license information:
 

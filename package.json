@@ -1,0 +1,16 @@
+{
+  "name": "lone-star-red-county",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "RED COUNTY — outlaw western Soft Open. Horses, heist, story. Not Golden Hour.",
+  "scripts": {
+    "build": "node build.mjs",
+    "build:min": "node build.mjs --min",
+    "dev": "node build.mjs && npx --yes serve docs -p 4173"
+  },
+  "dependencies": {
+    "esbuild": "0.24.2",
+    "three": "0.170.0"
+  }
+}

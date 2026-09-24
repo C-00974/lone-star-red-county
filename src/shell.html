@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+<meta name="theme-color" content="#0a0505"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>RED COUNTY · Soft Open</title>
+<style>/*__CSS__*/</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="c"></canvas>
+
+  <!-- TITLE -->
+  <div id="screen-title" class="screen active">
+    <div class="brand">
+      <div class="kicker">Soft Open · Quiet · tip __TIP_SHA__</div>
+      <h1>RED COUNTY</h1>
+      <p class="tag">Horses. Heist. Blood on the dust.</p>
+      <p class="sub">Greenville strip — Quiet approach. You ride for Rae.</p>
+    </div>
+    <div class="menu">
+      <button class="btn primary" id="btn-start">Start Soft Open</button>
+      <button class="btn" id="btn-controls">Controls</button>
+      <button class="btn" id="btn-settings">Settings</button>
+    </div>
+    <div id="panel-controls" class="panel hidden">
+      <h3>Controls</h3>
+      <p><kbd>W/S</kbd> or stick — walk / back<br/>
+      <kbd>A/D</kbd> — steer<br/>
+      <kbd>Shift</kbd> or Gallop — sprint<br/>
+      <kbd>E</kbd> or Mount — dismount / remount near hitch<br/>
+      <kbd>Space</kbd> — interact (case / drop)</p>
+      <p class="hint">Phone: open with <code>?touch=1</code> for on-screen stick.</p>
+      <button class="btn" data-close="panel-controls">Close</button>
+    </div>
+    <div id="panel-settings" class="panel hidden">
+      <h3>Settings</h3>
+      <label class="row"><span>Touch controls</span><input type="checkbox" id="opt-touch"/></label>
+      <label class="row"><span>Reduce motion</span><input type="checkbox" id="opt-motion"/></label>
+      <button class="btn" data-close="panel-settings">Close</button>
+    </div>
+  </div>
+
+  <!-- COLD OPEN / CINEMATIC -->
+  <div id="screen-cinematic" class="screen">
+    <div class="cine-frame">
+      <div class="cine-speaker" id="cine-speaker">RAE</div>
+      <div class="cine-line" id="cine-line"></div>
+      <button class="btn primary cine-next" id="btn-cine-next">Continue</button>
+    </div>
+  </div>
+
+  <!-- PREP — horse pick -->
+  <div id="screen-prep" class="screen">
+    <div class="prep-card">
+      <div class="kicker">Prep · Greenville</div>
+      <h2>Pick your horse</h2>
+      <p class="sub">Quiet approach locked. Get in, grab the case, ride the creek drop.</p>
+      <div class="horse-picks">
+        <button class="horse-card" data-horse="dun" id="pick-dun">
+          <div class="horse-swatch dun"></div>
+          <strong>Dun</strong>
+          <span>Steady turn · longer stamina</span>
+        </button>
+        <button class="horse-card" data-horse="bay" id="pick-bay">
+          <div class="horse-swatch bay"></div>
+          <strong>Bay</strong>
+          <span>Sharp turn · burst sprint</span>
+        </button>
+      </div>
+      <p class="hint">Approach: <em>Quiet</em> (Decoy / Loud — coming later)</p>
+    </div>
+  </div>
+
+  <!-- HUD during play -->
+  <div id="hud" class="hidden">
+    <div class="hud-top">
+      <div class="meter"><label>STAMINA</label><div class="bar"><i id="bar-stam"></i></div></div>
+      <div class="meter heat"><label>HEAT</label><div class="bar"><i id="bar-heat"></i></div></div>
+      <div class="timer" id="hud-timer">—</div>
+    </div>
+    <div class="hud-prompt" id="hud-prompt"></div>
+    <div class="hud-obj" id="hud-obj">Follow Rae's mark</div>
+  </div>
+
+  <!-- TOUCH -->
+  <div id="touch" class="hidden">
+    <div id="stick" class="stick"><div id="stick-knob"></div></div>
+    <button id="btn-gallop" class="tbtn">GALLOP</button>
+    <button id="btn-mount" class="tbtn">MOUNT</button>
+    <button id="btn-act" class="tbtn primary">ACT</button>
+  </div>
+
+  <!-- END -->
+  <div id="screen-end" class="screen">
+    <div class="end-card">
+      <div class="kicker" id="end-kicker">Soft Open</div>
+      <h2 id="end-title">Clean</h2>
+      <p id="end-body" class="sub"></p>
+      <div class="menu">
+        <button class="btn primary" id="btn-restart">Ride again</button>
+        <button class="btn" id="btn-title">Title</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>/*__JS__*/</script>
+</body>
+</html>

@@ -28,19 +28,20 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.05;
+renderer.toneMappingExposure = 1.22;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0a0508);
-scene.fog = new THREE.FogExp2(0x120808, 0.018);
+scene.background = new THREE.Color(0x1a0e12);
+// Milder linear fog — dusk wash without mid-strip soup
+scene.fog = new THREE.Fog(0x2a1818, 28, 95);
 
 const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
 const followCam = createFollowCamera(camera);
 
-// Lighting — dusk western, rust warmth, no gold film look
-const hemi = new THREE.HemisphereLight(0x6a4050, 0x1a1008, 0.55);
+// Lighting — western dusk, readable on phone (black/blood/rust/bone, no gold)
+const hemi = new THREE.HemisphereLight(0x8a6070, 0x2a1810, 1.05);
 scene.add(hemi);
-const sun = new THREE.DirectionalLight(0xc48a60, 0.85);
+const sun = new THREE.DirectionalLight(0xd4a070, 1.35);
 sun.position.set(-30, 40, 10);
 sun.castShadow = true;
 sun.shadow.mapSize.set(1024, 1024);
@@ -50,10 +51,18 @@ sun.shadow.camera.left = -40;
 sun.shadow.camera.right = 40;
 sun.shadow.camera.top = 40;
 sun.shadow.camera.bottom = -40;
+sun.shadow.bias = -0.0008;
 scene.add(sun);
-const fill = new THREE.DirectionalLight(0x402030, 0.25);
+const fill = new THREE.DirectionalLight(0x604050, 0.45);
 fill.position.set(20, 10, -20);
 scene.add(fill);
+// Subtle rim from sun side so horse silhouette pops against dusk
+const rim = new THREE.DirectionalLight(0xc48a70, 0.35);
+rim.position.set(-40, 18, 25);
+scene.add(rim);
+// Soft ambient lift so boardwalks/buildings don't crush to black
+const amb = new THREE.AmbientLight(0x3a2820, 0.28);
+scene.add(amb);
 
 const world = buildGreenville(scene);
 const heat = createHeat();

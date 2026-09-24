@@ -3,28 +3,30 @@ import * as THREE from 'three';
 /**
  * Authored Greenville strip — dirt street, saloon block, alley + hitch, creek drop.
  * Coordinates: +Z down the street toward the creek. Origin near hitch.
+ * Craft pass: brighter dusty materials, stronger false-fronts, alley mouth readable.
  */
 
 const COL = {
-  dirt: 0x5a3a22,
-  dirtDark: 0x3a2414,
-  wood: 0x4a2e18,
-  woodDark: 0x2a180c,
-  adobe: 0x8a6a4a,
-  adobeDark: 0x6a4a30,
-  roof: 0x3a1a12,
-  rust: 0x8a4020,
-  bone: 0xc8b898,
+  dirt: 0x7a5234,       // shoulders — lighter dusty
+  dirtDark: 0x3e2818,   // street bed — darker value separation
+  wood: 0x5a3a22,
+  woodDark: 0x2e1a0e,
+  adobe: 0xa08058,      // brighter dusty adobe (still western, not washed)
+  adobeDark: 0x7a5a38,
+  roof: 0x4a2218,
+  rust: 0x9a4824,
+  bone: 0xd0c0a0,
   blood: 0xc42828,
   water: 0x2a4a48,
-  brush: 0x3a4a28,
+  brush: 0x4a5a30,
   night: 0x0a080c,
+  falseFront: 0x3a2414,
 };
 
 function box(w, h, d, color, x, y, z, matOpts = {}) {
   const mesh = new THREE.Mesh(
     new THREE.BoxGeometry(w, h, d),
-    new THREE.MeshStandardMaterial({ color, roughness: 0.9, metalness: 0.02, ...matOpts }),
+    new THREE.MeshStandardMaterial({ color, roughness: 0.88, metalness: 0.02, ...matOpts }),
   );
   mesh.position.set(x, y, z);
   mesh.castShadow = true;
@@ -32,19 +34,32 @@ function box(w, h, d, color, x, y, z, matOpts = {}) {
   return mesh;
 }
 
-function building(group, { w, h, d, x, z, color = COL.adobe, roofH = 0.4 }) {
+function building(group, { w, h, d, x, z, color = COL.adobe, roofH = 0.4, signColor = null }) {
   const base = box(w, h, d, color, x, h / 2, z);
   group.add(base);
   const roof = box(w + 0.3, roofH, d + 0.3, COL.roof, x, h + roofH / 2, z);
   group.add(roof);
-  // false-front board
-  const front = box(w + 0.15, h * 0.35, 0.12, COL.woodDark, x, h + 0.1, z + d / 2 + 0.05);
+  // Stronger false-front silhouette — taller board + bone trim edge
+  const frontH = h * 0.48;
+  const front = box(w + 0.25, frontH, 0.16, COL.falseFront, x, h + frontH * 0.15, z + d / 2 + 0.08);
   group.add(front);
-  // door
-  group.add(box(0.7, 1.6, 0.08, COL.woodDark, x, 0.8, z + d / 2 + 0.06));
-  // windows
-  group.add(box(0.55, 0.55, 0.06, 0x1a1018, x - w * 0.28, 1.5, z + d / 2 + 0.06));
-  group.add(box(0.55, 0.55, 0.06, 0x1a1018, x + w * 0.28, 1.5, z + d / 2 + 0.06));
+  // Bone edge trim so false-front reads against sky
+  group.add(box(w + 0.35, 0.1, 0.18, COL.bone, x, h + frontH * 0.38, z + d / 2 + 0.1, {
+    emissive: 0x2a2010,
+    emissiveIntensity: 0.15,
+  }));
+  // door — darker recess
+  group.add(box(0.75, 1.7, 0.1, COL.woodDark, x, 0.85, z + d / 2 + 0.08));
+  // windows — warm glow so buildings read as inhabited at dusk
+  const winMat = { emissive: 0x6a3a18, emissiveIntensity: 0.45, roughness: 0.55 };
+  group.add(box(0.55, 0.55, 0.08, 0x2a1810, x - w * 0.28, 1.55, z + d / 2 + 0.08, winMat));
+  group.add(box(0.55, 0.55, 0.08, 0x2a1810, x + w * 0.28, 1.55, z + d / 2 + 0.08, winMat));
+  if (signColor != null) {
+    group.add(box(Math.min(w * 0.55, 3.8), 0.75, 0.18, signColor, x, h + 0.35, z + d / 2 + 0.2, {
+      emissive: signColor,
+      emissiveIntensity: 0.25,
+    }));
+  }
   return base;
 }
 
@@ -94,44 +109,56 @@ export function buildGreenville(scene) {
   const root = new THREE.Group();
   root.name = 'greenville';
 
-  // Ground — dirt street + shoulders
+  // Ground — lighter dusty shoulders
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(80, 120),
-    new THREE.MeshStandardMaterial({ color: COL.dirt, roughness: 1 }),
+    new THREE.MeshStandardMaterial({ color: COL.dirt, roughness: 0.95 }),
   );
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   root.add(ground);
 
-  // Street darker strip
+  // Street darker strip — clear value separation from shoulders
   const street = new THREE.Mesh(
     new THREE.PlaneGeometry(10, 90),
     new THREE.MeshStandardMaterial({ color: COL.dirtDark, roughness: 1 }),
   );
   street.rotation.x = -Math.PI / 2;
-  street.position.set(0, 0.01, 10);
+  street.position.set(0, 0.015, 10);
   street.receiveShadow = true;
   root.add(street);
 
-  // Boardwalks
-  for (const side of [-1, 1]) {
-    const walk = box(2.2, 0.18, 55, COL.wood, side * 6.2, 0.09, 5);
-    root.add(walk);
+  // Street edge ruts (thin bone-dust lines) to read the road bed
+  for (const x of [-4.9, 4.9]) {
+    const rut = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.18, 88),
+      new THREE.MeshStandardMaterial({ color: 0x5a4030, roughness: 0.98 }),
+    );
+    rut.rotation.x = -Math.PI / 2;
+    rut.position.set(x, 0.02, 10);
+    rut.receiveShadow = true;
+    root.add(rut);
   }
 
-  // Saloon block (west side, -X)
-  building(root, { w: 8, h: 4.2, d: 7, x: -11, z: 8, color: COL.adobe });
-  const saloonSign = box(3.5, 0.7, 0.15, COL.rust, -11, 4.6, 11.6);
-  root.add(saloonSign);
+  // Boardwalks — raised, lighter wood so they silhouette
+  for (const side of [-1, 1]) {
+    const walk = box(2.4, 0.22, 55, COL.wood, side * 6.3, 0.11, 5);
+    root.add(walk);
+    // Plank lip facing street
+    root.add(box(0.12, 0.28, 55, COL.woodDark, side * 5.15, 0.14, 5));
+  }
+
+  // Saloon block (west side, -X) — rust sign
+  building(root, { w: 8, h: 4.2, d: 7, x: -11, z: 8, color: COL.adobe, signColor: COL.rust });
 
   // Mercantile
   building(root, { w: 6, h: 3.4, d: 6, x: -10, z: -4, color: COL.adobeDark });
 
   // Sheriff lean-to / empty office
-  building(root, { w: 5, h: 3.2, d: 5, x: -9.5, z: 20, color: 0x6a5038 });
+  building(root, { w: 5, h: 3.2, d: 5, x: -9.5, z: 20, color: 0x7a6044 });
 
   // East side — hotel / rooms
-  building(root, { w: 7, h: 4.5, d: 8, x: 11, z: 6, color: 0x7a5a40 });
+  building(root, { w: 7, h: 4.5, d: 8, x: 11, z: 6, color: 0x8a6a48 });
   building(root, { w: 5.5, h: 3.3, d: 5.5, x: 10.5, z: -6, color: COL.adobe });
 
   // Stable shed (near hitch)
@@ -140,6 +167,22 @@ export function buildGreenville(scene) {
   // Alley between saloon and mercantile (west) — case spawn
   const alleyZ = 2.2;
   const alleyX = -7.2;
+
+  // Alley mouth gap lighting — obvious from spawn
+  const alleyFill = new THREE.PointLight(0xc46840, 0.85, 16, 1.8);
+  alleyFill.position.set(-5.2, 2.4, alleyZ);
+  root.add(alleyFill);
+  const alleyWarm = new THREE.PointLight(0xa04028, 0.55, 12, 2);
+  alleyWarm.position.set(alleyX, 1.8, alleyZ);
+  root.add(alleyWarm);
+  // Mouth posts frame the gap
+  root.add(box(0.18, 2.4, 0.18, COL.woodDark, -5.4, 1.2, alleyZ + 1.6));
+  root.add(box(0.18, 2.4, 0.18, COL.woodDark, -5.4, 1.2, alleyZ - 1.6));
+  root.add(box(0.14, 0.14, 3.4, COL.bone, -5.4, 2.35, alleyZ, {
+    emissive: 0x3a2810,
+    emissiveIntensity: 0.2,
+  }));
+
   // crates / barrels in alley
   root.add(box(0.9, 0.9, 0.9, COL.wood, alleyX - 1.2, 0.45, alleyZ));
   root.add(box(0.7, 1.1, 0.7, COL.woodDark, alleyX - 0.3, 0.55, alleyZ - 1.1));
@@ -175,19 +218,24 @@ export function buildGreenville(scene) {
   caseBeacon.position.set(alleyX, 0, alleyZ + 0.2);
   root.add(caseBeacon);
 
-  // Hitch rail near alley mouth / street edge
+  // Hitch rail — stronger silhouette near alley mouth / street edge
   const hitch = new THREE.Group();
   hitch.name = 'hitch';
   hitch.position.set(-4.5, 0, -2);
-  hitch.add(box(0.12, 1.1, 0.12, COL.woodDark, -1.2, 0.55, 0));
-  hitch.add(box(0.12, 1.1, 0.12, COL.woodDark, 1.2, 0.55, 0));
-  hitch.add(box(2.6, 0.1, 0.1, COL.wood, 0, 1.0, 0));
+  // Thicker posts + crossbar + bone tip caps
+  hitch.add(box(0.16, 1.25, 0.16, COL.woodDark, -1.3, 0.62, 0));
+  hitch.add(box(0.16, 1.25, 0.16, COL.woodDark, 1.3, 0.62, 0));
+  hitch.add(box(2.8, 0.12, 0.12, COL.wood, 0, 1.15, 0));
+  hitch.add(box(0.22, 0.12, 0.22, COL.bone, -1.3, 1.28, 0, { emissive: 0x2a2010, emissiveIntensity: 0.2 }));
+  hitch.add(box(0.22, 0.12, 0.22, COL.bone, 1.3, 1.28, 0, { emissive: 0x2a2010, emissiveIntensity: 0.2 }));
+  // Small ground ring so hitch reads from horseback
+  hitch.add(box(3.0, 0.06, 0.5, COL.woodDark, 0, 0.03, 0));
   root.add(hitch);
 
   // Fence posts along street
   for (let z = -25; z < 40; z += 4) {
     for (const x of [-5.2, 5.2]) {
-      root.add(box(0.12, 1.0, 0.12, COL.woodDark, x, 0.5, z));
+      root.add(box(0.12, 1.05, 0.12, COL.woodDark, x, 0.52, z));
     }
   }
 
@@ -197,7 +245,7 @@ export function buildGreenville(scene) {
   // Soft-wash / creek drop at +Z far end
   const creekBed = new THREE.Mesh(
     new THREE.PlaneGeometry(28, 18),
-    new THREE.MeshStandardMaterial({ color: 0x3a2a18, roughness: 1 }),
+    new THREE.MeshStandardMaterial({ color: 0x4a3420, roughness: 1 }),
   );
   creekBed.rotation.x = -Math.PI / 2;
   creekBed.position.set(0, -0.35, 48);
@@ -241,17 +289,22 @@ export function buildGreenville(scene) {
     root.add(box(0.6 + (i % 3) * 0.3, 0.4, 0.5, COL.brush, bx, 0.2, bz));
   }
 
-  // Distant buttes (billboard blocks)
+  // Distant buttes (billboard blocks) — slightly brighter so horizon reads
   for (const [x, z, s] of [[-35, 30, 12], [38, 55, 16], [-28, 70, 10], [30, -20, 9]]) {
-    root.add(box(s, s * 0.6, s * 0.5, 0x4a3020, x, s * 0.25, z));
+    root.add(box(s, s * 0.6, s * 0.5, 0x5a3c28, x, s * 0.25, z));
   }
 
-  // Ambient dust lamps — sparse warm points
+  // Ambient dust lamps — warmer/brighter for strip readability
   const lamp = (x, z) => {
-    const l = new THREE.PointLight(0xa85a2a, 0.35, 18);
+    const l = new THREE.PointLight(0xc07840, 0.55, 20);
     l.position.set(x, 3.2, z);
     root.add(l);
     root.add(box(0.15, 2.8, 0.15, COL.woodDark, x, 1.4, z));
+    // Lamp head glow
+    root.add(box(0.35, 0.25, 0.35, COL.rust, x, 3.0, z, {
+      emissive: 0x8a4020,
+      emissiveIntensity: 0.55,
+    }));
   };
   lamp(-6.5, 8);
   lamp(6.5, 8);

@@ -89,14 +89,25 @@
     </div>
     <div class="hud-prompt" id="hud-prompt"></div>
     <div class="hud-obj" id="hud-obj">Follow Rae's mark</div>
+    <div id="hud-controls" class="hud-controls hidden">
+      <div class="hud-controls-title">Controls</div>
+      <div id="hud-controls-body" class="hud-controls-body"></div>
+    </div>
+    <div id="hud-ride-tip" class="hud-ride-tip hidden">W/S move · A/D steer · Shift gallop · E mount · Space act</div>
   </div>
 
   <!-- TOUCH -->
   <div id="touch" class="hidden">
-    <div id="stick" class="stick"><div id="stick-knob"></div></div>
-    <button id="btn-gallop" class="tbtn">GALLOP</button>
-    <button id="btn-mount" class="tbtn">MOUNT</button>
-    <button id="btn-act" class="tbtn primary">ACT</button>
+    <div class="touch-stick-wrap">
+      <div id="stick" class="stick"><div id="stick-knob"></div></div>
+      <div class="touch-label">Stick</div>
+    </div>
+    <div class="touch-btns">
+      <button id="btn-gallop" class="tbtn">GALLOP</button>
+      <button id="btn-mount" class="tbtn">MOUNT</button>
+      <button id="btn-act" class="tbtn primary">ACT</button>
+      <div class="touch-btn-labels"><span>Gallop</span><span>Mount</span><span>Act</span></div>
+    </div>
   </div>
 
   <!-- END -->

@@ -17,6 +17,9 @@ export function createUI() {
   const compass = $('hud-compass');
   const compassArrow = $('compass-arrow');
   const compassLabel = $('compass-label');
+  const playControls = $('hud-controls');
+  const playControlsBody = $('hud-controls-body');
+  const rideTip = $('hud-ride-tip');
 
   function showScreen(name) {
     for (const [k, el] of Object.entries(screens)) {
@@ -24,6 +27,8 @@ export function createUI() {
     }
     hud.classList.toggle('hidden', name !== null && name !== undefined ? true : false);
     if (compass) compass.classList.add('hidden');
+    if (playControls) playControls.classList.add('hidden');
+    if (rideTip) rideTip.classList.add('hidden');
   }
 
   function playMode() {
@@ -75,6 +80,8 @@ export function createUI() {
     showScreen('end');
     hud.classList.add('hidden');
     if (compass) compass.classList.add('hidden');
+    if (playControls) playControls.classList.add('hidden');
+    if (rideTip) rideTip.classList.add('hidden');
     $('end-kicker').textContent = kicker || 'Soft Open';
     const t = $('end-title');
     t.textContent = title;
@@ -82,7 +89,40 @@ export function createUI() {
     $('end-body').textContent = body;
   }
 
+
+  /** In-play controls legend — always visible during heist. touch=true swaps copy. */
+  function showPlayControls(touch) {
+    if (!playControls) return;
+    playControls.classList.remove('hidden');
+    if (playControlsBody) {
+      playControlsBody.innerHTML = touch
+        ? '<div><b>Stick</b> move</div><div><b>Gallop</b> · <b>Mount</b> · <b>Act</b></div>'
+        : '<div><b>W/S</b> Move · <b>A/D</b> Steer</div><div><b>Shift</b> Gallop · <b>E</b> Mount · <b>Space</b> Act</div>';
+    }
+    if (rideTip) {
+      rideTip.classList.remove('hidden', 'fade');
+      // restart fade timer
+      void rideTip.offsetWidth;
+      rideTip.classList.add('show');
+      clearTimeout(rideTip._fadeTimer);
+      rideTip._fadeTimer = setTimeout(() => {
+        rideTip.classList.add('fade');
+        setTimeout(() => rideTip.classList.add('hidden'), 700);
+      }, 6000);
+    }
+  }
+
+  function hidePlayControls() {
+    if (playControls) playControls.classList.add('hidden');
+    if (rideTip) {
+      rideTip.classList.add('hidden');
+      rideTip.classList.remove('show', 'fade');
+      clearTimeout(rideTip._fadeTimer);
+    }
+  }
+
   return {
-    $, showScreen, playMode, setPrompt, setObjective, setMeters, setTimer, setCompass, setCine, showEnd, screens, hud,
+    $, showScreen, playMode, setPrompt, setObjective, setMeters, setTimer, setCompass, setCine, showEnd,
+    showPlayControls, hidePlayControls, screens, hud,
   };
 }

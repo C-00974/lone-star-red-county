@@ -3,11 +3,16 @@
  * Black / blood / rust / bone. Horses. Heist. Not Golden Hour.
  */
 import * as THREE from 'three';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { createInput } from './systems/input.js';
 import { HORSE_PROFILES, createHorseMesh, createHorseController } from './systems/horse.js';
 import { createFollowCamera } from './systems/camera.js';
 import { createHeat } from './systems/heat.js';
 import { createUI } from './systems/ui.js';
+import { makeSkyTexture } from './systems/textures.js';
 import { buildGreenville, isInStreet, dist2 } from './world/greenville.js';
 import { COLD_OPEN, END_CLEAN, END_BOTCHED, END_TIMEOUT } from './scenes/dialogue.js';
 
@@ -28,44 +33,78 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.22;
+renderer.toneMappingExposure = 1.48;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x1a0e12);
-// Milder linear fog — dusk wash without mid-strip soup
-scene.fog = new THREE.Fog(0x2a1818, 28, 95);
+// Late-afternoon / early-dusk western sky — NOT a near-black cave
+const skyMap = makeSkyTexture(512);
+scene.background = skyMap;
+scene.environment = skyMap;
+// Fog only for far depth; near field stays crystal clear
+scene.fog = new THREE.Fog(0xb88868, 52, 145);
 
-const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
+const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 220);
 const followCam = createFollowCamera(camera);
 
-// Lighting — western dusk, readable on phone (black/blood/rust/bone, no gold)
-const hemi = new THREE.HemisphereLight(0x8a6070, 0x2a1810, 1.05);
+// —— Lighting rewrite: readable late-afternoon / early dusk western strip ——
+// Hemisphere — warm sky / dusty ground bounce
+const hemi = new THREE.HemisphereLight(0xd4b090, 0x5a3828, 1.35);
 scene.add(hemi);
-const sun = new THREE.DirectionalLight(0xd4a070, 1.35);
-sun.position.set(-30, 40, 10);
+
+// Strong warm key sun from low western angle (rust/amber — not gold UI chrome)
+const sun = new THREE.DirectionalLight(0xe8a070, 2.15);
+sun.position.set(-42, 22, 18);
 sun.castShadow = true;
-sun.shadow.mapSize.set(1024, 1024);
-sun.shadow.camera.near = 5;
-sun.shadow.camera.far = 120;
-sun.shadow.camera.left = -40;
-sun.shadow.camera.right = 40;
-sun.shadow.camera.top = 40;
-sun.shadow.camera.bottom = -40;
-sun.shadow.bias = -0.0008;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.near = 4;
+sun.shadow.camera.far = 130;
+sun.shadow.camera.left = -45;
+sun.shadow.camera.right = 45;
+sun.shadow.camera.top = 45;
+sun.shadow.camera.bottom = -45;
+sun.shadow.bias = -0.0004;
+sun.shadow.normalBias = 0.025;
+sun.shadow.radius = 2.5;
 scene.add(sun);
-const fill = new THREE.DirectionalLight(0x604050, 0.45);
-fill.position.set(20, 10, -20);
+scene.add(sun.target);
+sun.target.position.set(0, 0, 10);
+
+// Soft fill from east so shadows don't crush adobe / horse / hitch
+const fill = new THREE.DirectionalLight(0x8a7080, 0.55);
+fill.position.set(28, 16, -22);
 scene.add(fill);
-// Subtle rim from sun side so horse silhouette pops against dusk
-const rim = new THREE.DirectionalLight(0xc48a70, 0.35);
-rim.position.set(-40, 18, 25);
+
+// Rim for silhouette separation against dusk sky
+const rim = new THREE.DirectionalLight(0xc0a090, 0.4);
+rim.position.set(-50, 12, 30);
 scene.add(rim);
-// Soft ambient lift so boardwalks/buildings don't crush to black
-const amb = new THREE.AmbientLight(0x3a2820, 0.28);
+
+// Ambient lift — dirt, adobe, leather all read outdoors on phone
+const amb = new THREE.AmbientLight(0x6a5040, 0.42);
 scene.add(amb);
+
+// Sky dome so title orbit / edges stay warm (inside-facing)
+const skyDome = new THREE.Mesh(
+  new THREE.SphereGeometry(180, 32, 16),
+  new THREE.MeshBasicMaterial({ map: skyMap, side: THREE.BackSide, depthWrite: false }),
+);
+scene.add(skyDome);
 
 const world = buildGreenville(scene);
 const heat = createHeat();
+
+// Cheap bloom — high threshold so mostly lamps / windows / beacons bloom
+let composer = null;
+function buildComposer() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  const bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.28, 0.45, 0.82);
+  composer.addPass(bloom);
+  composer.addPass(new OutputPass());
+}
+buildComposer();
 
 let horseCtrl = null;
 let horseProfile = null;
@@ -102,6 +141,7 @@ function resize() {
   camera.updateProjectionMatrix();
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setSize(w, h, false);
+  if (composer) composer.setSize(w, h);
 }
 window.addEventListener('resize', resize);
 
@@ -163,6 +203,7 @@ document.getElementById('btn-title').addEventListener('click', () => {
   phase = 'title';
   ui.showScreen('title');
   input.setTouchVisible(false);
+  ui.hidePlayControls();
 });
 
 function startColdOpen() {
@@ -222,13 +263,16 @@ function beginPlay(horseId) {
   ui.playMode();
   ui.setObjective('Reach the alley — grab the case');
   ui.setPrompt("Rae: Alley west of hitch — case glows blood.");
-  input.setTouchVisible(wantTouch());
+  const touch = wantTouch();
+  input.setTouchVisible(touch);
+  ui.showPlayControls(touch);
 }
 
 function finish(end) {
   phase = 'end';
   input.setTouchVisible(false);
   ui.setCompass(0, null);
+  ui.hidePlayControls();
   ui.showEnd(end);
 }
 
@@ -363,13 +407,15 @@ function frame(now) {
     updatePlay(dt, sample, now / 1000);
   }
 
-  renderer.render(scene, camera);
+  if (composer) composer.render();
+  else renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }
 
 // Boot
 ui.showScreen('title');
 input.setTouchVisible(false);
+ui.hidePlayControls();
 if (new URLSearchParams(location.search).get('touch') === '1') {
   document.getElementById('opt-touch').checked = true;
 }

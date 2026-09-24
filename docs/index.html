@@ -159,7 +159,7 @@ h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); color: var(--bone); letter-spacing: 
 }
 #touch .stick, #touch .tbtn { pointer-events: auto; }
 .stick {
-  position: absolute; left: 1.2rem; bottom: 1.4rem; width: 7.5rem; height: 7.5rem;
+  position: relative; width: 7.5rem; height: 7.5rem;
   border-radius: 50%; background: rgba(20, 8, 8, 0.55); border: 1px solid var(--line);
 }
 #stick-knob {
@@ -167,13 +167,11 @@ h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); color: var(--bone); letter-spacing: 
   border-radius: 50%; background: rgba(196, 40, 40, 0.75); border: 1px solid var(--blood-hot);
 }
 .tbtn {
-  position: absolute; right: 1.1rem; width: 4.6rem; height: 4.6rem; border-radius: 50%;
+  width: 4.6rem; height: 4.6rem; border-radius: 50%;
   border: 1px solid var(--line); background: rgba(20, 8, 8, 0.7); color: var(--bone);
   font-family: system-ui, sans-serif; font-size: 0.62rem; letter-spacing: 0.08em; font-weight: 700;
 }
-#btn-gallop { bottom: 6.4rem; }
-#btn-mount { bottom: 1.4rem; right: 6.2rem; }
-#btn-act { bottom: 1.4rem; background: rgba(110, 20, 20, 0.85); border-color: var(--blood-hot); }
+#btn-act { background: rgba(110, 20, 20, 0.85); border-color: var(--blood-hot); }
 .tbtn:active, .tbtn.held { background: rgba(196, 40, 40, 0.85); }
 
 .end-card { width: min(28rem, 92vw); }
@@ -183,6 +181,60 @@ h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); color: var(--bone); letter-spacing: 
 @media (max-width: 520px) {
   .horse-picks { grid-template-columns: 1fr; }
   .stick { width: 6.2rem; height: 6.2rem; }
+  .touch-stick-wrap { left: 0.7rem; bottom: 0.9rem; }
+}
+
+
+/* In-play controls legend — bone/rust, corner, clears compass (top-right) */
+.hud-controls {
+  position: absolute; left: 0.85rem; bottom: 0.85rem;
+  background: rgba(18, 10, 8, 0.72); border: 1px solid rgba(168, 90, 42, 0.55);
+  color: var(--bone); padding: 0.45rem 0.65rem; border-radius: 3px;
+  font-family: system-ui, sans-serif; font-size: 0.68rem; letter-spacing: 0.04em;
+  line-height: 1.45; pointer-events: none; max-width: 14rem;
+  backdrop-filter: blur(2px);
+}
+.hud-controls-title {
+  color: var(--rust); text-transform: uppercase; letter-spacing: 0.16em;
+  font-size: 0.58rem; margin-bottom: 0.2rem;
+}
+.hud-controls-body b { color: var(--bone); font-weight: 700; }
+.hud-controls-body div + div { margin-top: 0.1rem; color: var(--bone-dim); }
+
+.hud-ride-tip {
+  position: absolute; top: 4.6rem; left: 50%; transform: translateX(-50%);
+  background: rgba(18, 10, 8, 0.82); border: 1px solid rgba(168, 90, 42, 0.5);
+  color: var(--bone); padding: 0.4rem 0.85rem; border-radius: 2px;
+  font-family: system-ui, sans-serif; font-size: 0.72rem; letter-spacing: 0.04em;
+  pointer-events: none; white-space: nowrap; max-width: 92vw;
+  opacity: 0; transition: opacity 0.6s ease;
+}
+.hud-ride-tip.show { opacity: 1; }
+.hud-ride-tip.fade { opacity: 0; }
+
+.touch-stick-wrap {
+  position: absolute; left: 1.2rem; bottom: 1.4rem;
+  display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+  pointer-events: none;
+}
+.touch-stick-wrap .stick { position: relative; left: 0; bottom: 0; pointer-events: auto; }
+.touch-label, .touch-btn-labels {
+  font-family: system-ui, sans-serif; font-size: 0.58rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--bone-dim); pointer-events: none;
+}
+.touch-btns { position: absolute; right: 1.1rem; bottom: 1.4rem; width: 9.5rem; height: 10rem; pointer-events: none; }
+.touch-btns .tbtn { pointer-events: auto; }
+.touch-btns #btn-gallop { position: absolute; right: 0; bottom: 5rem; }
+.touch-btns #btn-mount { position: absolute; right: 5.1rem; bottom: 0; }
+.touch-btns #btn-act { position: absolute; right: 0; bottom: 0; }
+.touch-btn-labels {
+  position: absolute; right: 0; bottom: -1.1rem; width: 100%;
+  display: flex; justify-content: space-between; padding: 0 0.2rem;
+}
+
+@media (max-width: 520px) {
+  .hud-controls { font-size: 0.62rem; left: 0.5rem; bottom: 0.5rem; }
+  .hud-ride-tip { font-size: 0.65rem; white-space: normal; text-align: center; }
 }
 </style>
 </head>
@@ -193,7 +245,7 @@ h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); color: var(--bone); letter-spacing: 
   <!-- TITLE -->
   <div id="screen-title" class="screen active">
     <div class="brand">
-      <div class="kicker">Soft Open · Quiet · tip 8a984de</div>
+      <div class="kicker">Soft Open · Quiet · tip 2ada79e</div>
       <h1>RED COUNTY</h1>
       <p class="tag">Horses. Heist. Blood on the dust.</p>
       <p class="sub">Greenville strip — Quiet approach. You ride for Rae.</p>
@@ -267,14 +319,25 @@ h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); color: var(--bone); letter-spacing: 
     </div>
     <div class="hud-prompt" id="hud-prompt"></div>
     <div class="hud-obj" id="hud-obj">Follow Rae's mark</div>
+    <div id="hud-controls" class="hud-controls hidden">
+      <div class="hud-controls-title">Controls</div>
+      <div id="hud-controls-body" class="hud-controls-body"></div>
+    </div>
+    <div id="hud-ride-tip" class="hud-ride-tip hidden">W/S move · A/D steer · Shift gallop · E mount · Space act</div>
   </div>
 
   <!-- TOUCH -->
   <div id="touch" class="hidden">
-    <div id="stick" class="stick"><div id="stick-knob"></div></div>
-    <button id="btn-gallop" class="tbtn">GALLOP</button>
-    <button id="btn-mount" class="tbtn">MOUNT</button>
-    <button id="btn-act" class="tbtn primary">ACT</button>
+    <div class="touch-stick-wrap">
+      <div id="stick" class="stick"><div id="stick-knob"></div></div>
+      <div class="touch-label">Stick</div>
+    </div>
+    <div class="touch-btns">
+      <button id="btn-gallop" class="tbtn">GALLOP</button>
+      <button id="btn-mount" class="tbtn">MOUNT</button>
+      <button id="btn-act" class="tbtn primary">ACT</button>
+      <div class="touch-btn-labels"><span>Gallop</span><span>Mount</span><span>Act</span></div>
+    </div>
   </div>
 
   <!-- END -->
@@ -1072,17 +1135,17 @@ h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); color: var(--bone); letter-spacing: 
       return this;
     }
     transpose() {
-      let tmp;
+      let tmp2;
       const m = this.elements;
-      tmp = m[1];
+      tmp2 = m[1];
       m[1] = m[3];
-      m[3] = tmp;
-      tmp = m[2];
+      m[3] = tmp2;
+      tmp2 = m[2];
       m[2] = m[6];
-      m[6] = tmp;
-      tmp = m[5];
+      m[6] = tmp2;
+      tmp2 = m[5];
       m[5] = m[7];
-      m[7] = tmp;
+      m[7] = tmp2;
       return this;
     }
     getNormalMatrix(matrix4) {
@@ -1232,9 +1295,9 @@ h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); color: var(--bone); letter-spacing: 
     return document.createElementNS("http://www.w3.org/1999/xhtml", name);
   }
   function createCanvasElement() {
-    const canvas2 = createElementNS("canvas");
-    canvas2.style.display = "block";
-    return canvas2;
+    const canvas3 = createElementNS("canvas");
+    canvas3.style.display = "block";
+    return canvas3;
   }
   var _cache = {};
   function warnOnce(message) {
@@ -1410,9 +1473,9 @@ h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); color: var(--bone); letter-spacing: 
       if (typeof HTMLCanvasElement === "undefined") {
         return image.src;
       }
-      let canvas2;
+      let canvas3;
       if (image instanceof HTMLCanvasElement) {
-        canvas2 = image;
+        canvas3 = image;
       } else {
         if (_canvas === void 0) _canvas = createElementNS("canvas");
         _canvas.width = image.width;
@@ -1423,21 +1486,21 @@ h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); color: var(--bone); letter-spacing: 
         } else {
           context.drawImage(image, 0, 0, image.width, image.height);
         }
-        canvas2 = _canvas;
+        canvas3 = _canvas;
       }
-      if (canvas2.width > 2048 || canvas2.height > 2048) {
+      if (canvas3.width > 2048 || canvas3.height > 2048) {
         console.warn("THREE.ImageUtils.getDataURL: Image converted to jpg for performance reasons", image);
-        return canvas2.toDataURL("image/jpeg", 0.6);
+        return canvas3.toDataURL("image/jpeg", 0.6);
       } else {
-        return canvas2.toDataURL("image/png");
+        return canvas3.toDataURL("image/png");
       }
     }
     static sRGBToLinear(image) {
       if (typeof HTMLImageElement !== "undefined" && image instanceof HTMLImageElement || typeof HTMLCanvasElement !== "undefined" && image instanceof HTMLCanvasElement || typeof ImageBitmap !== "undefined" && image instanceof ImageBitmap) {
-        const canvas2 = createElementNS("canvas");
-        canvas2.width = image.width;
-        canvas2.height = image.height;
-        const context = canvas2.getContext("2d");
+        const canvas3 = createElementNS("canvas");
+        canvas3.width = image.width;
+        canvas3.height = image.height;
+        const context = canvas3.getContext("2d");
         context.drawImage(image, 0, 0, image.width, image.height);
         const imageData = context.getImageData(0, 0, image.width, image.height);
         const data = imageData.data;
@@ -1445,7 +1508,7 @@ h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); color: var(--bone); letter-spacing: 
           data[i] = SRGBToLinear(data[i] / 255) * 255;
         }
         context.putImageData(imageData, 0, 0);
-        return canvas2;
+        return canvas3;
       } else if (image.data) {
         const data = image.data.slice(0);
         for (let i = 0; i < data.length; i++) {
@@ -4042,25 +4105,25 @@ h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); color: var(--bone); letter-spacing: 
     }
     transpose() {
       const te = this.elements;
-      let tmp;
-      tmp = te[1];
+      let tmp2;
+      tmp2 = te[1];
       te[1] = te[4];
-      te[4] = tmp;
-      tmp = te[2];
+      te[4] = tmp2;
+      tmp2 = te[2];
       te[2] = te[8];
-      te[8] = tmp;
-      tmp = te[6];
+      te[8] = tmp2;
+      tmp2 = te[6];
       te[6] = te[9];
-      te[9] = tmp;
-      tmp = te[3];
+      te[9] = tmp2;
+      tmp2 = te[3];
       te[3] = te[12];
-      te[12] = tmp;
-      tmp = te[7];
+      te[12] = tmp2;
+      tmp2 = te[7];
       te[7] = te[13];
-      te[13] = tmp;
-      tmp = te[11];
+      te[13] = tmp2;
+      tmp2 = te[11];
       te[11] = te[14];
-      te[14] = tmp;
+      te[14] = tmp2;
       return this;
     }
     setPosition(x, y, z) {
@@ -6827,18 +6890,18 @@ h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); color: var(--bone); letter-spacing: 
           );
         }
       }
-      const tmp = new Vector3(), tmp2 = new Vector3();
+      const tmp2 = new Vector3(), tmp22 = new Vector3();
       const n = new Vector3(), n2 = new Vector3();
       function handleVertex(v) {
         n.fromBufferAttribute(normalAttribute, v);
         n2.copy(n);
         const t = tan1[v];
-        tmp.copy(t);
-        tmp.sub(n.multiplyScalar(n.dot(t))).normalize();
-        tmp2.crossVectors(n2, t);
-        const test = tmp2.dot(tan2[v]);
+        tmp2.copy(t);
+        tmp2.sub(n.multiplyScalar(n.dot(t))).normalize();
+        tmp22.crossVectors(n2, t);
+        const test = tmp22.dot(tan2[v]);
         const w = test < 0 ? -1 : 1;
-        tangentAttribute.setXYZW(v, tmp.x, tmp.y, tmp.z, w);
+        tangentAttribute.setXYZW(v, tmp2.x, tmp2.y, tmp2.z, w);
       }
       for (let i = 0, il = groups.length; i < il; ++i) {
         const group = groups[i];
@@ -7413,9 +7476,9 @@ h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); color: var(--bone); letter-spacing: 
   function mergeUniforms(uniforms) {
     const merged = {};
     for (let u = 0; u < uniforms.length; u++) {
-      const tmp = cloneUniforms(uniforms[u]);
-      for (const p in tmp) {
-        merged[p] = tmp[p];
+      const tmp2 = cloneUniforms(uniforms[u]);
+      for (const p in tmp2) {
+        merged[p] = tmp2[p];
       }
     }
     return merged;
@@ -14642,13 +14705,13 @@ h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); color: var(--bone); letter-spacing: 
           const width = Math.floor(scale * dimensions.width);
           const height = Math.floor(scale * dimensions.height);
           if (_canvas2 === void 0) _canvas2 = createCanvas(width, height);
-          const canvas2 = needsNewCanvas ? createCanvas(width, height) : _canvas2;
-          canvas2.width = width;
-          canvas2.height = height;
-          const context = canvas2.getContext("2d");
+          const canvas3 = needsNewCanvas ? createCanvas(width, height) : _canvas2;
+          canvas3.width = width;
+          canvas3.height = height;
+          const context = canvas3.getContext("2d");
           context.drawImage(image, 0, 0, width, height);
           console.warn("THREE.WebGLRenderer: Texture has been resized from (" + dimensions.width + "x" + dimensions.height + ") to (" + width + "x" + height + ").");
-          return canvas2;
+          return canvas3;
         } else {
           if ("data" in image) {
             console.warn("THREE.WebGLRenderer: Image in DataTexture is too big (" + dimensions.width + "x" + dimensions.height + ").");
@@ -17110,7 +17173,7 @@ void main() {
   var WebGLRenderer = class {
     constructor(parameters = {}) {
       const {
-        canvas: canvas2 = createCanvasElement(),
+        canvas: canvas3 = createCanvasElement(),
         context = null,
         depth = true,
         stencil = false,
@@ -17138,7 +17201,7 @@ void main() {
       let currentRenderState = null;
       const renderListStack = [];
       const renderStateStack = [];
-      this.domElement = canvas2;
+      this.domElement = canvas3;
       this.debug = {
         /**
          * Enables error checking and reporting when shader programs are being compiled
@@ -17173,8 +17236,8 @@ void main() {
       let _currentScissorTest = null;
       const _currentClearColor = new Color(0);
       let _currentClearAlpha = 0;
-      let _width = canvas2.width;
-      let _height = canvas2.height;
+      let _width = canvas3.width;
+      let _height = canvas3.height;
       let _pixelRatio = 1;
       let _opaqueSort = null;
       let _transparentSort = null;
@@ -17195,7 +17258,7 @@ void main() {
       }
       let _gl = context;
       function getContext(contextName, contextAttributes) {
-        return canvas2.getContext(contextName, contextAttributes);
+        return canvas3.getContext(contextName, contextAttributes);
       }
       try {
         const contextAttributes = {
@@ -17208,10 +17271,10 @@ void main() {
           powerPreference,
           failIfMajorPerformanceCaveat
         };
-        if ("setAttribute" in canvas2) canvas2.setAttribute("data-engine", `three.js r${REVISION}`);
-        canvas2.addEventListener("webglcontextlost", onContextLost, false);
-        canvas2.addEventListener("webglcontextrestored", onContextRestore, false);
-        canvas2.addEventListener("webglcontextcreationerror", onContextCreationError, false);
+        if ("setAttribute" in canvas3) canvas3.setAttribute("data-engine", `three.js r${REVISION}`);
+        canvas3.addEventListener("webglcontextlost", onContextLost, false);
+        canvas3.addEventListener("webglcontextrestored", onContextRestore, false);
+        canvas3.addEventListener("webglcontextcreationerror", onContextCreationError, false);
         if (_gl === null) {
           const contextName = "webgl2";
           _gl = getContext(contextName, contextAttributes);
@@ -17305,11 +17368,11 @@ void main() {
         }
         _width = width;
         _height = height;
-        canvas2.width = Math.floor(width * _pixelRatio);
-        canvas2.height = Math.floor(height * _pixelRatio);
+        canvas3.width = Math.floor(width * _pixelRatio);
+        canvas3.height = Math.floor(height * _pixelRatio);
         if (updateStyle === true) {
-          canvas2.style.width = width + "px";
-          canvas2.style.height = height + "px";
+          canvas3.style.width = width + "px";
+          canvas3.style.height = height + "px";
         }
         this.setViewport(0, 0, width, height);
       };
@@ -17320,8 +17383,8 @@ void main() {
         _width = width;
         _height = height;
         _pixelRatio = pixelRatio;
-        canvas2.width = Math.floor(width * pixelRatio);
-        canvas2.height = Math.floor(height * pixelRatio);
+        canvas3.width = Math.floor(width * pixelRatio);
+        canvas3.height = Math.floor(height * pixelRatio);
         this.setViewport(0, 0, width, height);
       };
       this.getCurrentViewport = function(target) {
@@ -17425,9 +17488,9 @@ void main() {
         this.clear(false, false, true);
       };
       this.dispose = function() {
-        canvas2.removeEventListener("webglcontextlost", onContextLost, false);
-        canvas2.removeEventListener("webglcontextrestored", onContextRestore, false);
-        canvas2.removeEventListener("webglcontextcreationerror", onContextCreationError, false);
+        canvas3.removeEventListener("webglcontextlost", onContextLost, false);
+        canvas3.removeEventListener("webglcontextrestored", onContextRestore, false);
+        canvas3.removeEventListener("webglcontextcreationerror", onContextCreationError, false);
         renderLists.dispose();
         renderStates.dispose();
         properties.dispose();
@@ -18651,6 +18714,797 @@ void main() {
       return data;
     }
   };
+  var CanvasTexture = class extends Texture {
+    constructor(canvas3, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy) {
+      super(canvas3, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy);
+      this.isCanvasTexture = true;
+      this.needsUpdate = true;
+    }
+  };
+  var Curve = class {
+    constructor() {
+      this.type = "Curve";
+      this.arcLengthDivisions = 200;
+    }
+    // Virtual base class method to overwrite and implement in subclasses
+    //	- t [0 .. 1]
+    getPoint() {
+      console.warn("THREE.Curve: .getPoint() not implemented.");
+      return null;
+    }
+    // Get point at relative position in curve according to arc length
+    // - u [0 .. 1]
+    getPointAt(u, optionalTarget) {
+      const t = this.getUtoTmapping(u);
+      return this.getPoint(t, optionalTarget);
+    }
+    // Get sequence of points using getPoint( t )
+    getPoints(divisions = 5) {
+      const points = [];
+      for (let d = 0; d <= divisions; d++) {
+        points.push(this.getPoint(d / divisions));
+      }
+      return points;
+    }
+    // Get sequence of points using getPointAt( u )
+    getSpacedPoints(divisions = 5) {
+      const points = [];
+      for (let d = 0; d <= divisions; d++) {
+        points.push(this.getPointAt(d / divisions));
+      }
+      return points;
+    }
+    // Get total curve arc length
+    getLength() {
+      const lengths = this.getLengths();
+      return lengths[lengths.length - 1];
+    }
+    // Get list of cumulative segment lengths
+    getLengths(divisions = this.arcLengthDivisions) {
+      if (this.cacheArcLengths && this.cacheArcLengths.length === divisions + 1 && !this.needsUpdate) {
+        return this.cacheArcLengths;
+      }
+      this.needsUpdate = false;
+      const cache = [];
+      let current, last2 = this.getPoint(0);
+      let sum = 0;
+      cache.push(0);
+      for (let p = 1; p <= divisions; p++) {
+        current = this.getPoint(p / divisions);
+        sum += current.distanceTo(last2);
+        cache.push(sum);
+        last2 = current;
+      }
+      this.cacheArcLengths = cache;
+      return cache;
+    }
+    updateArcLengths() {
+      this.needsUpdate = true;
+      this.getLengths();
+    }
+    // Given u ( 0 .. 1 ), get a t to find p. This gives you points which are equidistant
+    getUtoTmapping(u, distance) {
+      const arcLengths = this.getLengths();
+      let i = 0;
+      const il = arcLengths.length;
+      let targetArcLength;
+      if (distance) {
+        targetArcLength = distance;
+      } else {
+        targetArcLength = u * arcLengths[il - 1];
+      }
+      let low = 0, high = il - 1, comparison;
+      while (low <= high) {
+        i = Math.floor(low + (high - low) / 2);
+        comparison = arcLengths[i] - targetArcLength;
+        if (comparison < 0) {
+          low = i + 1;
+        } else if (comparison > 0) {
+          high = i - 1;
+        } else {
+          high = i;
+          break;
+        }
+      }
+      i = high;
+      if (arcLengths[i] === targetArcLength) {
+        return i / (il - 1);
+      }
+      const lengthBefore = arcLengths[i];
+      const lengthAfter = arcLengths[i + 1];
+      const segmentLength = lengthAfter - lengthBefore;
+      const segmentFraction = (targetArcLength - lengthBefore) / segmentLength;
+      const t = (i + segmentFraction) / (il - 1);
+      return t;
+    }
+    // Returns a unit vector tangent at t
+    // In case any sub curve does not implement its tangent derivation,
+    // 2 points a small delta apart will be used to find its gradient
+    // which seems to give a reasonable approximation
+    getTangent(t, optionalTarget) {
+      const delta = 1e-4;
+      let t1 = t - delta;
+      let t2 = t + delta;
+      if (t1 < 0) t1 = 0;
+      if (t2 > 1) t2 = 1;
+      const pt1 = this.getPoint(t1);
+      const pt2 = this.getPoint(t2);
+      const tangent = optionalTarget || (pt1.isVector2 ? new Vector2() : new Vector3());
+      tangent.copy(pt2).sub(pt1).normalize();
+      return tangent;
+    }
+    getTangentAt(u, optionalTarget) {
+      const t = this.getUtoTmapping(u);
+      return this.getTangent(t, optionalTarget);
+    }
+    computeFrenetFrames(segments, closed) {
+      const normal = new Vector3();
+      const tangents = [];
+      const normals = [];
+      const binormals = [];
+      const vec = new Vector3();
+      const mat2 = new Matrix4();
+      for (let i = 0; i <= segments; i++) {
+        const u = i / segments;
+        tangents[i] = this.getTangentAt(u, new Vector3());
+      }
+      normals[0] = new Vector3();
+      binormals[0] = new Vector3();
+      let min = Number.MAX_VALUE;
+      const tx = Math.abs(tangents[0].x);
+      const ty = Math.abs(tangents[0].y);
+      const tz = Math.abs(tangents[0].z);
+      if (tx <= min) {
+        min = tx;
+        normal.set(1, 0, 0);
+      }
+      if (ty <= min) {
+        min = ty;
+        normal.set(0, 1, 0);
+      }
+      if (tz <= min) {
+        normal.set(0, 0, 1);
+      }
+      vec.crossVectors(tangents[0], normal).normalize();
+      normals[0].crossVectors(tangents[0], vec);
+      binormals[0].crossVectors(tangents[0], normals[0]);
+      for (let i = 1; i <= segments; i++) {
+        normals[i] = normals[i - 1].clone();
+        binormals[i] = binormals[i - 1].clone();
+        vec.crossVectors(tangents[i - 1], tangents[i]);
+        if (vec.length() > Number.EPSILON) {
+          vec.normalize();
+          const theta = Math.acos(clamp(tangents[i - 1].dot(tangents[i]), -1, 1));
+          normals[i].applyMatrix4(mat2.makeRotationAxis(vec, theta));
+        }
+        binormals[i].crossVectors(tangents[i], normals[i]);
+      }
+      if (closed === true) {
+        let theta = Math.acos(clamp(normals[0].dot(normals[segments]), -1, 1));
+        theta /= segments;
+        if (tangents[0].dot(vec.crossVectors(normals[0], normals[segments])) > 0) {
+          theta = -theta;
+        }
+        for (let i = 1; i <= segments; i++) {
+          normals[i].applyMatrix4(mat2.makeRotationAxis(tangents[i], theta * i));
+          binormals[i].crossVectors(tangents[i], normals[i]);
+        }
+      }
+      return {
+        tangents,
+        normals,
+        binormals
+      };
+    }
+    clone() {
+      return new this.constructor().copy(this);
+    }
+    copy(source) {
+      this.arcLengthDivisions = source.arcLengthDivisions;
+      return this;
+    }
+    toJSON() {
+      const data = {
+        metadata: {
+          version: 4.6,
+          type: "Curve",
+          generator: "Curve.toJSON"
+        }
+      };
+      data.arcLengthDivisions = this.arcLengthDivisions;
+      data.type = this.type;
+      return data;
+    }
+    fromJSON(json) {
+      this.arcLengthDivisions = json.arcLengthDivisions;
+      return this;
+    }
+  };
+  var EllipseCurve = class extends Curve {
+    constructor(aX = 0, aY = 0, xRadius = 1, yRadius = 1, aStartAngle = 0, aEndAngle = Math.PI * 2, aClockwise = false, aRotation = 0) {
+      super();
+      this.isEllipseCurve = true;
+      this.type = "EllipseCurve";
+      this.aX = aX;
+      this.aY = aY;
+      this.xRadius = xRadius;
+      this.yRadius = yRadius;
+      this.aStartAngle = aStartAngle;
+      this.aEndAngle = aEndAngle;
+      this.aClockwise = aClockwise;
+      this.aRotation = aRotation;
+    }
+    getPoint(t, optionalTarget = new Vector2()) {
+      const point = optionalTarget;
+      const twoPi = Math.PI * 2;
+      let deltaAngle = this.aEndAngle - this.aStartAngle;
+      const samePoints = Math.abs(deltaAngle) < Number.EPSILON;
+      while (deltaAngle < 0) deltaAngle += twoPi;
+      while (deltaAngle > twoPi) deltaAngle -= twoPi;
+      if (deltaAngle < Number.EPSILON) {
+        if (samePoints) {
+          deltaAngle = 0;
+        } else {
+          deltaAngle = twoPi;
+        }
+      }
+      if (this.aClockwise === true && !samePoints) {
+        if (deltaAngle === twoPi) {
+          deltaAngle = -twoPi;
+        } else {
+          deltaAngle = deltaAngle - twoPi;
+        }
+      }
+      const angle = this.aStartAngle + t * deltaAngle;
+      let x = this.aX + this.xRadius * Math.cos(angle);
+      let y = this.aY + this.yRadius * Math.sin(angle);
+      if (this.aRotation !== 0) {
+        const cos = Math.cos(this.aRotation);
+        const sin = Math.sin(this.aRotation);
+        const tx = x - this.aX;
+        const ty = y - this.aY;
+        x = tx * cos - ty * sin + this.aX;
+        y = tx * sin + ty * cos + this.aY;
+      }
+      return point.set(x, y);
+    }
+    copy(source) {
+      super.copy(source);
+      this.aX = source.aX;
+      this.aY = source.aY;
+      this.xRadius = source.xRadius;
+      this.yRadius = source.yRadius;
+      this.aStartAngle = source.aStartAngle;
+      this.aEndAngle = source.aEndAngle;
+      this.aClockwise = source.aClockwise;
+      this.aRotation = source.aRotation;
+      return this;
+    }
+    toJSON() {
+      const data = super.toJSON();
+      data.aX = this.aX;
+      data.aY = this.aY;
+      data.xRadius = this.xRadius;
+      data.yRadius = this.yRadius;
+      data.aStartAngle = this.aStartAngle;
+      data.aEndAngle = this.aEndAngle;
+      data.aClockwise = this.aClockwise;
+      data.aRotation = this.aRotation;
+      return data;
+    }
+    fromJSON(json) {
+      super.fromJSON(json);
+      this.aX = json.aX;
+      this.aY = json.aY;
+      this.xRadius = json.xRadius;
+      this.yRadius = json.yRadius;
+      this.aStartAngle = json.aStartAngle;
+      this.aEndAngle = json.aEndAngle;
+      this.aClockwise = json.aClockwise;
+      this.aRotation = json.aRotation;
+      return this;
+    }
+  };
+  var ArcCurve = class extends EllipseCurve {
+    constructor(aX, aY, aRadius, aStartAngle, aEndAngle, aClockwise) {
+      super(aX, aY, aRadius, aRadius, aStartAngle, aEndAngle, aClockwise);
+      this.isArcCurve = true;
+      this.type = "ArcCurve";
+    }
+  };
+  function CubicPoly() {
+    let c0 = 0, c1 = 0, c2 = 0, c3 = 0;
+    function init(x0, x1, t0, t1) {
+      c0 = x0;
+      c1 = t0;
+      c2 = -3 * x0 + 3 * x1 - 2 * t0 - t1;
+      c3 = 2 * x0 - 2 * x1 + t0 + t1;
+    }
+    return {
+      initCatmullRom: function(x0, x1, x2, x3, tension) {
+        init(x1, x2, tension * (x2 - x0), tension * (x3 - x1));
+      },
+      initNonuniformCatmullRom: function(x0, x1, x2, x3, dt0, dt1, dt2) {
+        let t1 = (x1 - x0) / dt0 - (x2 - x0) / (dt0 + dt1) + (x2 - x1) / dt1;
+        let t2 = (x2 - x1) / dt1 - (x3 - x1) / (dt1 + dt2) + (x3 - x2) / dt2;
+        t1 *= dt1;
+        t2 *= dt1;
+        init(x1, x2, t1, t2);
+      },
+      calc: function(t) {
+        const t2 = t * t;
+        const t3 = t2 * t;
+        return c0 + c1 * t + c2 * t2 + c3 * t3;
+      }
+    };
+  }
+  var tmp = /* @__PURE__ */ new Vector3();
+  var px = /* @__PURE__ */ new CubicPoly();
+  var py = /* @__PURE__ */ new CubicPoly();
+  var pz = /* @__PURE__ */ new CubicPoly();
+  var CatmullRomCurve3 = class extends Curve {
+    constructor(points = [], closed = false, curveType = "centripetal", tension = 0.5) {
+      super();
+      this.isCatmullRomCurve3 = true;
+      this.type = "CatmullRomCurve3";
+      this.points = points;
+      this.closed = closed;
+      this.curveType = curveType;
+      this.tension = tension;
+    }
+    getPoint(t, optionalTarget = new Vector3()) {
+      const point = optionalTarget;
+      const points = this.points;
+      const l = points.length;
+      const p = (l - (this.closed ? 0 : 1)) * t;
+      let intPoint = Math.floor(p);
+      let weight = p - intPoint;
+      if (this.closed) {
+        intPoint += intPoint > 0 ? 0 : (Math.floor(Math.abs(intPoint) / l) + 1) * l;
+      } else if (weight === 0 && intPoint === l - 1) {
+        intPoint = l - 2;
+        weight = 1;
+      }
+      let p0, p3;
+      if (this.closed || intPoint > 0) {
+        p0 = points[(intPoint - 1) % l];
+      } else {
+        tmp.subVectors(points[0], points[1]).add(points[0]);
+        p0 = tmp;
+      }
+      const p1 = points[intPoint % l];
+      const p2 = points[(intPoint + 1) % l];
+      if (this.closed || intPoint + 2 < l) {
+        p3 = points[(intPoint + 2) % l];
+      } else {
+        tmp.subVectors(points[l - 1], points[l - 2]).add(points[l - 1]);
+        p3 = tmp;
+      }
+      if (this.curveType === "centripetal" || this.curveType === "chordal") {
+        const pow = this.curveType === "chordal" ? 0.5 : 0.25;
+        let dt0 = Math.pow(p0.distanceToSquared(p1), pow);
+        let dt1 = Math.pow(p1.distanceToSquared(p2), pow);
+        let dt2 = Math.pow(p2.distanceToSquared(p3), pow);
+        if (dt1 < 1e-4) dt1 = 1;
+        if (dt0 < 1e-4) dt0 = dt1;
+        if (dt2 < 1e-4) dt2 = dt1;
+        px.initNonuniformCatmullRom(p0.x, p1.x, p2.x, p3.x, dt0, dt1, dt2);
+        py.initNonuniformCatmullRom(p0.y, p1.y, p2.y, p3.y, dt0, dt1, dt2);
+        pz.initNonuniformCatmullRom(p0.z, p1.z, p2.z, p3.z, dt0, dt1, dt2);
+      } else if (this.curveType === "catmullrom") {
+        px.initCatmullRom(p0.x, p1.x, p2.x, p3.x, this.tension);
+        py.initCatmullRom(p0.y, p1.y, p2.y, p3.y, this.tension);
+        pz.initCatmullRom(p0.z, p1.z, p2.z, p3.z, this.tension);
+      }
+      point.set(
+        px.calc(weight),
+        py.calc(weight),
+        pz.calc(weight)
+      );
+      return point;
+    }
+    copy(source) {
+      super.copy(source);
+      this.points = [];
+      for (let i = 0, l = source.points.length; i < l; i++) {
+        const point = source.points[i];
+        this.points.push(point.clone());
+      }
+      this.closed = source.closed;
+      this.curveType = source.curveType;
+      this.tension = source.tension;
+      return this;
+    }
+    toJSON() {
+      const data = super.toJSON();
+      data.points = [];
+      for (let i = 0, l = this.points.length; i < l; i++) {
+        const point = this.points[i];
+        data.points.push(point.toArray());
+      }
+      data.closed = this.closed;
+      data.curveType = this.curveType;
+      data.tension = this.tension;
+      return data;
+    }
+    fromJSON(json) {
+      super.fromJSON(json);
+      this.points = [];
+      for (let i = 0, l = json.points.length; i < l; i++) {
+        const point = json.points[i];
+        this.points.push(new Vector3().fromArray(point));
+      }
+      this.closed = json.closed;
+      this.curveType = json.curveType;
+      this.tension = json.tension;
+      return this;
+    }
+  };
+  function CatmullRom(t, p0, p1, p2, p3) {
+    const v0 = (p2 - p0) * 0.5;
+    const v1 = (p3 - p1) * 0.5;
+    const t2 = t * t;
+    const t3 = t * t2;
+    return (2 * p1 - 2 * p2 + v0 + v1) * t3 + (-3 * p1 + 3 * p2 - 2 * v0 - v1) * t2 + v0 * t + p1;
+  }
+  function QuadraticBezierP0(t, p) {
+    const k = 1 - t;
+    return k * k * p;
+  }
+  function QuadraticBezierP1(t, p) {
+    return 2 * (1 - t) * t * p;
+  }
+  function QuadraticBezierP2(t, p) {
+    return t * t * p;
+  }
+  function QuadraticBezier(t, p0, p1, p2) {
+    return QuadraticBezierP0(t, p0) + QuadraticBezierP1(t, p1) + QuadraticBezierP2(t, p2);
+  }
+  function CubicBezierP0(t, p) {
+    const k = 1 - t;
+    return k * k * k * p;
+  }
+  function CubicBezierP1(t, p) {
+    const k = 1 - t;
+    return 3 * k * k * t * p;
+  }
+  function CubicBezierP2(t, p) {
+    return 3 * (1 - t) * t * t * p;
+  }
+  function CubicBezierP3(t, p) {
+    return t * t * t * p;
+  }
+  function CubicBezier(t, p0, p1, p2, p3) {
+    return CubicBezierP0(t, p0) + CubicBezierP1(t, p1) + CubicBezierP2(t, p2) + CubicBezierP3(t, p3);
+  }
+  var CubicBezierCurve = class extends Curve {
+    constructor(v0 = new Vector2(), v1 = new Vector2(), v2 = new Vector2(), v3 = new Vector2()) {
+      super();
+      this.isCubicBezierCurve = true;
+      this.type = "CubicBezierCurve";
+      this.v0 = v0;
+      this.v1 = v1;
+      this.v2 = v2;
+      this.v3 = v3;
+    }
+    getPoint(t, optionalTarget = new Vector2()) {
+      const point = optionalTarget;
+      const v0 = this.v0, v1 = this.v1, v2 = this.v2, v3 = this.v3;
+      point.set(
+        CubicBezier(t, v0.x, v1.x, v2.x, v3.x),
+        CubicBezier(t, v0.y, v1.y, v2.y, v3.y)
+      );
+      return point;
+    }
+    copy(source) {
+      super.copy(source);
+      this.v0.copy(source.v0);
+      this.v1.copy(source.v1);
+      this.v2.copy(source.v2);
+      this.v3.copy(source.v3);
+      return this;
+    }
+    toJSON() {
+      const data = super.toJSON();
+      data.v0 = this.v0.toArray();
+      data.v1 = this.v1.toArray();
+      data.v2 = this.v2.toArray();
+      data.v3 = this.v3.toArray();
+      return data;
+    }
+    fromJSON(json) {
+      super.fromJSON(json);
+      this.v0.fromArray(json.v0);
+      this.v1.fromArray(json.v1);
+      this.v2.fromArray(json.v2);
+      this.v3.fromArray(json.v3);
+      return this;
+    }
+  };
+  var CubicBezierCurve3 = class extends Curve {
+    constructor(v0 = new Vector3(), v1 = new Vector3(), v2 = new Vector3(), v3 = new Vector3()) {
+      super();
+      this.isCubicBezierCurve3 = true;
+      this.type = "CubicBezierCurve3";
+      this.v0 = v0;
+      this.v1 = v1;
+      this.v2 = v2;
+      this.v3 = v3;
+    }
+    getPoint(t, optionalTarget = new Vector3()) {
+      const point = optionalTarget;
+      const v0 = this.v0, v1 = this.v1, v2 = this.v2, v3 = this.v3;
+      point.set(
+        CubicBezier(t, v0.x, v1.x, v2.x, v3.x),
+        CubicBezier(t, v0.y, v1.y, v2.y, v3.y),
+        CubicBezier(t, v0.z, v1.z, v2.z, v3.z)
+      );
+      return point;
+    }
+    copy(source) {
+      super.copy(source);
+      this.v0.copy(source.v0);
+      this.v1.copy(source.v1);
+      this.v2.copy(source.v2);
+      this.v3.copy(source.v3);
+      return this;
+    }
+    toJSON() {
+      const data = super.toJSON();
+      data.v0 = this.v0.toArray();
+      data.v1 = this.v1.toArray();
+      data.v2 = this.v2.toArray();
+      data.v3 = this.v3.toArray();
+      return data;
+    }
+    fromJSON(json) {
+      super.fromJSON(json);
+      this.v0.fromArray(json.v0);
+      this.v1.fromArray(json.v1);
+      this.v2.fromArray(json.v2);
+      this.v3.fromArray(json.v3);
+      return this;
+    }
+  };
+  var LineCurve = class extends Curve {
+    constructor(v1 = new Vector2(), v2 = new Vector2()) {
+      super();
+      this.isLineCurve = true;
+      this.type = "LineCurve";
+      this.v1 = v1;
+      this.v2 = v2;
+    }
+    getPoint(t, optionalTarget = new Vector2()) {
+      const point = optionalTarget;
+      if (t === 1) {
+        point.copy(this.v2);
+      } else {
+        point.copy(this.v2).sub(this.v1);
+        point.multiplyScalar(t).add(this.v1);
+      }
+      return point;
+    }
+    // Line curve is linear, so we can overwrite default getPointAt
+    getPointAt(u, optionalTarget) {
+      return this.getPoint(u, optionalTarget);
+    }
+    getTangent(t, optionalTarget = new Vector2()) {
+      return optionalTarget.subVectors(this.v2, this.v1).normalize();
+    }
+    getTangentAt(u, optionalTarget) {
+      return this.getTangent(u, optionalTarget);
+    }
+    copy(source) {
+      super.copy(source);
+      this.v1.copy(source.v1);
+      this.v2.copy(source.v2);
+      return this;
+    }
+    toJSON() {
+      const data = super.toJSON();
+      data.v1 = this.v1.toArray();
+      data.v2 = this.v2.toArray();
+      return data;
+    }
+    fromJSON(json) {
+      super.fromJSON(json);
+      this.v1.fromArray(json.v1);
+      this.v2.fromArray(json.v2);
+      return this;
+    }
+  };
+  var LineCurve3 = class extends Curve {
+    constructor(v1 = new Vector3(), v2 = new Vector3()) {
+      super();
+      this.isLineCurve3 = true;
+      this.type = "LineCurve3";
+      this.v1 = v1;
+      this.v2 = v2;
+    }
+    getPoint(t, optionalTarget = new Vector3()) {
+      const point = optionalTarget;
+      if (t === 1) {
+        point.copy(this.v2);
+      } else {
+        point.copy(this.v2).sub(this.v1);
+        point.multiplyScalar(t).add(this.v1);
+      }
+      return point;
+    }
+    // Line curve is linear, so we can overwrite default getPointAt
+    getPointAt(u, optionalTarget) {
+      return this.getPoint(u, optionalTarget);
+    }
+    getTangent(t, optionalTarget = new Vector3()) {
+      return optionalTarget.subVectors(this.v2, this.v1).normalize();
+    }
+    getTangentAt(u, optionalTarget) {
+      return this.getTangent(u, optionalTarget);
+    }
+    copy(source) {
+      super.copy(source);
+      this.v1.copy(source.v1);
+      this.v2.copy(source.v2);
+      return this;
+    }
+    toJSON() {
+      const data = super.toJSON();
+      data.v1 = this.v1.toArray();
+      data.v2 = this.v2.toArray();
+      return data;
+    }
+    fromJSON(json) {
+      super.fromJSON(json);
+      this.v1.fromArray(json.v1);
+      this.v2.fromArray(json.v2);
+      return this;
+    }
+  };
+  var QuadraticBezierCurve = class extends Curve {
+    constructor(v0 = new Vector2(), v1 = new Vector2(), v2 = new Vector2()) {
+      super();
+      this.isQuadraticBezierCurve = true;
+      this.type = "QuadraticBezierCurve";
+      this.v0 = v0;
+      this.v1 = v1;
+      this.v2 = v2;
+    }
+    getPoint(t, optionalTarget = new Vector2()) {
+      const point = optionalTarget;
+      const v0 = this.v0, v1 = this.v1, v2 = this.v2;
+      point.set(
+        QuadraticBezier(t, v0.x, v1.x, v2.x),
+        QuadraticBezier(t, v0.y, v1.y, v2.y)
+      );
+      return point;
+    }
+    copy(source) {
+      super.copy(source);
+      this.v0.copy(source.v0);
+      this.v1.copy(source.v1);
+      this.v2.copy(source.v2);
+      return this;
+    }
+    toJSON() {
+      const data = super.toJSON();
+      data.v0 = this.v0.toArray();
+      data.v1 = this.v1.toArray();
+      data.v2 = this.v2.toArray();
+      return data;
+    }
+    fromJSON(json) {
+      super.fromJSON(json);
+      this.v0.fromArray(json.v0);
+      this.v1.fromArray(json.v1);
+      this.v2.fromArray(json.v2);
+      return this;
+    }
+  };
+  var QuadraticBezierCurve3 = class extends Curve {
+    constructor(v0 = new Vector3(), v1 = new Vector3(), v2 = new Vector3()) {
+      super();
+      this.isQuadraticBezierCurve3 = true;
+      this.type = "QuadraticBezierCurve3";
+      this.v0 = v0;
+      this.v1 = v1;
+      this.v2 = v2;
+    }
+    getPoint(t, optionalTarget = new Vector3()) {
+      const point = optionalTarget;
+      const v0 = this.v0, v1 = this.v1, v2 = this.v2;
+      point.set(
+        QuadraticBezier(t, v0.x, v1.x, v2.x),
+        QuadraticBezier(t, v0.y, v1.y, v2.y),
+        QuadraticBezier(t, v0.z, v1.z, v2.z)
+      );
+      return point;
+    }
+    copy(source) {
+      super.copy(source);
+      this.v0.copy(source.v0);
+      this.v1.copy(source.v1);
+      this.v2.copy(source.v2);
+      return this;
+    }
+    toJSON() {
+      const data = super.toJSON();
+      data.v0 = this.v0.toArray();
+      data.v1 = this.v1.toArray();
+      data.v2 = this.v2.toArray();
+      return data;
+    }
+    fromJSON(json) {
+      super.fromJSON(json);
+      this.v0.fromArray(json.v0);
+      this.v1.fromArray(json.v1);
+      this.v2.fromArray(json.v2);
+      return this;
+    }
+  };
+  var SplineCurve = class extends Curve {
+    constructor(points = []) {
+      super();
+      this.isSplineCurve = true;
+      this.type = "SplineCurve";
+      this.points = points;
+    }
+    getPoint(t, optionalTarget = new Vector2()) {
+      const point = optionalTarget;
+      const points = this.points;
+      const p = (points.length - 1) * t;
+      const intPoint = Math.floor(p);
+      const weight = p - intPoint;
+      const p0 = points[intPoint === 0 ? intPoint : intPoint - 1];
+      const p1 = points[intPoint];
+      const p2 = points[intPoint > points.length - 2 ? points.length - 1 : intPoint + 1];
+      const p3 = points[intPoint > points.length - 3 ? points.length - 1 : intPoint + 2];
+      point.set(
+        CatmullRom(weight, p0.x, p1.x, p2.x, p3.x),
+        CatmullRom(weight, p0.y, p1.y, p2.y, p3.y)
+      );
+      return point;
+    }
+    copy(source) {
+      super.copy(source);
+      this.points = [];
+      for (let i = 0, l = source.points.length; i < l; i++) {
+        const point = source.points[i];
+        this.points.push(point.clone());
+      }
+      return this;
+    }
+    toJSON() {
+      const data = super.toJSON();
+      data.points = [];
+      for (let i = 0, l = this.points.length; i < l; i++) {
+        const point = this.points[i];
+        data.points.push(point.toArray());
+      }
+      return data;
+    }
+    fromJSON(json) {
+      super.fromJSON(json);
+      this.points = [];
+      for (let i = 0, l = json.points.length; i < l; i++) {
+        const point = json.points[i];
+        this.points.push(new Vector2().fromArray(point));
+      }
+      return this;
+    }
+  };
+  var Curves = /* @__PURE__ */ Object.freeze({
+    __proto__: null,
+    ArcCurve,
+    CatmullRomCurve3,
+    CubicBezierCurve,
+    CubicBezierCurve3,
+    EllipseCurve,
+    LineCurve,
+    LineCurve3,
+    QuadraticBezierCurve,
+    QuadraticBezierCurve3,
+    SplineCurve
+  });
   var LatheGeometry = class _LatheGeometry extends BufferGeometry {
     constructor(points = [new Vector2(0, -0.5), new Vector2(0.5, 0), new Vector2(0, 0.5)], segments = 12, phiStart = 0, phiLength = Math.PI * 2) {
       super();
@@ -18747,6 +19601,53 @@ void main() {
     }
     static fromJSON(data) {
       return new _LatheGeometry(data.points, data.segments, data.phiStart, data.phiLength);
+    }
+  };
+  var CircleGeometry = class _CircleGeometry extends BufferGeometry {
+    constructor(radius = 1, segments = 32, thetaStart = 0, thetaLength = Math.PI * 2) {
+      super();
+      this.type = "CircleGeometry";
+      this.parameters = {
+        radius,
+        segments,
+        thetaStart,
+        thetaLength
+      };
+      segments = Math.max(3, segments);
+      const indices = [];
+      const vertices = [];
+      const normals = [];
+      const uvs = [];
+      const vertex2 = new Vector3();
+      const uv = new Vector2();
+      vertices.push(0, 0, 0);
+      normals.push(0, 0, 1);
+      uvs.push(0.5, 0.5);
+      for (let s = 0, i = 3; s <= segments; s++, i += 3) {
+        const segment = thetaStart + s / segments * thetaLength;
+        vertex2.x = radius * Math.cos(segment);
+        vertex2.y = radius * Math.sin(segment);
+        vertices.push(vertex2.x, vertex2.y, vertex2.z);
+        normals.push(0, 0, 1);
+        uv.x = (vertices[i] / radius + 1) / 2;
+        uv.y = (vertices[i + 1] / radius + 1) / 2;
+        uvs.push(uv.x, uv.y);
+      }
+      for (let i = 1; i <= segments; i++) {
+        indices.push(i, i + 1, 0);
+      }
+      this.setIndex(indices);
+      this.setAttribute("position", new Float32BufferAttribute(vertices, 3));
+      this.setAttribute("normal", new Float32BufferAttribute(normals, 3));
+      this.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
+    }
+    copy(source) {
+      super.copy(source);
+      this.parameters = Object.assign({}, source.parameters);
+      return this;
+    }
+    static fromJSON(data) {
+      return new _CircleGeometry(data.radius, data.segments, data.thetaStart, data.thetaLength);
     }
   };
   var CylinderGeometry = class _CylinderGeometry extends BufferGeometry {
@@ -18965,6 +19866,172 @@ void main() {
     }
     static fromJSON(data) {
       return new _SphereGeometry(data.radius, data.widthSegments, data.heightSegments, data.phiStart, data.phiLength, data.thetaStart, data.thetaLength);
+    }
+  };
+  var TorusGeometry = class _TorusGeometry extends BufferGeometry {
+    constructor(radius = 1, tube = 0.4, radialSegments = 12, tubularSegments = 48, arc = Math.PI * 2) {
+      super();
+      this.type = "TorusGeometry";
+      this.parameters = {
+        radius,
+        tube,
+        radialSegments,
+        tubularSegments,
+        arc
+      };
+      radialSegments = Math.floor(radialSegments);
+      tubularSegments = Math.floor(tubularSegments);
+      const indices = [];
+      const vertices = [];
+      const normals = [];
+      const uvs = [];
+      const center = new Vector3();
+      const vertex2 = new Vector3();
+      const normal = new Vector3();
+      for (let j = 0; j <= radialSegments; j++) {
+        for (let i = 0; i <= tubularSegments; i++) {
+          const u = i / tubularSegments * arc;
+          const v = j / radialSegments * Math.PI * 2;
+          vertex2.x = (radius + tube * Math.cos(v)) * Math.cos(u);
+          vertex2.y = (radius + tube * Math.cos(v)) * Math.sin(u);
+          vertex2.z = tube * Math.sin(v);
+          vertices.push(vertex2.x, vertex2.y, vertex2.z);
+          center.x = radius * Math.cos(u);
+          center.y = radius * Math.sin(u);
+          normal.subVectors(vertex2, center).normalize();
+          normals.push(normal.x, normal.y, normal.z);
+          uvs.push(i / tubularSegments);
+          uvs.push(j / radialSegments);
+        }
+      }
+      for (let j = 1; j <= radialSegments; j++) {
+        for (let i = 1; i <= tubularSegments; i++) {
+          const a = (tubularSegments + 1) * j + i - 1;
+          const b = (tubularSegments + 1) * (j - 1) + i - 1;
+          const c = (tubularSegments + 1) * (j - 1) + i;
+          const d = (tubularSegments + 1) * j + i;
+          indices.push(a, b, d);
+          indices.push(b, c, d);
+        }
+      }
+      this.setIndex(indices);
+      this.setAttribute("position", new Float32BufferAttribute(vertices, 3));
+      this.setAttribute("normal", new Float32BufferAttribute(normals, 3));
+      this.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
+    }
+    copy(source) {
+      super.copy(source);
+      this.parameters = Object.assign({}, source.parameters);
+      return this;
+    }
+    static fromJSON(data) {
+      return new _TorusGeometry(data.radius, data.tube, data.radialSegments, data.tubularSegments, data.arc);
+    }
+  };
+  var TubeGeometry = class _TubeGeometry extends BufferGeometry {
+    constructor(path = new QuadraticBezierCurve3(new Vector3(-1, -1, 0), new Vector3(-1, 1, 0), new Vector3(1, 1, 0)), tubularSegments = 64, radius = 1, radialSegments = 8, closed = false) {
+      super();
+      this.type = "TubeGeometry";
+      this.parameters = {
+        path,
+        tubularSegments,
+        radius,
+        radialSegments,
+        closed
+      };
+      const frames = path.computeFrenetFrames(tubularSegments, closed);
+      this.tangents = frames.tangents;
+      this.normals = frames.normals;
+      this.binormals = frames.binormals;
+      const vertex2 = new Vector3();
+      const normal = new Vector3();
+      const uv = new Vector2();
+      let P = new Vector3();
+      const vertices = [];
+      const normals = [];
+      const uvs = [];
+      const indices = [];
+      generateBufferData();
+      this.setIndex(indices);
+      this.setAttribute("position", new Float32BufferAttribute(vertices, 3));
+      this.setAttribute("normal", new Float32BufferAttribute(normals, 3));
+      this.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
+      function generateBufferData() {
+        for (let i = 0; i < tubularSegments; i++) {
+          generateSegment(i);
+        }
+        generateSegment(closed === false ? tubularSegments : 0);
+        generateUVs();
+        generateIndices();
+      }
+      function generateSegment(i) {
+        P = path.getPointAt(i / tubularSegments, P);
+        const N = frames.normals[i];
+        const B = frames.binormals[i];
+        for (let j = 0; j <= radialSegments; j++) {
+          const v = j / radialSegments * Math.PI * 2;
+          const sin = Math.sin(v);
+          const cos = -Math.cos(v);
+          normal.x = cos * N.x + sin * B.x;
+          normal.y = cos * N.y + sin * B.y;
+          normal.z = cos * N.z + sin * B.z;
+          normal.normalize();
+          normals.push(normal.x, normal.y, normal.z);
+          vertex2.x = P.x + radius * normal.x;
+          vertex2.y = P.y + radius * normal.y;
+          vertex2.z = P.z + radius * normal.z;
+          vertices.push(vertex2.x, vertex2.y, vertex2.z);
+        }
+      }
+      function generateIndices() {
+        for (let j = 1; j <= tubularSegments; j++) {
+          for (let i = 1; i <= radialSegments; i++) {
+            const a = (radialSegments + 1) * (j - 1) + (i - 1);
+            const b = (radialSegments + 1) * j + (i - 1);
+            const c = (radialSegments + 1) * j + i;
+            const d = (radialSegments + 1) * (j - 1) + i;
+            indices.push(a, b, d);
+            indices.push(b, c, d);
+          }
+        }
+      }
+      function generateUVs() {
+        for (let i = 0; i <= tubularSegments; i++) {
+          for (let j = 0; j <= radialSegments; j++) {
+            uv.x = i / tubularSegments;
+            uv.y = j / radialSegments;
+            uvs.push(uv.x, uv.y);
+          }
+        }
+      }
+    }
+    copy(source) {
+      super.copy(source);
+      this.parameters = Object.assign({}, source.parameters);
+      return this;
+    }
+    toJSON() {
+      const data = super.toJSON();
+      data.path = this.parameters.path.toJSON();
+      return data;
+    }
+    static fromJSON(data) {
+      return new _TubeGeometry(
+        new Curves[data.path.type]().fromJSON(data.path),
+        data.tubularSegments,
+        data.radius,
+        data.radialSegments,
+        data.closed
+      );
+    }
+  };
+  var RawShaderMaterial = class extends ShaderMaterial {
+    static get type() {
+      return "RawShaderMaterial";
+    }
+    constructor(parameters) {
+      super(parameters);
+      this.isRawShaderMaterial = true;
     }
   };
   var MeshStandardMaterial = class extends Material {
@@ -19905,6 +20972,47 @@ void main() {
       this.type = "AmbientLight";
     }
   };
+  var Clock = class {
+    constructor(autoStart = true) {
+      this.autoStart = autoStart;
+      this.startTime = 0;
+      this.oldTime = 0;
+      this.elapsedTime = 0;
+      this.running = false;
+    }
+    start() {
+      this.startTime = now();
+      this.oldTime = this.startTime;
+      this.elapsedTime = 0;
+      this.running = true;
+    }
+    stop() {
+      this.getElapsedTime();
+      this.running = false;
+      this.autoStart = false;
+    }
+    getElapsedTime() {
+      this.getDelta();
+      return this.elapsedTime;
+    }
+    getDelta() {
+      let diff = 0;
+      if (this.autoStart && !this.running) {
+        this.start();
+        return 0;
+      }
+      if (this.running) {
+        const newTime = now();
+        diff = (newTime - this.oldTime) / 1e3;
+        this.oldTime = newTime;
+        this.elapsedTime += diff;
+      }
+      return diff;
+    }
+  };
+  function now() {
+    return performance.now();
+  }
   var _RESERVED_CHARS_RE = "\\[\\]\\.:\\/";
   var _reservedRe = new RegExp("[" + _RESERVED_CHARS_RE + "]", "g");
   var _wordChar = "[^" + _RESERVED_CHARS_RE + "]";
@@ -20296,6 +21404,800 @@ void main() {
     }
   }
 
+  // node_modules/three/examples/jsm/shaders/CopyShader.js
+  var CopyShader = {
+    name: "CopyShader",
+    uniforms: {
+      "tDiffuse": { value: null },
+      "opacity": { value: 1 }
+    },
+    vertexShader: (
+      /* glsl */
+      `
+
+		varying vec2 vUv;
+
+		void main() {
+
+			vUv = uv;
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+
+		}`
+    ),
+    fragmentShader: (
+      /* glsl */
+      `
+
+		uniform float opacity;
+
+		uniform sampler2D tDiffuse;
+
+		varying vec2 vUv;
+
+		void main() {
+
+			vec4 texel = texture2D( tDiffuse, vUv );
+			gl_FragColor = opacity * texel;
+
+
+		}`
+    )
+  };
+
+  // node_modules/three/examples/jsm/postprocessing/Pass.js
+  var Pass = class {
+    constructor() {
+      this.isPass = true;
+      this.enabled = true;
+      this.needsSwap = true;
+      this.clear = false;
+      this.renderToScreen = false;
+    }
+    setSize() {
+    }
+    render() {
+      console.error("THREE.Pass: .render() must be implemented in derived pass.");
+    }
+    dispose() {
+    }
+  };
+  var _camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  var FullscreenTriangleGeometry = class extends BufferGeometry {
+    constructor() {
+      super();
+      this.setAttribute("position", new Float32BufferAttribute([-1, 3, 0, -1, -1, 0, 3, -1, 0], 3));
+      this.setAttribute("uv", new Float32BufferAttribute([0, 2, 0, 0, 2, 0], 2));
+    }
+  };
+  var _geometry = new FullscreenTriangleGeometry();
+  var FullScreenQuad = class {
+    constructor(material) {
+      this._mesh = new Mesh(_geometry, material);
+    }
+    dispose() {
+      this._mesh.geometry.dispose();
+    }
+    render(renderer2) {
+      renderer2.render(this._mesh, _camera);
+    }
+    get material() {
+      return this._mesh.material;
+    }
+    set material(value) {
+      this._mesh.material = value;
+    }
+  };
+
+  // node_modules/three/examples/jsm/postprocessing/ShaderPass.js
+  var ShaderPass = class extends Pass {
+    constructor(shader, textureID) {
+      super();
+      this.textureID = textureID !== void 0 ? textureID : "tDiffuse";
+      if (shader instanceof ShaderMaterial) {
+        this.uniforms = shader.uniforms;
+        this.material = shader;
+      } else if (shader) {
+        this.uniforms = UniformsUtils.clone(shader.uniforms);
+        this.material = new ShaderMaterial({
+          name: shader.name !== void 0 ? shader.name : "unspecified",
+          defines: Object.assign({}, shader.defines),
+          uniforms: this.uniforms,
+          vertexShader: shader.vertexShader,
+          fragmentShader: shader.fragmentShader
+        });
+      }
+      this.fsQuad = new FullScreenQuad(this.material);
+    }
+    render(renderer2, writeBuffer, readBuffer) {
+      if (this.uniforms[this.textureID]) {
+        this.uniforms[this.textureID].value = readBuffer.texture;
+      }
+      this.fsQuad.material = this.material;
+      if (this.renderToScreen) {
+        renderer2.setRenderTarget(null);
+        this.fsQuad.render(renderer2);
+      } else {
+        renderer2.setRenderTarget(writeBuffer);
+        if (this.clear) renderer2.clear(renderer2.autoClearColor, renderer2.autoClearDepth, renderer2.autoClearStencil);
+        this.fsQuad.render(renderer2);
+      }
+    }
+    dispose() {
+      this.material.dispose();
+      this.fsQuad.dispose();
+    }
+  };
+
+  // node_modules/three/examples/jsm/postprocessing/MaskPass.js
+  var MaskPass = class extends Pass {
+    constructor(scene2, camera2) {
+      super();
+      this.scene = scene2;
+      this.camera = camera2;
+      this.clear = true;
+      this.needsSwap = false;
+      this.inverse = false;
+    }
+    render(renderer2, writeBuffer, readBuffer) {
+      const context = renderer2.getContext();
+      const state = renderer2.state;
+      state.buffers.color.setMask(false);
+      state.buffers.depth.setMask(false);
+      state.buffers.color.setLocked(true);
+      state.buffers.depth.setLocked(true);
+      let writeValue, clearValue;
+      if (this.inverse) {
+        writeValue = 0;
+        clearValue = 1;
+      } else {
+        writeValue = 1;
+        clearValue = 0;
+      }
+      state.buffers.stencil.setTest(true);
+      state.buffers.stencil.setOp(context.REPLACE, context.REPLACE, context.REPLACE);
+      state.buffers.stencil.setFunc(context.ALWAYS, writeValue, 4294967295);
+      state.buffers.stencil.setClear(clearValue);
+      state.buffers.stencil.setLocked(true);
+      renderer2.setRenderTarget(readBuffer);
+      if (this.clear) renderer2.clear();
+      renderer2.render(this.scene, this.camera);
+      renderer2.setRenderTarget(writeBuffer);
+      if (this.clear) renderer2.clear();
+      renderer2.render(this.scene, this.camera);
+      state.buffers.color.setLocked(false);
+      state.buffers.depth.setLocked(false);
+      state.buffers.color.setMask(true);
+      state.buffers.depth.setMask(true);
+      state.buffers.stencil.setLocked(false);
+      state.buffers.stencil.setFunc(context.EQUAL, 1, 4294967295);
+      state.buffers.stencil.setOp(context.KEEP, context.KEEP, context.KEEP);
+      state.buffers.stencil.setLocked(true);
+    }
+  };
+  var ClearMaskPass = class extends Pass {
+    constructor() {
+      super();
+      this.needsSwap = false;
+    }
+    render(renderer2) {
+      renderer2.state.buffers.stencil.setLocked(false);
+      renderer2.state.buffers.stencil.setTest(false);
+    }
+  };
+
+  // node_modules/three/examples/jsm/postprocessing/EffectComposer.js
+  var EffectComposer = class {
+    constructor(renderer2, renderTarget) {
+      this.renderer = renderer2;
+      this._pixelRatio = renderer2.getPixelRatio();
+      if (renderTarget === void 0) {
+        const size = renderer2.getSize(new Vector2());
+        this._width = size.width;
+        this._height = size.height;
+        renderTarget = new WebGLRenderTarget(this._width * this._pixelRatio, this._height * this._pixelRatio, { type: HalfFloatType });
+        renderTarget.texture.name = "EffectComposer.rt1";
+      } else {
+        this._width = renderTarget.width;
+        this._height = renderTarget.height;
+      }
+      this.renderTarget1 = renderTarget;
+      this.renderTarget2 = renderTarget.clone();
+      this.renderTarget2.texture.name = "EffectComposer.rt2";
+      this.writeBuffer = this.renderTarget1;
+      this.readBuffer = this.renderTarget2;
+      this.renderToScreen = true;
+      this.passes = [];
+      this.copyPass = new ShaderPass(CopyShader);
+      this.copyPass.material.blending = NoBlending;
+      this.clock = new Clock();
+    }
+    swapBuffers() {
+      const tmp2 = this.readBuffer;
+      this.readBuffer = this.writeBuffer;
+      this.writeBuffer = tmp2;
+    }
+    addPass(pass) {
+      this.passes.push(pass);
+      pass.setSize(this._width * this._pixelRatio, this._height * this._pixelRatio);
+    }
+    insertPass(pass, index) {
+      this.passes.splice(index, 0, pass);
+      pass.setSize(this._width * this._pixelRatio, this._height * this._pixelRatio);
+    }
+    removePass(pass) {
+      const index = this.passes.indexOf(pass);
+      if (index !== -1) {
+        this.passes.splice(index, 1);
+      }
+    }
+    isLastEnabledPass(passIndex) {
+      for (let i = passIndex + 1; i < this.passes.length; i++) {
+        if (this.passes[i].enabled) {
+          return false;
+        }
+      }
+      return true;
+    }
+    render(deltaTime) {
+      if (deltaTime === void 0) {
+        deltaTime = this.clock.getDelta();
+      }
+      const currentRenderTarget = this.renderer.getRenderTarget();
+      let maskActive = false;
+      for (let i = 0, il = this.passes.length; i < il; i++) {
+        const pass = this.passes[i];
+        if (pass.enabled === false) continue;
+        pass.renderToScreen = this.renderToScreen && this.isLastEnabledPass(i);
+        pass.render(this.renderer, this.writeBuffer, this.readBuffer, deltaTime, maskActive);
+        if (pass.needsSwap) {
+          if (maskActive) {
+            const context = this.renderer.getContext();
+            const stencil = this.renderer.state.buffers.stencil;
+            stencil.setFunc(context.NOTEQUAL, 1, 4294967295);
+            this.copyPass.render(this.renderer, this.writeBuffer, this.readBuffer, deltaTime);
+            stencil.setFunc(context.EQUAL, 1, 4294967295);
+          }
+          this.swapBuffers();
+        }
+        if (MaskPass !== void 0) {
+          if (pass instanceof MaskPass) {
+            maskActive = true;
+          } else if (pass instanceof ClearMaskPass) {
+            maskActive = false;
+          }
+        }
+      }
+      this.renderer.setRenderTarget(currentRenderTarget);
+    }
+    reset(renderTarget) {
+      if (renderTarget === void 0) {
+        const size = this.renderer.getSize(new Vector2());
+        this._pixelRatio = this.renderer.getPixelRatio();
+        this._width = size.width;
+        this._height = size.height;
+        renderTarget = this.renderTarget1.clone();
+        renderTarget.setSize(this._width * this._pixelRatio, this._height * this._pixelRatio);
+      }
+      this.renderTarget1.dispose();
+      this.renderTarget2.dispose();
+      this.renderTarget1 = renderTarget;
+      this.renderTarget2 = renderTarget.clone();
+      this.writeBuffer = this.renderTarget1;
+      this.readBuffer = this.renderTarget2;
+    }
+    setSize(width, height) {
+      this._width = width;
+      this._height = height;
+      const effectiveWidth = this._width * this._pixelRatio;
+      const effectiveHeight = this._height * this._pixelRatio;
+      this.renderTarget1.setSize(effectiveWidth, effectiveHeight);
+      this.renderTarget2.setSize(effectiveWidth, effectiveHeight);
+      for (let i = 0; i < this.passes.length; i++) {
+        this.passes[i].setSize(effectiveWidth, effectiveHeight);
+      }
+    }
+    setPixelRatio(pixelRatio) {
+      this._pixelRatio = pixelRatio;
+      this.setSize(this._width, this._height);
+    }
+    dispose() {
+      this.renderTarget1.dispose();
+      this.renderTarget2.dispose();
+      this.copyPass.dispose();
+    }
+  };
+
+  // node_modules/three/examples/jsm/postprocessing/RenderPass.js
+  var RenderPass = class extends Pass {
+    constructor(scene2, camera2, overrideMaterial = null, clearColor = null, clearAlpha = null) {
+      super();
+      this.scene = scene2;
+      this.camera = camera2;
+      this.overrideMaterial = overrideMaterial;
+      this.clearColor = clearColor;
+      this.clearAlpha = clearAlpha;
+      this.clear = true;
+      this.clearDepth = false;
+      this.needsSwap = false;
+      this._oldClearColor = new Color();
+    }
+    render(renderer2, writeBuffer, readBuffer) {
+      const oldAutoClear = renderer2.autoClear;
+      renderer2.autoClear = false;
+      let oldClearAlpha, oldOverrideMaterial;
+      if (this.overrideMaterial !== null) {
+        oldOverrideMaterial = this.scene.overrideMaterial;
+        this.scene.overrideMaterial = this.overrideMaterial;
+      }
+      if (this.clearColor !== null) {
+        renderer2.getClearColor(this._oldClearColor);
+        renderer2.setClearColor(this.clearColor, renderer2.getClearAlpha());
+      }
+      if (this.clearAlpha !== null) {
+        oldClearAlpha = renderer2.getClearAlpha();
+        renderer2.setClearAlpha(this.clearAlpha);
+      }
+      if (this.clearDepth == true) {
+        renderer2.clearDepth();
+      }
+      renderer2.setRenderTarget(this.renderToScreen ? null : readBuffer);
+      if (this.clear === true) {
+        renderer2.clear(renderer2.autoClearColor, renderer2.autoClearDepth, renderer2.autoClearStencil);
+      }
+      renderer2.render(this.scene, this.camera);
+      if (this.clearColor !== null) {
+        renderer2.setClearColor(this._oldClearColor);
+      }
+      if (this.clearAlpha !== null) {
+        renderer2.setClearAlpha(oldClearAlpha);
+      }
+      if (this.overrideMaterial !== null) {
+        this.scene.overrideMaterial = oldOverrideMaterial;
+      }
+      renderer2.autoClear = oldAutoClear;
+    }
+  };
+
+  // node_modules/three/examples/jsm/shaders/LuminosityHighPassShader.js
+  var LuminosityHighPassShader = {
+    name: "LuminosityHighPassShader",
+    shaderID: "luminosityHighPass",
+    uniforms: {
+      "tDiffuse": { value: null },
+      "luminosityThreshold": { value: 1 },
+      "smoothWidth": { value: 1 },
+      "defaultColor": { value: new Color(0) },
+      "defaultOpacity": { value: 0 }
+    },
+    vertexShader: (
+      /* glsl */
+      `
+
+		varying vec2 vUv;
+
+		void main() {
+
+			vUv = uv;
+
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+
+		}`
+    ),
+    fragmentShader: (
+      /* glsl */
+      `
+
+		uniform sampler2D tDiffuse;
+		uniform vec3 defaultColor;
+		uniform float defaultOpacity;
+		uniform float luminosityThreshold;
+		uniform float smoothWidth;
+
+		varying vec2 vUv;
+
+		void main() {
+
+			vec4 texel = texture2D( tDiffuse, vUv );
+
+			float v = luminance( texel.xyz );
+
+			vec4 outputColor = vec4( defaultColor.rgb, defaultOpacity );
+
+			float alpha = smoothstep( luminosityThreshold, luminosityThreshold + smoothWidth, v );
+
+			gl_FragColor = mix( outputColor, texel, alpha );
+
+		}`
+    )
+  };
+
+  // node_modules/three/examples/jsm/postprocessing/UnrealBloomPass.js
+  var UnrealBloomPass = class _UnrealBloomPass extends Pass {
+    constructor(resolution, strength, radius, threshold) {
+      super();
+      this.strength = strength !== void 0 ? strength : 1;
+      this.radius = radius;
+      this.threshold = threshold;
+      this.resolution = resolution !== void 0 ? new Vector2(resolution.x, resolution.y) : new Vector2(256, 256);
+      this.clearColor = new Color(0, 0, 0);
+      this.renderTargetsHorizontal = [];
+      this.renderTargetsVertical = [];
+      this.nMips = 5;
+      let resx = Math.round(this.resolution.x / 2);
+      let resy = Math.round(this.resolution.y / 2);
+      this.renderTargetBright = new WebGLRenderTarget(resx, resy, { type: HalfFloatType });
+      this.renderTargetBright.texture.name = "UnrealBloomPass.bright";
+      this.renderTargetBright.texture.generateMipmaps = false;
+      for (let i = 0; i < this.nMips; i++) {
+        const renderTargetHorizontal = new WebGLRenderTarget(resx, resy, { type: HalfFloatType });
+        renderTargetHorizontal.texture.name = "UnrealBloomPass.h" + i;
+        renderTargetHorizontal.texture.generateMipmaps = false;
+        this.renderTargetsHorizontal.push(renderTargetHorizontal);
+        const renderTargetVertical = new WebGLRenderTarget(resx, resy, { type: HalfFloatType });
+        renderTargetVertical.texture.name = "UnrealBloomPass.v" + i;
+        renderTargetVertical.texture.generateMipmaps = false;
+        this.renderTargetsVertical.push(renderTargetVertical);
+        resx = Math.round(resx / 2);
+        resy = Math.round(resy / 2);
+      }
+      const highPassShader = LuminosityHighPassShader;
+      this.highPassUniforms = UniformsUtils.clone(highPassShader.uniforms);
+      this.highPassUniforms["luminosityThreshold"].value = threshold;
+      this.highPassUniforms["smoothWidth"].value = 0.01;
+      this.materialHighPassFilter = new ShaderMaterial({
+        uniforms: this.highPassUniforms,
+        vertexShader: highPassShader.vertexShader,
+        fragmentShader: highPassShader.fragmentShader
+      });
+      this.separableBlurMaterials = [];
+      const kernelSizeArray = [3, 5, 7, 9, 11];
+      resx = Math.round(this.resolution.x / 2);
+      resy = Math.round(this.resolution.y / 2);
+      for (let i = 0; i < this.nMips; i++) {
+        this.separableBlurMaterials.push(this.getSeperableBlurMaterial(kernelSizeArray[i]));
+        this.separableBlurMaterials[i].uniforms["invSize"].value = new Vector2(1 / resx, 1 / resy);
+        resx = Math.round(resx / 2);
+        resy = Math.round(resy / 2);
+      }
+      this.compositeMaterial = this.getCompositeMaterial(this.nMips);
+      this.compositeMaterial.uniforms["blurTexture1"].value = this.renderTargetsVertical[0].texture;
+      this.compositeMaterial.uniforms["blurTexture2"].value = this.renderTargetsVertical[1].texture;
+      this.compositeMaterial.uniforms["blurTexture3"].value = this.renderTargetsVertical[2].texture;
+      this.compositeMaterial.uniforms["blurTexture4"].value = this.renderTargetsVertical[3].texture;
+      this.compositeMaterial.uniforms["blurTexture5"].value = this.renderTargetsVertical[4].texture;
+      this.compositeMaterial.uniforms["bloomStrength"].value = strength;
+      this.compositeMaterial.uniforms["bloomRadius"].value = 0.1;
+      const bloomFactors = [1, 0.8, 0.6, 0.4, 0.2];
+      this.compositeMaterial.uniforms["bloomFactors"].value = bloomFactors;
+      this.bloomTintColors = [new Vector3(1, 1, 1), new Vector3(1, 1, 1), new Vector3(1, 1, 1), new Vector3(1, 1, 1), new Vector3(1, 1, 1)];
+      this.compositeMaterial.uniforms["bloomTintColors"].value = this.bloomTintColors;
+      const copyShader = CopyShader;
+      this.copyUniforms = UniformsUtils.clone(copyShader.uniforms);
+      this.blendMaterial = new ShaderMaterial({
+        uniforms: this.copyUniforms,
+        vertexShader: copyShader.vertexShader,
+        fragmentShader: copyShader.fragmentShader,
+        blending: AdditiveBlending,
+        depthTest: false,
+        depthWrite: false,
+        transparent: true
+      });
+      this.enabled = true;
+      this.needsSwap = false;
+      this._oldClearColor = new Color();
+      this.oldClearAlpha = 1;
+      this.basic = new MeshBasicMaterial();
+      this.fsQuad = new FullScreenQuad(null);
+    }
+    dispose() {
+      for (let i = 0; i < this.renderTargetsHorizontal.length; i++) {
+        this.renderTargetsHorizontal[i].dispose();
+      }
+      for (let i = 0; i < this.renderTargetsVertical.length; i++) {
+        this.renderTargetsVertical[i].dispose();
+      }
+      this.renderTargetBright.dispose();
+      for (let i = 0; i < this.separableBlurMaterials.length; i++) {
+        this.separableBlurMaterials[i].dispose();
+      }
+      this.compositeMaterial.dispose();
+      this.blendMaterial.dispose();
+      this.basic.dispose();
+      this.fsQuad.dispose();
+    }
+    setSize(width, height) {
+      let resx = Math.round(width / 2);
+      let resy = Math.round(height / 2);
+      this.renderTargetBright.setSize(resx, resy);
+      for (let i = 0; i < this.nMips; i++) {
+        this.renderTargetsHorizontal[i].setSize(resx, resy);
+        this.renderTargetsVertical[i].setSize(resx, resy);
+        this.separableBlurMaterials[i].uniforms["invSize"].value = new Vector2(1 / resx, 1 / resy);
+        resx = Math.round(resx / 2);
+        resy = Math.round(resy / 2);
+      }
+    }
+    render(renderer2, writeBuffer, readBuffer, deltaTime, maskActive) {
+      renderer2.getClearColor(this._oldClearColor);
+      this.oldClearAlpha = renderer2.getClearAlpha();
+      const oldAutoClear = renderer2.autoClear;
+      renderer2.autoClear = false;
+      renderer2.setClearColor(this.clearColor, 0);
+      if (maskActive) renderer2.state.buffers.stencil.setTest(false);
+      if (this.renderToScreen) {
+        this.fsQuad.material = this.basic;
+        this.basic.map = readBuffer.texture;
+        renderer2.setRenderTarget(null);
+        renderer2.clear();
+        this.fsQuad.render(renderer2);
+      }
+      this.highPassUniforms["tDiffuse"].value = readBuffer.texture;
+      this.highPassUniforms["luminosityThreshold"].value = this.threshold;
+      this.fsQuad.material = this.materialHighPassFilter;
+      renderer2.setRenderTarget(this.renderTargetBright);
+      renderer2.clear();
+      this.fsQuad.render(renderer2);
+      let inputRenderTarget = this.renderTargetBright;
+      for (let i = 0; i < this.nMips; i++) {
+        this.fsQuad.material = this.separableBlurMaterials[i];
+        this.separableBlurMaterials[i].uniforms["colorTexture"].value = inputRenderTarget.texture;
+        this.separableBlurMaterials[i].uniforms["direction"].value = _UnrealBloomPass.BlurDirectionX;
+        renderer2.setRenderTarget(this.renderTargetsHorizontal[i]);
+        renderer2.clear();
+        this.fsQuad.render(renderer2);
+        this.separableBlurMaterials[i].uniforms["colorTexture"].value = this.renderTargetsHorizontal[i].texture;
+        this.separableBlurMaterials[i].uniforms["direction"].value = _UnrealBloomPass.BlurDirectionY;
+        renderer2.setRenderTarget(this.renderTargetsVertical[i]);
+        renderer2.clear();
+        this.fsQuad.render(renderer2);
+        inputRenderTarget = this.renderTargetsVertical[i];
+      }
+      this.fsQuad.material = this.compositeMaterial;
+      this.compositeMaterial.uniforms["bloomStrength"].value = this.strength;
+      this.compositeMaterial.uniforms["bloomRadius"].value = this.radius;
+      this.compositeMaterial.uniforms["bloomTintColors"].value = this.bloomTintColors;
+      renderer2.setRenderTarget(this.renderTargetsHorizontal[0]);
+      renderer2.clear();
+      this.fsQuad.render(renderer2);
+      this.fsQuad.material = this.blendMaterial;
+      this.copyUniforms["tDiffuse"].value = this.renderTargetsHorizontal[0].texture;
+      if (maskActive) renderer2.state.buffers.stencil.setTest(true);
+      if (this.renderToScreen) {
+        renderer2.setRenderTarget(null);
+        this.fsQuad.render(renderer2);
+      } else {
+        renderer2.setRenderTarget(readBuffer);
+        this.fsQuad.render(renderer2);
+      }
+      renderer2.setClearColor(this._oldClearColor, this.oldClearAlpha);
+      renderer2.autoClear = oldAutoClear;
+    }
+    getSeperableBlurMaterial(kernelRadius) {
+      const coefficients = [];
+      for (let i = 0; i < kernelRadius; i++) {
+        coefficients.push(0.39894 * Math.exp(-0.5 * i * i / (kernelRadius * kernelRadius)) / kernelRadius);
+      }
+      return new ShaderMaterial({
+        defines: {
+          "KERNEL_RADIUS": kernelRadius
+        },
+        uniforms: {
+          "colorTexture": { value: null },
+          "invSize": { value: new Vector2(0.5, 0.5) },
+          // inverse texture size
+          "direction": { value: new Vector2(0.5, 0.5) },
+          "gaussianCoefficients": { value: coefficients }
+          // precomputed Gaussian coefficients
+        },
+        vertexShader: `varying vec2 vUv;
+				void main() {
+					vUv = uv;
+					gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+				}`,
+        fragmentShader: `#include <common>
+				varying vec2 vUv;
+				uniform sampler2D colorTexture;
+				uniform vec2 invSize;
+				uniform vec2 direction;
+				uniform float gaussianCoefficients[KERNEL_RADIUS];
+
+				void main() {
+					float weightSum = gaussianCoefficients[0];
+					vec3 diffuseSum = texture2D( colorTexture, vUv ).rgb * weightSum;
+					for( int i = 1; i < KERNEL_RADIUS; i ++ ) {
+						float x = float(i);
+						float w = gaussianCoefficients[i];
+						vec2 uvOffset = direction * invSize * x;
+						vec3 sample1 = texture2D( colorTexture, vUv + uvOffset ).rgb;
+						vec3 sample2 = texture2D( colorTexture, vUv - uvOffset ).rgb;
+						diffuseSum += (sample1 + sample2) * w;
+						weightSum += 2.0 * w;
+					}
+					gl_FragColor = vec4(diffuseSum/weightSum, 1.0);
+				}`
+      });
+    }
+    getCompositeMaterial(nMips) {
+      return new ShaderMaterial({
+        defines: {
+          "NUM_MIPS": nMips
+        },
+        uniforms: {
+          "blurTexture1": { value: null },
+          "blurTexture2": { value: null },
+          "blurTexture3": { value: null },
+          "blurTexture4": { value: null },
+          "blurTexture5": { value: null },
+          "bloomStrength": { value: 1 },
+          "bloomFactors": { value: null },
+          "bloomTintColors": { value: null },
+          "bloomRadius": { value: 0 }
+        },
+        vertexShader: `varying vec2 vUv;
+				void main() {
+					vUv = uv;
+					gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+				}`,
+        fragmentShader: `varying vec2 vUv;
+				uniform sampler2D blurTexture1;
+				uniform sampler2D blurTexture2;
+				uniform sampler2D blurTexture3;
+				uniform sampler2D blurTexture4;
+				uniform sampler2D blurTexture5;
+				uniform float bloomStrength;
+				uniform float bloomRadius;
+				uniform float bloomFactors[NUM_MIPS];
+				uniform vec3 bloomTintColors[NUM_MIPS];
+
+				float lerpBloomFactor(const in float factor) {
+					float mirrorFactor = 1.2 - factor;
+					return mix(factor, mirrorFactor, bloomRadius);
+				}
+
+				void main() {
+					gl_FragColor = bloomStrength * ( lerpBloomFactor(bloomFactors[0]) * vec4(bloomTintColors[0], 1.0) * texture2D(blurTexture1, vUv) +
+						lerpBloomFactor(bloomFactors[1]) * vec4(bloomTintColors[1], 1.0) * texture2D(blurTexture2, vUv) +
+						lerpBloomFactor(bloomFactors[2]) * vec4(bloomTintColors[2], 1.0) * texture2D(blurTexture3, vUv) +
+						lerpBloomFactor(bloomFactors[3]) * vec4(bloomTintColors[3], 1.0) * texture2D(blurTexture4, vUv) +
+						lerpBloomFactor(bloomFactors[4]) * vec4(bloomTintColors[4], 1.0) * texture2D(blurTexture5, vUv) );
+				}`
+      });
+    }
+  };
+  UnrealBloomPass.BlurDirectionX = new Vector2(1, 0);
+  UnrealBloomPass.BlurDirectionY = new Vector2(0, 1);
+
+  // node_modules/three/examples/jsm/shaders/OutputShader.js
+  var OutputShader = {
+    name: "OutputShader",
+    uniforms: {
+      "tDiffuse": { value: null },
+      "toneMappingExposure": { value: 1 }
+    },
+    vertexShader: (
+      /* glsl */
+      `
+		precision highp float;
+
+		uniform mat4 modelViewMatrix;
+		uniform mat4 projectionMatrix;
+
+		attribute vec3 position;
+		attribute vec2 uv;
+
+		varying vec2 vUv;
+
+		void main() {
+
+			vUv = uv;
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+
+		}`
+    ),
+    fragmentShader: (
+      /* glsl */
+      `
+	
+		precision highp float;
+
+		uniform sampler2D tDiffuse;
+
+		#include <tonemapping_pars_fragment>
+		#include <colorspace_pars_fragment>
+
+		varying vec2 vUv;
+
+		void main() {
+
+			gl_FragColor = texture2D( tDiffuse, vUv );
+
+			// tone mapping
+
+			#ifdef LINEAR_TONE_MAPPING
+
+				gl_FragColor.rgb = LinearToneMapping( gl_FragColor.rgb );
+
+			#elif defined( REINHARD_TONE_MAPPING )
+
+				gl_FragColor.rgb = ReinhardToneMapping( gl_FragColor.rgb );
+
+			#elif defined( CINEON_TONE_MAPPING )
+
+				gl_FragColor.rgb = CineonToneMapping( gl_FragColor.rgb );
+
+			#elif defined( ACES_FILMIC_TONE_MAPPING )
+
+				gl_FragColor.rgb = ACESFilmicToneMapping( gl_FragColor.rgb );
+
+			#elif defined( AGX_TONE_MAPPING )
+
+				gl_FragColor.rgb = AgXToneMapping( gl_FragColor.rgb );
+
+			#elif defined( NEUTRAL_TONE_MAPPING )
+
+				gl_FragColor.rgb = NeutralToneMapping( gl_FragColor.rgb );
+
+			#endif
+
+			// color space
+
+			#ifdef SRGB_TRANSFER
+
+				gl_FragColor = sRGBTransferOETF( gl_FragColor );
+
+			#endif
+
+		}`
+    )
+  };
+
+  // node_modules/three/examples/jsm/postprocessing/OutputPass.js
+  var OutputPass = class extends Pass {
+    constructor() {
+      super();
+      const shader = OutputShader;
+      this.uniforms = UniformsUtils.clone(shader.uniforms);
+      this.material = new RawShaderMaterial({
+        name: shader.name,
+        uniforms: this.uniforms,
+        vertexShader: shader.vertexShader,
+        fragmentShader: shader.fragmentShader
+      });
+      this.fsQuad = new FullScreenQuad(this.material);
+      this._outputColorSpace = null;
+      this._toneMapping = null;
+    }
+    render(renderer2, writeBuffer, readBuffer) {
+      this.uniforms["tDiffuse"].value = readBuffer.texture;
+      this.uniforms["toneMappingExposure"].value = renderer2.toneMappingExposure;
+      if (this._outputColorSpace !== renderer2.outputColorSpace || this._toneMapping !== renderer2.toneMapping) {
+        this._outputColorSpace = renderer2.outputColorSpace;
+        this._toneMapping = renderer2.toneMapping;
+        this.material.defines = {};
+        if (ColorManagement.getTransfer(this._outputColorSpace) === SRGBTransfer) this.material.defines.SRGB_TRANSFER = "";
+        if (this._toneMapping === LinearToneMapping) this.material.defines.LINEAR_TONE_MAPPING = "";
+        else if (this._toneMapping === ReinhardToneMapping) this.material.defines.REINHARD_TONE_MAPPING = "";
+        else if (this._toneMapping === CineonToneMapping) this.material.defines.CINEON_TONE_MAPPING = "";
+        else if (this._toneMapping === ACESFilmicToneMapping) this.material.defines.ACES_FILMIC_TONE_MAPPING = "";
+        else if (this._toneMapping === AgXToneMapping) this.material.defines.AGX_TONE_MAPPING = "";
+        else if (this._toneMapping === NeutralToneMapping) this.material.defines.NEUTRAL_TONE_MAPPING = "";
+        this.material.needsUpdate = true;
+      }
+      if (this.renderToScreen === true) {
+        renderer2.setRenderTarget(null);
+        this.fsQuad.render(renderer2);
+      } else {
+        renderer2.setRenderTarget(writeBuffer);
+        if (this.clear) renderer2.clear(renderer2.autoClearColor, renderer2.autoClearDepth, renderer2.autoClearStencil);
+        this.fsQuad.render(renderer2);
+      }
+    }
+    dispose() {
+      this.material.dispose();
+      this.fsQuad.dispose();
+    }
+  };
+
   // src/systems/input.js
   function createInput({ touchRoot, stickEl, knobEl, gallopBtn, mountBtn, actBtn }) {
     const keys = /* @__PURE__ */ Object.create(null);
@@ -20397,6 +22299,291 @@ void main() {
     return { sample, setTouchVisible, keys };
   }
 
+  // src/systems/textures.js
+  function canvas(size) {
+    const c = document.createElement("canvas");
+    c.width = c.height = size;
+    const ctx = c.getContext("2d");
+    return { c, ctx, size };
+  }
+  function toTex(c, { wrap = RepeatWrapping, repeat = [1, 1], colorSpace = SRGBColorSpace } = {}) {
+    const tex = new CanvasTexture(c);
+    tex.wrapS = tex.wrapT = wrap;
+    tex.repeat.set(repeat[0], repeat[1]);
+    tex.colorSpace = colorSpace;
+    tex.anisotropy = 4;
+    tex.needsUpdate = true;
+    return tex;
+  }
+  function makeDirtTexture(size = 256) {
+    const { c, ctx } = canvas(size);
+    const g = ctx.createLinearGradient(0, 0, size, size);
+    g.addColorStop(0, "#6a4428");
+    g.addColorStop(0.45, "#5a3820");
+    g.addColorStop(1, "#4a2e18");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, size, size);
+    for (let i = 0; i < 180; i++) {
+      const x = Math.random() * size;
+      const y = Math.random() * size;
+      const r = 4 + Math.random() * 28;
+      ctx.fillStyle = `rgba(${70 + Math.random() * 50 | 0},${40 + Math.random() * 30 | 0},${20 + Math.random() * 20 | 0},${0.08 + Math.random() * 0.12})`;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    for (let i = 0; i < 2200; i++) {
+      const x = Math.random() * size;
+      const y = Math.random() * size;
+      const bright = Math.random() > 0.55;
+      ctx.fillStyle = bright ? `rgba(180,150,110,${0.15 + Math.random() * 0.25})` : `rgba(30,18,10,${0.2 + Math.random() * 0.35})`;
+      ctx.fillRect(x, y, 1 + (Math.random() > 0.85 ? 1 : 0), 1);
+    }
+    for (let i = 0; i < 40; i++) {
+      ctx.fillStyle = `rgba(90,70,50,${0.25 + Math.random() * 0.3})`;
+      ctx.beginPath();
+      ctx.ellipse(Math.random() * size, Math.random() * size, 1 + Math.random() * 2.5, 0.8 + Math.random() * 1.5, Math.random(), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    return toTex(c, { repeat: [8, 12] });
+  }
+  function makeStreetTexture(size = 256) {
+    const { c, ctx } = canvas(size);
+    ctx.fillStyle = "#3a2414";
+    ctx.fillRect(0, 0, size, size);
+    for (let i = 0; i < 120; i++) {
+      ctx.fillStyle = `rgba(${40 + Math.random() * 40 | 0},${25 + Math.random() * 25 | 0},${12 + Math.random() * 15 | 0},${0.1 + Math.random() * 0.15})`;
+      ctx.fillRect(Math.random() * size, Math.random() * size, 8 + Math.random() * 40, 3 + Math.random() * 12);
+    }
+    for (let i = 0; i < 1800; i++) {
+      ctx.fillStyle = Math.random() > 0.5 ? `rgba(120,90,60,${0.1 + Math.random() * 0.2})` : `rgba(20,12,8,${0.25 + Math.random() * 0.35})`;
+      ctx.fillRect(Math.random() * size, Math.random() * size, 1, 1);
+    }
+    ctx.strokeStyle = "rgba(25,15,10,0.35)";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(size * 0.3, 0);
+    ctx.lineTo(size * 0.28, size);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(size * 0.7, 0);
+    ctx.lineTo(size * 0.72, size);
+    ctx.stroke();
+    return toTex(c, { repeat: [2, 14] });
+  }
+  function makeWoodTexture(size = 256) {
+    const { c, ctx } = canvas(size);
+    ctx.fillStyle = "#4a2e18";
+    ctx.fillRect(0, 0, size, size);
+    const plankH = size / 6;
+    for (let i = 0; i < 6; i++) {
+      const y = i * plankH;
+      const shade = 55 + i % 3 * 12 + Math.random() * 10;
+      ctx.fillStyle = `rgb(${shade | 0},${shade * 0.65 | 0},${shade * 0.35 | 0})`;
+      ctx.fillRect(0, y, size, plankH - 1.5);
+      ctx.strokeStyle = `rgba(30,18,8,${0.15 + Math.random() * 0.2})`;
+      ctx.lineWidth = 1;
+      for (let g = 0; g < 5; g++) {
+        const gy = y + 4 + g * (plankH / 6);
+        ctx.beginPath();
+        ctx.moveTo(0, gy + Math.sin(g) * 1.5);
+        for (let x = 0; x < size; x += 8) {
+          ctx.lineTo(x, gy + Math.sin(x * 0.08 + i) * 1.2);
+        }
+        ctx.stroke();
+      }
+      if (Math.random() > 0.45) {
+        const kx = 20 + Math.random() * (size - 40);
+        const ky = y + plankH * 0.4;
+        ctx.fillStyle = "rgba(30,16,8,0.45)";
+        ctx.beginPath();
+        ctx.ellipse(kx, ky, 4 + Math.random() * 3, 2.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = "rgba(15,8,4,0.55)";
+      ctx.fillRect(0, y + plankH - 1.5, size, 1.5);
+    }
+    return toTex(c, { repeat: [2, 10] });
+  }
+  function makeAdobeTexture(size = 256) {
+    const { c, ctx } = canvas(size);
+    ctx.fillStyle = "#a08058";
+    ctx.fillRect(0, 0, size, size);
+    for (let i = 0; i < 350; i++) {
+      const x = Math.random() * size;
+      const y = Math.random() * size;
+      const r = 3 + Math.random() * 18;
+      const v = 140 + Math.random() * 50;
+      ctx.fillStyle = `rgba(${v | 0},${v * 0.8 | 0},${v * 0.5 | 0},${0.06 + Math.random() * 0.1})`;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    for (let i = 0; i < 3e3; i++) {
+      const v = 90 + Math.random() * 80;
+      ctx.fillStyle = `rgba(${v | 0},${v * 0.78 | 0},${v * 0.48 | 0},${0.12 + Math.random() * 0.2})`;
+      ctx.fillRect(Math.random() * size, Math.random() * size, 1, 1);
+    }
+    ctx.strokeStyle = "rgba(60,40,25,0.18)";
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 8; i++) {
+      ctx.beginPath();
+      let x = Math.random() * size;
+      let y = Math.random() * size;
+      ctx.moveTo(x, y);
+      for (let s = 0; s < 6; s++) {
+        x += (Math.random() - 0.5) * 40;
+        y += 8 + Math.random() * 20;
+        ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    return toTex(c, { repeat: [2, 2] });
+  }
+  function makeLeatherTexture(size = 128) {
+    const { c, ctx } = canvas(size);
+    const g = ctx.createRadialGradient(size * 0.4, size * 0.35, 8, size * 0.5, size * 0.5, size * 0.7);
+    g.addColorStop(0, "#5a3420");
+    g.addColorStop(0.55, "#3a2010");
+    g.addColorStop(1, "#241408");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, size, size);
+    for (let i = 0; i < 800; i++) {
+      ctx.fillStyle = Math.random() > 0.5 ? `rgba(120,80,50,${0.08 + Math.random() * 0.15})` : `rgba(20,10,5,${0.1 + Math.random() * 0.2})`;
+      ctx.fillRect(Math.random() * size, Math.random() * size, 1 + Math.random(), 1);
+    }
+    for (let i = 0; i < 12; i++) {
+      ctx.strokeStyle = `rgba(90,60,35,${0.15 + Math.random() * 0.2})`;
+      ctx.lineWidth = 1 + Math.random();
+      ctx.beginPath();
+      ctx.arc(Math.random() * size, Math.random() * size, 6 + Math.random() * 20, 0, Math.PI * (0.4 + Math.random() * 0.8));
+      ctx.stroke();
+    }
+    return toTex(c, { repeat: [1, 1] });
+  }
+  function makeCoatTexture(hexBase, size = 128) {
+    const { c, ctx } = canvas(size);
+    ctx.fillStyle = `#${hexBase.toString(16).padStart(6, "0")}`;
+    ctx.fillRect(0, 0, size, size);
+    const r = hexBase >> 16 & 255;
+    const g = hexBase >> 8 & 255;
+    const b = hexBase & 255;
+    for (let i = 0; i < 1200; i++) {
+      const dr = (Math.random() - 0.5) * 40;
+      const dg = (Math.random() - 0.5) * 30;
+      const db = (Math.random() - 0.5) * 20;
+      ctx.fillStyle = `rgba(${r + dr | 0},${g + dg | 0},${b + db | 0},${0.12 + Math.random() * 0.2})`;
+      ctx.fillRect(Math.random() * size, Math.random() * size, 1 + Math.random() * 2, 1 + Math.random() * 2);
+    }
+    return toTex(c, { repeat: [2, 2] });
+  }
+  function makeSignTexture(text, bg = "#7a3820", fg = "#e8dcc8", size = 256) {
+    const c = document.createElement("canvas");
+    c.width = size;
+    c.height = Math.round(size * 0.4);
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, c.width, c.height);
+    for (let i = 0; i < 80; i++) {
+      ctx.fillStyle = `rgba(20,10,5,${0.05 + Math.random() * 0.1})`;
+      ctx.fillRect(Math.random() * c.width, Math.random() * c.height, 4 + Math.random() * 20, 2);
+    }
+    ctx.strokeStyle = "#d0c0a0";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(6, 6, c.width - 12, c.height - 12);
+    ctx.strokeStyle = "rgba(20,8,4,0.5)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(10, 10, c.width - 20, c.height - 20);
+    ctx.fillStyle = fg;
+    ctx.font = `bold ${Math.round(c.height * 0.42)}px "Times New Roman", Palatino, serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, c.width / 2, c.height / 2 + 1);
+    ctx.fillStyle = "#8b1a1a";
+    ctx.fillRect(c.width * 0.28, c.height * 0.78, c.width * 0.44, 3);
+    const tex = new CanvasTexture(c);
+    tex.colorSpace = SRGBColorSpace;
+    tex.needsUpdate = true;
+    return tex;
+  }
+  function makeSkyTexture(size = 512) {
+    const c = document.createElement("canvas");
+    c.width = size;
+    c.height = size / 2;
+    const ctx = c.getContext("2d");
+    const g = ctx.createLinearGradient(0, 0, 0, c.height);
+    g.addColorStop(0, "#4a3a58");
+    g.addColorStop(0.35, "#7a5a68");
+    g.addColorStop(0.62, "#c48860");
+    g.addColorStop(0.78, "#e0a070");
+    g.addColorStop(0.9, "#b87048");
+    g.addColorStop(1, "#6a4030");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, c.width, c.height);
+    const sunX = c.width * 0.22;
+    const sunY = c.height * 0.72;
+    const sg = ctx.createRadialGradient(sunX, sunY, 4, sunX, sunY, c.height * 0.45);
+    sg.addColorStop(0, "rgba(255,200,140,0.85)");
+    sg.addColorStop(0.25, "rgba(232,140,70,0.45)");
+    sg.addColorStop(0.55, "rgba(180,80,40,0.15)");
+    sg.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = sg;
+    ctx.fillRect(0, 0, c.width, c.height);
+    for (let i = 0; i < 18; i++) {
+      const x = Math.random() * c.width;
+      const y = c.height * (0.25 + Math.random() * 0.35);
+      const w = 40 + Math.random() * 120;
+      ctx.fillStyle = `rgba(220,190,170,${0.04 + Math.random() * 0.08})`;
+      ctx.beginPath();
+      ctx.ellipse(x, y, w, 6 + Math.random() * 10, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    const tex = new CanvasTexture(c);
+    tex.colorSpace = SRGBColorSpace;
+    tex.mapping = EquirectangularReflectionMapping;
+    tex.needsUpdate = true;
+    return tex;
+  }
+  function makeWaterTexture(size = 256) {
+    const { c, ctx } = canvas(size);
+    ctx.fillStyle = "#2a4848";
+    ctx.fillRect(0, 0, size, size);
+    for (let i = 0; i < 40; i++) {
+      const y = i / 40 * size;
+      ctx.strokeStyle = `rgba(${60 + Math.random() * 40 | 0},${100 + Math.random() * 40 | 0},${90 + Math.random() * 30 | 0},${0.15 + Math.random() * 0.2})`;
+      ctx.lineWidth = 1 + Math.random() * 2;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      for (let x = 0; x <= size; x += 8) {
+        ctx.lineTo(x, y + Math.sin(x * 0.08 + i) * 3);
+      }
+      ctx.stroke();
+    }
+    for (let i = 0; i < 200; i++) {
+      ctx.fillStyle = `rgba(180,220,210,${0.05 + Math.random() * 0.12})`;
+      ctx.fillRect(Math.random() * size, Math.random() * size, 2, 1);
+    }
+    return toTex(c, { repeat: [3, 1.5] });
+  }
+  function makeCrateWoodTexture(size = 128) {
+    const { c, ctx } = canvas(size);
+    ctx.fillStyle = "#4a2a14";
+    ctx.fillRect(0, 0, size, size);
+    const plankW = size / 4;
+    for (let i = 0; i < 4; i++) {
+      const x = i * plankW;
+      const shade = 50 + i % 2 * 18;
+      ctx.fillStyle = `rgb(${shade},${shade * 0.6 | 0},${shade * 0.3 | 0})`;
+      ctx.fillRect(x, 0, plankW - 2, size);
+      ctx.fillStyle = "rgba(20,10,5,0.4)";
+      ctx.fillRect(x + plankW - 2, 0, 2, size);
+    }
+    ctx.fillStyle = "rgba(90,50,25,0.55)";
+    ctx.fillRect(0, size * 0.2, size, 4);
+    ctx.fillRect(0, size * 0.75, size, 4);
+    return toTex(c, { repeat: [1, 1] });
+  }
+
   // src/systems/horse.js
   var HORSE_PROFILES = {
     dun: {
@@ -20440,36 +22627,47 @@ void main() {
   }
   function makeBodyLathe(bodyMat) {
     const pts = [
-      new Vector2(0.02, -0.85),
-      new Vector2(0.28, -0.75),
-      new Vector2(0.38, -0.45),
-      new Vector2(0.42, -0.1),
-      new Vector2(0.4, 0.25),
-      new Vector2(0.34, 0.55),
-      new Vector2(0.26, 0.78),
-      new Vector2(0.08, 0.9)
+      new Vector2(0.015, -0.92),
+      new Vector2(0.18, -0.88),
+      new Vector2(0.3, -0.78),
+      new Vector2(0.38, -0.58),
+      new Vector2(0.42, -0.35),
+      new Vector2(0.44, -0.12),
+      new Vector2(0.43, 0.1),
+      new Vector2(0.4, 0.32),
+      new Vector2(0.36, 0.52),
+      new Vector2(0.3, 0.7),
+      new Vector2(0.22, 0.84),
+      new Vector2(0.1, 0.92),
+      new Vector2(0.04, 0.96)
     ];
-    const geo = new LatheGeometry(pts, 12);
+    const geo = new LatheGeometry(pts, 20);
     const mesh = new Mesh(geo, bodyMat);
     mesh.rotation.x = Math.PI / 2;
-    mesh.scale.set(1, 1.05, 0.92);
+    mesh.scale.set(1.05, 1.08, 0.95);
     return mesh;
   }
   function makeLeg(bodyMat, hoofMat) {
     const g = new Group();
-    const upper = new Mesh(new CylinderGeometry(0.09, 0.08, 0.42, 6), bodyMat);
-    upper.position.y = -0.21;
+    const upper = new Mesh(new CylinderGeometry(0.095, 0.082, 0.44, 8), bodyMat);
+    upper.position.y = -0.22;
     upper.castShadow = true;
+    upper.receiveShadow = true;
     g.add(upper);
     const knee = new Group();
-    knee.position.y = -0.42;
+    knee.position.y = -0.44;
     g.add(knee);
-    const lower = new Mesh(new CylinderGeometry(0.07, 0.055, 0.38, 6), bodyMat);
-    lower.position.y = -0.19;
+    const lower = new Mesh(new CylinderGeometry(0.072, 0.055, 0.4, 8), bodyMat);
+    lower.position.y = -0.2;
     lower.castShadow = true;
     knee.add(lower);
-    const hoof = new Mesh(new BoxGeometry(0.1, 0.08, 0.14), hoofMat);
-    hoof.position.set(0, -0.4, 0.02);
+    const fetlock = new Mesh(new SphereGeometry(0.06, 6, 5), bodyMat);
+    fetlock.position.set(0, -0.38, 0.01);
+    fetlock.scale.set(1, 0.7, 1.1);
+    knee.add(fetlock);
+    const hoof = new Mesh(new CylinderGeometry(0.055, 0.06, 0.09, 8), hoofMat);
+    hoof.position.set(0, -0.44, 0.02);
+    hoof.rotation.x = 0.08;
     knee.add(hoof);
     g.userData.upper = upper;
     g.userData.knee = knee;
@@ -20486,52 +22684,55 @@ void main() {
     legR.position.set(0.16, 0.05, 0.02);
     legR.rotation.z = -0.12;
     rider.add(legR);
-    const bootL = new Mesh(new BoxGeometry(0.14, 0.14, 0.22), darkMat);
-    bootL.position.set(-0.18, -0.22, 0.06);
+    const bootL = new Mesh(new BoxGeometry(0.14, 0.14, 0.24), darkMat);
+    bootL.position.set(-0.18, -0.22, 0.07);
     rider.add(bootL);
-    const bootR = new Mesh(new BoxGeometry(0.14, 0.14, 0.22), darkMat);
-    bootR.position.set(0.18, -0.22, 0.06);
+    const bootR = new Mesh(new BoxGeometry(0.14, 0.14, 0.24), darkMat);
+    bootR.position.set(0.18, -0.22, 0.07);
     rider.add(bootR);
-    const torso = new Mesh(new BoxGeometry(0.38, 0.48, 0.26), coatMat);
-    torso.position.set(0, 0.42, -0.02);
+    const torso = new Mesh(new BoxGeometry(0.4, 0.5, 0.28), coatMat);
+    torso.position.set(0, 0.44, -0.02);
     torso.castShadow = true;
     rider.add(torso);
-    const shoulders = new Mesh(new BoxGeometry(0.48, 0.14, 0.24), coatMat);
-    shoulders.position.set(0, 0.62, -0.02);
+    const shoulders = new Mesh(new BoxGeometry(0.5, 0.15, 0.26), coatMat);
+    shoulders.position.set(0, 0.64, -0.02);
     rider.add(shoulders);
-    const armL = new Mesh(new BoxGeometry(0.12, 0.36, 0.12), coatMat);
-    armL.position.set(-0.28, 0.4, 0.08);
+    const armL = new Mesh(new BoxGeometry(0.12, 0.38, 0.12), coatMat);
+    armL.position.set(-0.3, 0.4, 0.08);
     armL.rotation.x = -0.55;
     rider.add(armL);
-    const armR = new Mesh(new BoxGeometry(0.12, 0.36, 0.12), coatMat);
-    armR.position.set(0.28, 0.4, 0.08);
+    const armR = new Mesh(new BoxGeometry(0.12, 0.38, 0.12), coatMat);
+    armR.position.set(0.3, 0.4, 0.08);
     armR.rotation.x = -0.55;
     rider.add(armR);
-    const neck = new Mesh(new CylinderGeometry(0.07, 0.08, 0.12, 6), coatMat);
-    neck.position.set(0, 0.72, -0.02);
+    const neck = new Mesh(new CylinderGeometry(0.07, 0.085, 0.13, 8), coatMat);
+    neck.position.set(0, 0.74, -0.02);
     rider.add(neck);
-    const head = new Mesh(new SphereGeometry(0.13, 8, 6), mat(12888194, { roughness: 0.7 }));
-    head.position.set(0, 0.88, -0.02);
+    const head = new Mesh(new SphereGeometry(0.135, 10, 8), mat(12888194, { roughness: 0.7 }));
+    head.position.set(0, 0.9, -0.02);
     head.scale.set(1, 1.1, 0.95);
     rider.add(head);
-    const crown = new Mesh(new CylinderGeometry(0.14, 0.16, 0.16, 10), darkMat);
-    crown.position.set(0, 1.02, -0.02);
+    const crown = new Mesh(new CylinderGeometry(0.145, 0.165, 0.17, 12), darkMat);
+    crown.position.set(0, 1.04, -0.02);
     rider.add(crown);
-    const brim = new Mesh(new CylinderGeometry(0.28, 0.3, 0.035, 12), darkMat);
-    brim.position.set(0, 0.94, -0.02);
+    const brim = new Mesh(new CylinderGeometry(0.29, 0.31, 0.035, 14), darkMat);
+    brim.position.set(0, 0.96, -0.02);
     rider.add(brim);
     const brimFront = new Mesh(new BoxGeometry(0.22, 0.03, 0.12), darkMat);
-    brimFront.position.set(0, 0.94, 0.2);
+    brimFront.position.set(0, 0.96, 0.2);
     rider.add(brimFront);
     return rider;
   }
   function createHorseMesh(profile) {
     const root = new Group();
     root.name = "horse";
-    const bodyMat = mat(profile.color);
+    const coatMap = makeCoatTexture(profile.color);
+    const leatherMap = makeLeatherTexture();
+    const bodyMat = mat(profile.color, { map: coatMap, roughness: 0.78, roughnessMap: coatMap });
     const maneMat = mat(profile.mane, { roughness: 0.95 });
     const dark = mat(1708040, { roughness: 0.75 });
-    const hoofMat = mat(1708556, { roughness: 0.65 });
+    const leather = mat(3809296, { map: leatherMap, roughness: 0.72, roughnessMap: leatherMap });
+    const hoofMat = mat(1708556, { roughness: 0.55, metalness: 0.08 });
     const coatMat = mat(2758672, { roughness: 0.85 });
     const denimMat = mat(2762808, { roughness: 0.9 });
     const bodyRoot = new Group();
@@ -20541,93 +22742,148 @@ void main() {
     body.castShadow = true;
     body.receiveShadow = true;
     bodyRoot.add(body);
-    const chest = new Mesh(new SphereGeometry(0.32, 8, 6), bodyMat);
-    chest.position.set(0, -0.05, 0.55);
-    chest.scale.set(1.05, 0.95, 1.15);
+    const chest = new Mesh(new SphereGeometry(0.34, 12, 10), bodyMat);
+    chest.position.set(0, -0.04, 0.58);
+    chest.scale.set(1.08, 0.98, 1.18);
     chest.castShadow = true;
+    chest.receiveShadow = true;
     bodyRoot.add(chest);
-    const haunch = new Mesh(new SphereGeometry(0.34, 8, 6), bodyMat);
-    haunch.position.set(0, 0.02, -0.55);
-    haunch.scale.set(1.1, 1.05, 1);
+    const haunch = new Mesh(new SphereGeometry(0.36, 12, 10), bodyMat);
+    haunch.position.set(0, 0.04, -0.58);
+    haunch.scale.set(1.12, 1.08, 1.02);
     haunch.castShadow = true;
+    haunch.receiveShadow = true;
     bodyRoot.add(haunch);
+    const belly = new Mesh(new SphereGeometry(0.28, 10, 8), bodyMat);
+    belly.position.set(0, -0.18, 0);
+    belly.scale.set(0.95, 0.7, 1.35);
+    bodyRoot.add(belly);
     const neckGroup = new Group();
-    neckGroup.position.set(0, 0.15, 0.72);
+    neckGroup.position.set(0, 0.18, 0.76);
     neckGroup.rotation.x = -0.55;
     bodyRoot.add(neckGroup);
-    const neck1 = new Mesh(new CylinderGeometry(0.16, 0.2, 0.38, 8), bodyMat);
-    neck1.position.y = 0.18;
+    const neck1 = new Mesh(new CylinderGeometry(0.17, 0.22, 0.4, 12), bodyMat);
+    neck1.position.y = 0.2;
     neck1.castShadow = true;
     neckGroup.add(neck1);
-    const neck2 = new Mesh(new CylinderGeometry(0.13, 0.16, 0.32, 8), bodyMat);
-    neck2.position.y = 0.48;
-    neck2.rotation.x = -0.25;
+    const neck2 = new Mesh(new CylinderGeometry(0.135, 0.17, 0.34, 12), bodyMat);
+    neck2.position.y = 0.52;
+    neck2.rotation.x = -0.28;
     neck2.castShadow = true;
     neckGroup.add(neck2);
     const headGroup = new Group();
-    headGroup.position.set(0, 0.7, 0.08);
-    headGroup.rotation.x = 0.35;
+    headGroup.position.set(0, 0.74, 0.1);
+    headGroup.rotation.x = 0.38;
     neckGroup.add(headGroup);
-    const skull = new Mesh(new BoxGeometry(0.26, 0.24, 0.28), bodyMat);
+    const skull = new Mesh(new BoxGeometry(0.28, 0.26, 0.3), bodyMat);
     skull.position.set(0, 0.02, 0);
     skull.castShadow = true;
     headGroup.add(skull);
-    const snout = new Mesh(new BoxGeometry(0.18, 0.16, 0.38), bodyMat);
-    snout.position.set(0, -0.04, 0.28);
+    const cheekL = new Mesh(new SphereGeometry(0.1, 8, 6), bodyMat);
+    cheekL.position.set(-0.12, -0.02, 0.02);
+    cheekL.scale.set(0.7, 1, 1.1);
+    headGroup.add(cheekL);
+    const cheekR = cheekL.clone();
+    cheekR.position.x = 0.12;
+    headGroup.add(cheekR);
+    const snout = new Mesh(new BoxGeometry(0.19, 0.17, 0.4), bodyMat);
+    snout.position.set(0, -0.04, 0.3);
     snout.castShadow = true;
     headGroup.add(snout);
-    const muzzle = new Mesh(new BoxGeometry(0.16, 0.1, 0.12), dark);
-    muzzle.position.set(0, -0.06, 0.48);
+    const muzzle = new Mesh(new BoxGeometry(0.17, 0.11, 0.13), dark);
+    muzzle.position.set(0, -0.06, 0.5);
     headGroup.add(muzzle);
-    const earGeo = new ConeGeometry(0.05, 0.16, 5);
+    const nostrilL = new Mesh(new SphereGeometry(0.025, 6, 4), dark);
+    nostrilL.position.set(-0.05, -0.02, 0.55);
+    headGroup.add(nostrilL);
+    const nostrilR = nostrilL.clone();
+    nostrilR.position.x = 0.05;
+    headGroup.add(nostrilR);
+    const earGeo = new ConeGeometry(0.055, 0.18, 6);
     const earL = new Mesh(earGeo, bodyMat);
-    earL.position.set(-0.08, 0.18, -0.04);
-    earL.rotation.z = -0.2;
+    earL.position.set(-0.09, 0.2, -0.04);
+    earL.rotation.z = -0.22;
+    earL.rotation.x = -0.15;
     headGroup.add(earL);
     const earR = new Mesh(earGeo, bodyMat);
-    earR.position.set(0.08, 0.18, -0.04);
-    earR.rotation.z = 0.2;
+    earR.position.set(0.09, 0.2, -0.04);
+    earR.rotation.z = 0.22;
+    earR.rotation.x = -0.15;
     headGroup.add(earR);
-    const eyeMat = mat(657414);
-    const eyeL = new Mesh(new SphereGeometry(0.035, 6, 4), eyeMat);
-    eyeL.position.set(-0.12, 0.05, 0.08);
+    const eyeMat = mat(657414, { roughness: 0.3 });
+    const eyeL = new Mesh(new SphereGeometry(0.038, 8, 6), eyeMat);
+    eyeL.position.set(-0.13, 0.06, 0.1);
     headGroup.add(eyeL);
-    const eyeR = new Mesh(new SphereGeometry(0.035, 6, 4), eyeMat);
-    eyeR.position.set(0.12, 0.05, 0.08);
+    const eyeR = eyeL.clone();
+    eyeR.position.x = 0.13;
     headGroup.add(eyeR);
-    const mane = new Mesh(new BoxGeometry(0.08, 0.55, 0.14), maneMat);
-    mane.position.set(0, 0.42, -0.12);
-    mane.rotation.x = 0.15;
-    neckGroup.add(mane);
-    const maneCrest = new Mesh(new BoxGeometry(0.07, 0.18, 0.22), maneMat);
-    maneCrest.position.set(0, 0.12, -0.06);
+    for (let i = 0; i < 7; i++) {
+      const t = i / 6;
+      const strand = new Mesh(
+        new BoxGeometry(0.06 + i % 2 * 0.02, 0.14 + t * 0.12, 0.1),
+        maneMat
+      );
+      strand.position.set((i % 2 - 0.5) * 0.04, 0.22 + t * 0.42, -0.14 - t * 0.02);
+      strand.rotation.x = 0.2 + t * 0.15;
+      strand.castShadow = true;
+      neckGroup.add(strand);
+    }
+    const maneCrest = new Mesh(new BoxGeometry(0.08, 0.2, 0.26), maneMat);
+    maneCrest.position.set(0, 0.14, -0.08);
     headGroup.add(maneCrest);
+    const forelock = new Mesh(new BoxGeometry(0.06, 0.16, 0.1), maneMat);
+    forelock.position.set(0, 0.08, 0.12);
+    forelock.rotation.x = 0.6;
+    headGroup.add(forelock);
     const tailGroup = new Group();
-    tailGroup.position.set(0, 0.15, -0.85);
+    tailGroup.position.set(0, 0.18, -0.88);
     bodyRoot.add(tailGroup);
-    const tail1 = new Mesh(new CylinderGeometry(0.06, 0.09, 0.45, 6), maneMat);
-    tail1.position.set(0, -0.1, -0.12);
+    const tail1 = new Mesh(new CylinderGeometry(0.07, 0.1, 0.48, 8), maneMat);
+    tail1.position.set(0, -0.12, -0.14);
     tail1.rotation.x = 0.55;
     tail1.castShadow = true;
     tailGroup.add(tail1);
-    const tail2 = new Mesh(new CylinderGeometry(0.04, 0.07, 0.4, 6), maneMat);
-    tail2.position.set(0, -0.35, -0.32);
+    const tail2 = new Mesh(new CylinderGeometry(0.05, 0.08, 0.42, 8), maneMat);
+    tail2.position.set(0, -0.38, -0.36);
     tail2.rotation.x = 0.35;
     tailGroup.add(tail2);
-    const saddle = new Mesh(new BoxGeometry(0.5, 0.14, 0.48), dark);
-    saddle.position.set(0, 0.38, 0.02);
+    const tail3 = new Mesh(new CylinderGeometry(0.03, 0.055, 0.28, 6), maneMat);
+    tail3.position.set(0, -0.58, -0.52);
+    tail3.rotation.x = 0.25;
+    tailGroup.add(tail3);
+    const saddle = new Mesh(new BoxGeometry(0.52, 0.16, 0.5), leather);
+    saddle.position.set(0, 0.4, 0.02);
+    saddle.castShadow = true;
     bodyRoot.add(saddle);
-    const saddleHorn = new Mesh(new CylinderGeometry(0.04, 0.05, 0.12, 6), dark);
-    saddleHorn.position.set(0, 0.5, 0.18);
+    const skirtL = new Mesh(new BoxGeometry(0.08, 0.28, 0.36), leather);
+    skirtL.position.set(-0.28, 0.22, 0.02);
+    bodyRoot.add(skirtL);
+    const skirtR = skirtL.clone();
+    skirtR.position.x = 0.28;
+    bodyRoot.add(skirtR);
+    const saddleHorn = new Mesh(new CylinderGeometry(0.045, 0.055, 0.14, 8), leather);
+    saddleHorn.position.set(0, 0.54, 0.2);
     bodyRoot.add(saddleHorn);
-    const cantle = new Mesh(new BoxGeometry(0.42, 0.16, 0.1), dark);
-    cantle.position.set(0, 0.48, -0.18);
+    const cantle = new Mesh(new BoxGeometry(0.44, 0.18, 0.12), leather);
+    cantle.position.set(0, 0.52, -0.2);
     bodyRoot.add(cantle);
+    for (const sx of [-0.32, 0.32]) {
+      const strap = new Mesh(new BoxGeometry(0.04, 0.35, 0.04), leather);
+      strap.position.set(sx, 0.05, 0.08);
+      bodyRoot.add(strap);
+      const iron = new Mesh(new TorusGeometry(0.07, 0.015, 6, 10), dark);
+      iron.position.set(sx, -0.14, 0.08);
+      iron.rotation.y = Math.PI / 2;
+      bodyRoot.add(iron);
+    }
+    const blanket = new Mesh(new BoxGeometry(0.58, 0.04, 0.55), mat(6957088, { roughness: 0.9 }));
+    blanket.position.set(0, 0.32, 0.02);
+    bodyRoot.add(blanket);
     const legDefs = [
-      { name: "fl", x: -0.2, z: 0.48 },
-      { name: "fr", x: 0.2, z: 0.48 },
-      { name: "bl", x: -0.22, z: -0.48 },
-      { name: "br", x: 0.22, z: -0.48 }
+      { name: "fl", x: -0.22, z: 0.5 },
+      { name: "fr", x: 0.22, z: 0.5 },
+      { name: "bl", x: -0.24, z: -0.5 },
+      { name: "br", x: 0.24, z: -0.5 }
     ];
     const legs = [];
     for (const def of legDefs) {
@@ -20638,7 +22894,7 @@ void main() {
       legs.push(leg);
     }
     const rider = makeRider(dark, coatMat, denimMat);
-    rider.position.set(0, 1.55, 0.02);
+    rider.position.set(0, 1.58, 0.02);
     root.add(rider);
     return {
       root,
@@ -20660,7 +22916,7 @@ void main() {
       bob: 0
     };
     const pos = mesh.root.position;
-    const tmp = new Vector3();
+    const tmp2 = new Vector3();
     const restUpper = 0.08;
     const restKnee = 0.12;
     function update(dt, input2, groundY = 0) {
@@ -20734,7 +22990,7 @@ void main() {
         mesh.tail.rotation.x = 0.1 + Math.sin(state.bob) * 0.08 * speedN;
       }
     }
-    function getWorldPos(out = tmp) {
+    function getWorldPos(out = tmp2) {
       return out.copy(pos);
     }
     return { state, profile, mesh, update, getWorldPos, pos };
@@ -20819,12 +23075,17 @@ void main() {
     const compass = $("hud-compass");
     const compassArrow = $("compass-arrow");
     const compassLabel = $("compass-label");
+    const playControls = $("hud-controls");
+    const playControlsBody = $("hud-controls-body");
+    const rideTip = $("hud-ride-tip");
     function showScreen(name) {
       for (const [k, el] of Object.entries(screens)) {
         el.classList.toggle("active", k === name);
       }
       hud.classList.toggle("hidden", name !== null && name !== void 0 ? true : false);
       if (compass) compass.classList.add("hidden");
+      if (playControls) playControls.classList.add("hidden");
+      if (rideTip) rideTip.classList.add("hidden");
     }
     function playMode() {
       for (const el of Object.values(screens)) el.classList.remove("active");
@@ -20876,11 +23137,38 @@ void main() {
       showScreen("end");
       hud.classList.add("hidden");
       if (compass) compass.classList.add("hidden");
+      if (playControls) playControls.classList.add("hidden");
+      if (rideTip) rideTip.classList.add("hidden");
       $("end-kicker").textContent = kicker || "Soft Open";
       const t = $("end-title");
       t.textContent = title;
       t.className = clean ? "clean" : "botched";
       $("end-body").textContent = body;
+    }
+    function showPlayControls(touch) {
+      if (!playControls) return;
+      playControls.classList.remove("hidden");
+      if (playControlsBody) {
+        playControlsBody.innerHTML = touch ? "<div><b>Stick</b> move</div><div><b>Gallop</b> \xB7 <b>Mount</b> \xB7 <b>Act</b></div>" : "<div><b>W/S</b> Move \xB7 <b>A/D</b> Steer</div><div><b>Shift</b> Gallop \xB7 <b>E</b> Mount \xB7 <b>Space</b> Act</div>";
+      }
+      if (rideTip) {
+        rideTip.classList.remove("hidden", "fade");
+        void rideTip.offsetWidth;
+        rideTip.classList.add("show");
+        clearTimeout(rideTip._fadeTimer);
+        rideTip._fadeTimer = setTimeout(() => {
+          rideTip.classList.add("fade");
+          setTimeout(() => rideTip.classList.add("hidden"), 700);
+        }, 6e3);
+      }
+    }
+    function hidePlayControls() {
+      if (playControls) playControls.classList.add("hidden");
+      if (rideTip) {
+        rideTip.classList.add("hidden");
+        rideTip.classList.remove("show", "fade");
+        clearTimeout(rideTip._fadeTimer);
+      }
     }
     return {
       $,
@@ -20893,6 +23181,8 @@ void main() {
       setCompass,
       setCine,
       showEnd,
+      showPlayControls,
+      hidePlayControls,
       screens,
       hud
     };
@@ -20901,13 +23191,10 @@ void main() {
   // src/world/greenville.js
   var COL = {
     dirt: 8016436,
-    // shoulders — lighter dusty
     dirtDark: 4073496,
-    // street bed — darker value separation
     wood: 5913122,
     woodDark: 3021326,
     adobe: 10518616,
-    // brighter dusty adobe (still western, not washed)
     adobeDark: 8018488,
     roof: 4858392,
     rust: 10111012,
@@ -20915,40 +23202,90 @@ void main() {
     blood: 12855336,
     water: 2771528,
     brush: 4872752,
-    night: 657420,
     falseFront: 3810324
   };
-  function box(w, h, d, color, x, y, z, matOpts = {}) {
-    const mesh = new Mesh(
-      new BoxGeometry(w, h, d),
-      new MeshStandardMaterial({ color, roughness: 0.88, metalness: 0.02, ...matOpts })
-    );
+  function std(color, extras = {}) {
+    return new MeshStandardMaterial({
+      color,
+      roughness: 0.88,
+      metalness: 0.02,
+      ...extras
+    });
+  }
+  function box(w, h, d, colorOrMat, x, y, z, matOpts = {}) {
+    const material = colorOrMat.isMaterial ? colorOrMat : std(colorOrMat, matOpts);
+    const mesh = new Mesh(new BoxGeometry(w, h, d), material);
     mesh.position.set(x, y, z);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     return mesh;
   }
-  function building(group, { w, h, d, x, z, color = COL.adobe, roofH = 0.4, signColor = null }) {
-    const base = box(w, h, d, color, x, h / 2, z);
+  function building(group, {
+    w,
+    h,
+    d,
+    x,
+    z,
+    color = COL.adobe,
+    adobeMap = null,
+    woodMap = null,
+    roofH = 0.4,
+    signTex = null,
+    porch = true
+  }) {
+    const wallMat = adobeMap ? std(color, { map: adobeMap, roughnessMap: adobeMap, roughness: 0.92 }) : std(color);
+    const base = box(w, h, d, wallMat, x, h / 2, z);
     group.add(base);
-    const roof = box(w + 0.3, roofH, d + 0.3, COL.roof, x, h + roofH / 2, z);
+    const roof = box(w + 0.35, roofH, d + 0.35, COL.roof, x, h + roofH / 2, z);
     group.add(roof);
-    const frontH = h * 0.48;
-    const front = box(w + 0.25, frontH, 0.16, COL.falseFront, x, h + frontH * 0.15, z + d / 2 + 0.08);
-    group.add(front);
-    group.add(box(w + 0.35, 0.1, 0.18, COL.bone, x, h + frontH * 0.38, z + d / 2 + 0.1, {
+    const frontH = h * 0.52;
+    const frontZ = z + d / 2;
+    group.add(box(w + 0.3, frontH, 0.22, COL.falseFront, x, h + frontH * 0.12, frontZ + 0.05));
+    group.add(box(w + 0.2, frontH * 0.92, 0.1, 4861976, x, h + frontH * 0.14, frontZ + 0.16));
+    group.add(box(w + 0.4, 0.12, 0.2, COL.bone, x, h + frontH * 0.4, frontZ + 0.18, {
       emissive: 2760720,
-      emissiveIntensity: 0.15
+      emissiveIntensity: 0.12
     }));
-    group.add(box(0.75, 1.7, 0.1, COL.woodDark, x, 0.85, z + d / 2 + 0.08));
-    const winMat = { emissive: 6961688, emissiveIntensity: 0.45, roughness: 0.55 };
-    group.add(box(0.55, 0.55, 0.08, 2758672, x - w * 0.28, 1.55, z + d / 2 + 0.08, winMat));
-    group.add(box(0.55, 0.55, 0.08, 2758672, x + w * 0.28, 1.55, z + d / 2 + 0.08, winMat));
-    if (signColor != null) {
-      group.add(box(Math.min(w * 0.55, 3.8), 0.75, 0.18, signColor, x, h + 0.35, z + d / 2 + 0.2, {
-        emissive: signColor,
-        emissiveIntensity: 0.25
-      }));
+    for (const sx of [-w * 0.42, w * 0.42]) {
+      group.add(box(0.14, 0.35, 0.28, COL.woodDark, x + sx, h + 0.15, frontZ + 0.2));
+    }
+    group.add(box(0.9, 1.85, 0.12, COL.woodDark, x, 0.92, frontZ + 0.1));
+    group.add(box(1.05, 0.1, 0.14, COL.wood, x, 1.9, frontZ + 0.12));
+    const winMat = {
+      emissive: 9062936,
+      emissiveIntensity: 0.65,
+      roughness: 0.45,
+      metalness: 0.05
+    };
+    group.add(box(0.58, 0.58, 0.08, 2758672, x - w * 0.28, 1.6, frontZ + 0.1, winMat));
+    group.add(box(0.58, 0.58, 0.08, 2758672, x + w * 0.28, 1.6, frontZ + 0.1, winMat));
+    for (const wx of [-w * 0.28, w * 0.28]) {
+      group.add(box(0.68, 0.06, 0.1, COL.bone, x + wx, 1.92, frontZ + 0.12));
+      group.add(box(0.68, 0.06, 0.1, COL.bone, x + wx, 1.28, frontZ + 0.12));
+    }
+    if (porch) {
+      const porchZ = frontZ + 1.15;
+      const woodMat = woodMap ? std(COL.wood, { map: woodMap, roughnessMap: woodMap }) : std(COL.wood);
+      group.add(box(w * 0.85, 0.1, 1.6, woodMat, x, 0.12, porchZ - 0.3));
+      for (const sx of [-w * 0.38, w * 0.38]) {
+        group.add(box(0.14, 2.4, 0.14, COL.woodDark, x + sx, 1.2, porchZ));
+      }
+      group.add(box(w * 0.9, 0.08, 1.7, COL.woodDark, x, 2.45, porchZ - 0.2));
+    }
+    if (signTex) {
+      const sign = new Mesh(
+        new PlaneGeometry(Math.min(w * 0.7, 4.2), 1),
+        new MeshStandardMaterial({
+          map: signTex,
+          roughness: 0.7,
+          metalness: 0.05,
+          emissive: 3807248,
+          emissiveIntensity: 0.2
+        })
+      );
+      sign.position.set(x, h + 0.55, frontZ + 0.28);
+      sign.castShadow = true;
+      group.add(sign);
     }
     return base;
   }
@@ -20978,77 +23315,181 @@ void main() {
     orb.position.set(0, height + 0.55, 0);
     orb.castShadow = false;
     g.add(orb);
-    const light = new PointLight(lightColor, 1.6, 28, 1.6);
+    const light = new PointLight(lightColor, 1.4, 26, 1.6);
     light.position.set(0, height + 0.4, 0);
     g.add(light);
     g.userData.orb = orb;
     g.userData.tip = tip;
     g.userData.light = light;
-    g.userData.baseIntensity = 1.6;
+    g.userData.baseIntensity = 1.4;
     return g;
+  }
+  function hitchRope(group, x0, y0, z0, x1, y1, z1, mat2) {
+    const curve = new CatmullRomCurve3([
+      new Vector3(x0, y0, z0),
+      new Vector3((x0 + x1) / 2, Math.min(y0, y1) - 0.18, (z0 + z1) / 2),
+      new Vector3(x1, y1, z1)
+    ]);
+    const geo = new TubeGeometry(curve, 12, 0.025, 5, false);
+    const rope = new Mesh(geo, mat2);
+    rope.castShadow = true;
+    group.add(rope);
   }
   function buildGreenville(scene2) {
     const root = new Group();
     root.name = "greenville";
+    const dirtMap = makeDirtTexture();
+    const streetMap = makeStreetTexture();
+    const woodMap = makeWoodTexture();
+    const adobeMap = makeAdobeTexture();
+    const adobeMapB = makeAdobeTexture(192);
+    const waterMap = makeWaterTexture();
+    const crateMap = makeCrateWoodTexture();
+    const saloonSign = makeSignTexture("SALOON", "#7a3018", "#e8dcc8");
+    const hotelSign = makeSignTexture("HOTEL", "#5a3020", "#d0c0a0");
     const ground = new Mesh(
-      new PlaneGeometry(80, 120),
-      new MeshStandardMaterial({ color: COL.dirt, roughness: 0.95 })
+      new PlaneGeometry(90, 130),
+      std(COL.dirt, { map: dirtMap, roughnessMap: dirtMap, roughness: 0.96 })
     );
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
     root.add(ground);
+    for (const [px2, pz2, s, col] of [
+      [-12, 15, 8, 6965296],
+      [14, -8, 7, 5913640],
+      [8, 30, 9, 8017208],
+      [-18, -12, 6, 4861984],
+      [0, 55, 14, 5914664]
+    ]) {
+      const patch = new Mesh(
+        new CircleGeometry(s, 10),
+        std(col, { roughness: 0.98 })
+      );
+      patch.rotation.x = -Math.PI / 2;
+      patch.position.set(px2, 8e-3, pz2);
+      patch.receiveShadow = true;
+      root.add(patch);
+    }
     const street = new Mesh(
       new PlaneGeometry(10, 90),
-      new MeshStandardMaterial({ color: COL.dirtDark, roughness: 1 })
+      std(COL.dirtDark, { map: streetMap, roughnessMap: streetMap, roughness: 1 })
     );
     street.rotation.x = -Math.PI / 2;
-    street.position.set(0, 0.015, 10);
+    street.position.set(0, 0.018, 10);
     street.receiveShadow = true;
     root.add(street);
     for (const x of [-4.9, 4.9]) {
       const rut = new Mesh(
-        new PlaneGeometry(0.18, 88),
-        new MeshStandardMaterial({ color: 5914672, roughness: 0.98 })
+        new PlaneGeometry(0.2, 88),
+        std(5914672, { roughness: 0.98 })
       );
       rut.rotation.x = -Math.PI / 2;
-      rut.position.set(x, 0.02, 10);
+      rut.position.set(x, 0.025, 10);
       rut.receiveShadow = true;
       root.add(rut);
     }
+    const walkMat = std(COL.wood, { map: woodMap, roughnessMap: woodMap, roughness: 0.9 });
     for (const side of [-1, 1]) {
-      const walk = box(2.4, 0.22, 55, COL.wood, side * 6.3, 0.11, 5);
+      const walk = box(2.5, 0.22, 55, walkMat, side * 6.35, 0.11, 5);
       root.add(walk);
-      root.add(box(0.12, 0.28, 55, COL.woodDark, side * 5.15, 0.14, 5));
+      root.add(box(0.14, 0.3, 55, COL.woodDark, side * 5.12, 0.15, 5));
+      for (let i = 0; i < 18; i++) {
+        root.add(box(2.4, 0.02, 0.04, 2758672, side * 6.35, 0.23, -20 + i * 3));
+      }
     }
-    building(root, { w: 8, h: 4.2, d: 7, x: -11, z: 8, color: COL.adobe, signColor: COL.rust });
-    building(root, { w: 6, h: 3.4, d: 6, x: -10, z: -4, color: COL.adobeDark });
-    building(root, { w: 5, h: 3.2, d: 5, x: -9.5, z: 20, color: 8020036 });
-    building(root, { w: 7, h: 4.5, d: 8, x: 11, z: 6, color: 9071176 });
-    building(root, { w: 5.5, h: 3.3, d: 5.5, x: 10.5, z: -6, color: COL.adobe });
-    building(root, { w: 5, h: 2.8, d: 4, x: 10, z: -18, color: COL.wood });
+    building(root, {
+      w: 8,
+      h: 4.2,
+      d: 7,
+      x: -11,
+      z: 8,
+      color: COL.adobe,
+      adobeMap,
+      woodMap,
+      signTex: saloonSign
+    });
+    building(root, {
+      w: 6,
+      h: 3.4,
+      d: 6,
+      x: -10,
+      z: -4,
+      color: COL.adobeDark,
+      adobeMap: adobeMapB,
+      woodMap,
+      porch: true
+    });
+    building(root, {
+      w: 5,
+      h: 3.2,
+      d: 5,
+      x: -9.5,
+      z: 20,
+      color: 8020036,
+      adobeMap,
+      woodMap
+    });
+    building(root, {
+      w: 7,
+      h: 4.5,
+      d: 8,
+      x: 11,
+      z: 6,
+      color: 9071176,
+      adobeMap: adobeMapB,
+      woodMap,
+      signTex: hotelSign
+    });
+    building(root, {
+      w: 5.5,
+      h: 3.3,
+      d: 5.5,
+      x: 10.5,
+      z: -6,
+      color: COL.adobe,
+      adobeMap,
+      woodMap
+    });
+    building(root, {
+      w: 5,
+      h: 2.8,
+      d: 4,
+      x: 10,
+      z: -18,
+      color: COL.wood,
+      adobeMap: woodMap,
+      woodMap,
+      porch: false
+    });
     const alleyZ = 2.2;
     const alleyX = -7.2;
-    const alleyFill = new PointLight(12871744, 0.85, 16, 1.8);
+    const alleyFill = new PointLight(12875840, 0.7, 16, 1.8);
     alleyFill.position.set(-5.2, 2.4, alleyZ);
     root.add(alleyFill);
-    const alleyWarm = new PointLight(10502184, 0.55, 12, 2);
+    const alleyWarm = new PointLight(10504232, 0.45, 12, 2);
     alleyWarm.position.set(alleyX, 1.8, alleyZ);
     root.add(alleyWarm);
     root.add(box(0.18, 2.4, 0.18, COL.woodDark, -5.4, 1.2, alleyZ + 1.6));
     root.add(box(0.18, 2.4, 0.18, COL.woodDark, -5.4, 1.2, alleyZ - 1.6));
     root.add(box(0.14, 0.14, 3.4, COL.bone, -5.4, 2.35, alleyZ, {
       emissive: 3811344,
-      emissiveIntensity: 0.2
+      emissiveIntensity: 0.15
     }));
-    root.add(box(0.9, 0.9, 0.9, COL.wood, alleyX - 1.2, 0.45, alleyZ));
-    root.add(box(0.7, 1.1, 0.7, COL.woodDark, alleyX - 0.3, 0.55, alleyZ - 1.1));
-    const barrel = new Mesh(
-      new CylinderGeometry(0.4, 0.4, 0.85, 10),
-      new MeshStandardMaterial({ color: COL.rust, roughness: 0.75 })
-    );
-    barrel.position.set(alleyX + 0.5, 0.42, alleyZ + 0.8);
+    const crateMat = std(COL.wood, { map: crateMap, roughnessMap: crateMap });
+    root.add(box(0.95, 0.95, 0.95, crateMat, alleyX - 1.2, 0.48, alleyZ));
+    root.add(box(0.75, 1.15, 0.75, crateMat, alleyX - 0.3, 0.58, alleyZ - 1.1));
+    root.add(box(0.7, 0.7, 0.7, crateMat, alleyX - 1.5, 0.35, alleyZ + 1.2));
+    root.add(box(0.65, 0.55, 0.65, crateMat, alleyX - 1.2, 1.2, alleyZ));
+    const barrelMat = std(COL.rust, { map: crateMap, roughness: 0.7, metalness: 0.15 });
+    const barrel = new Mesh(new CylinderGeometry(0.42, 0.42, 0.9, 14), barrelMat);
+    barrel.position.set(alleyX + 0.5, 0.45, alleyZ + 0.8);
     barrel.castShadow = true;
+    barrel.receiveShadow = true;
     root.add(barrel);
+    const barrel2 = new Mesh(new CylinderGeometry(0.38, 0.38, 0.8, 14), barrelMat);
+    barrel2.position.set(alleyX + 0.9, 0.4, alleyZ - 0.6);
+    barrel2.castShadow = true;
+    root.add(barrel2);
     const caseMesh = box(0.7, 0.36, 0.5, 3809300, alleyX, 0.55, alleyZ + 0.2);
     caseMesh.name = "case";
     root.add(caseMesh);
@@ -21058,7 +23499,7 @@ void main() {
     });
     caseLid.name = "caseLid";
     root.add(caseLid);
-    const caseGlow = new PointLight(12855336, 1.1, 10);
+    const caseGlow = new PointLight(12855336, 1, 10);
     caseGlow.position.copy(caseMesh.position).add(new Vector3(0, 0.7, 0));
     root.add(caseGlow);
     const caseBeacon = makeBeacon({
@@ -21072,22 +23513,40 @@ void main() {
     const hitch = new Group();
     hitch.name = "hitch";
     hitch.position.set(-4.5, 0, -2);
-    hitch.add(box(0.16, 1.25, 0.16, COL.woodDark, -1.3, 0.62, 0));
-    hitch.add(box(0.16, 1.25, 0.16, COL.woodDark, 1.3, 0.62, 0));
-    hitch.add(box(2.8, 0.12, 0.12, COL.wood, 0, 1.15, 0));
-    hitch.add(box(0.22, 0.12, 0.22, COL.bone, -1.3, 1.28, 0, { emissive: 2760720, emissiveIntensity: 0.2 }));
-    hitch.add(box(0.22, 0.12, 0.22, COL.bone, 1.3, 1.28, 0, { emissive: 2760720, emissiveIntensity: 0.2 }));
-    hitch.add(box(3, 0.06, 0.5, COL.woodDark, 0, 0.03, 0));
+    hitch.add(box(0.18, 1.3, 0.18, COL.woodDark, -1.35, 0.65, 0));
+    hitch.add(box(0.18, 1.3, 0.18, COL.woodDark, 1.35, 0.65, 0));
+    hitch.add(box(2.9, 0.14, 0.14, COL.wood, 0, 1.18, 0));
+    hitch.add(box(0.24, 0.12, 0.24, COL.bone, -1.35, 1.32, 0, { emissive: 2760720, emissiveIntensity: 0.15 }));
+    hitch.add(box(0.24, 0.12, 0.24, COL.bone, 1.35, 1.32, 0, { emissive: 2760720, emissiveIntensity: 0.15 }));
+    hitch.add(box(3.1, 0.06, 0.55, COL.woodDark, 0, 0.03, 0));
+    const ropeMat = std(9072720, { roughness: 0.95 });
+    hitchRope(hitch, -1.3, 1.05, 0.02, 1.3, 1.05, 0.02, ropeMat);
+    hitchRope(hitch, -1.3, 0.95, -0.04, 1.3, 0.95, -0.04, ropeMat);
     root.add(hitch);
     for (let z = -25; z < 40; z += 4) {
       for (const x of [-5.2, 5.2]) {
         root.add(box(0.12, 1.05, 0.12, COL.woodDark, x, 0.52, z));
+        if (z % 8 === 0) {
+          root.add(box(0.06, 0.06, 3.8, COL.wood, x, 0.85, z + 2));
+        }
       }
     }
     root.add(box(2.2, 0.5, 0.7, COL.wood, 4.5, 0.25, -2));
+    const troughWater = new Mesh(
+      new BoxGeometry(1.9, 0.08, 0.5),
+      new MeshStandardMaterial({
+        color: 3824216,
+        roughness: 0.25,
+        metalness: 0.15,
+        transparent: true,
+        opacity: 0.75
+      })
+    );
+    troughWater.position.set(4.5, 0.48, -2);
+    root.add(troughWater);
     const creekBed = new Mesh(
       new PlaneGeometry(28, 18),
-      new MeshStandardMaterial({ color: 4863008, roughness: 1 })
+      std(4863008, { map: dirtMap, roughness: 1 })
     );
     creekBed.rotation.x = -Math.PI / 2;
     creekBed.position.set(0, -0.35, 48);
@@ -21095,17 +23554,38 @@ void main() {
     root.add(creekBed);
     const water = new Mesh(
       new PlaneGeometry(22, 8),
-      new MeshStandardMaterial({ color: COL.water, roughness: 0.35, metalness: 0.2 })
+      new MeshStandardMaterial({
+        color: COL.water,
+        map: waterMap,
+        roughness: 0.28,
+        metalness: 0.25,
+        transparent: true,
+        opacity: 0.82
+      })
     );
     water.rotation.x = -Math.PI / 2;
-    water.position.set(0, -0.28, 50);
+    water.position.set(0, -0.26, 50);
+    water.receiveShadow = true;
     root.add(water);
+    root.userData.water = water;
+    for (let i = 0; i < 10; i++) {
+      const stone = box(
+        0.5 + i % 3 * 0.25,
+        0.25,
+        0.4 + i % 2 * 0.2,
+        5916728,
+        -8 + i * 1.8,
+        0.05,
+        46 + i % 3 * 0.4
+      );
+      root.add(stone);
+    }
     const drop = new Group();
     drop.name = "drop";
     drop.position.set(2, 0, 46);
-    drop.add(box(2.4, 0.9, 1.2, COL.woodDark, 0, 0.45, 0));
+    drop.add(box(2.4, 0.9, 1.2, crateMat, 0, 0.45, 0));
     drop.add(box(0.3, 0.3, 0.3, COL.bone, -0.6, 1, 0.2));
-    const dropLight = new PointLight(11033130, 0.7, 12);
+    const dropLight = new PointLight(11033130, 0.55, 12);
     dropLight.position.set(0, 2, 0);
     drop.add(dropLight);
     root.add(drop);
@@ -21123,17 +23603,18 @@ void main() {
       const bz = 42 + i % 5 * 2.2;
       root.add(box(0.6 + i % 3 * 0.3, 0.4, 0.5, COL.brush, bx, 0.2, bz));
     }
-    for (const [x, z, s] of [[-35, 30, 12], [38, 55, 16], [-28, 70, 10], [30, -20, 9]]) {
-      root.add(box(s, s * 0.6, s * 0.5, 5913640, x, s * 0.25, z));
+    for (const [x, z, s] of [[-35, 30, 12], [38, 55, 16], [-28, 70, 10], [30, -20, 9], [-40, 50, 8]]) {
+      root.add(box(s, s * 0.55, s * 0.45, 6965296, x, s * 0.22, z));
+      root.add(box(s * 0.6, s * 0.25, s * 0.35, 5913640, x + s * 0.15, s * 0.55, z));
     }
     const lamp = (x, z) => {
-      const l = new PointLight(12613696, 0.55, 20);
+      const l = new PointLight(12613696, 0.4, 18);
       l.position.set(x, 3.2, z);
       root.add(l);
       root.add(box(0.15, 2.8, 0.15, COL.woodDark, x, 1.4, z));
-      root.add(box(0.35, 0.25, 0.35, COL.rust, x, 3, z, {
+      root.add(box(0.38, 0.28, 0.38, COL.rust, x, 3, z, {
         emissive: 9060384,
-        emissiveIntensity: 0.55
+        emissiveIntensity: 0.7
       }));
     };
     lamp(-6.5, 8);
@@ -21196,7 +23677,12 @@ void main() {
         pulseBeacon(caseBeacon, t, 0.6);
         pulseBeacon(dropBeacon, t, 0.5);
         if (caseGlow.visible) {
-          caseGlow.intensity = 0.85 + Math.sin(t * 3.2) * 0.45;
+          caseGlow.intensity = 0.75 + Math.sin(t * 3.2) * 0.4;
+        }
+        const w = root.userData.water;
+        if (w?.material?.map) {
+          w.material.map.offset.x = Math.sin(t * 0.15) * 0.02;
+          w.material.map.offset.y = t * 0.02;
         }
       }
     };
@@ -21243,44 +23729,66 @@ void main() {
   var HITCH_RADIUS = 3;
   var RAE_HINT_EVERY = 12;
   var ui = createUI();
-  var canvas = document.getElementById("c");
-  var renderer = new WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
+  var canvas2 = document.getElementById("c");
+  var renderer = new WebGLRenderer({ canvas: canvas2, antialias: true, powerPreference: "high-performance" });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setSize(window.innerWidth, window.innerHeight, false);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = PCFSoftShadowMap;
   renderer.outputColorSpace = SRGBColorSpace;
   renderer.toneMapping = ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.22;
+  renderer.toneMappingExposure = 1.48;
   var scene = new Scene();
-  scene.background = new Color(1707538);
-  scene.fog = new Fog(2758680, 28, 95);
-  var camera = new PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
+  var skyMap = makeSkyTexture(512);
+  scene.background = skyMap;
+  scene.environment = skyMap;
+  scene.fog = new Fog(12093544, 52, 145);
+  var camera = new PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 220);
   var followCam = createFollowCamera(camera);
-  var hemi = new HemisphereLight(9068656, 2758672, 1.05);
+  var hemi = new HemisphereLight(13938832, 5912616, 1.35);
   scene.add(hemi);
-  var sun = new DirectionalLight(13934704, 1.35);
-  sun.position.set(-30, 40, 10);
+  var sun = new DirectionalLight(15245424, 2.15);
+  sun.position.set(-42, 22, 18);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(1024, 1024);
-  sun.shadow.camera.near = 5;
-  sun.shadow.camera.far = 120;
-  sun.shadow.camera.left = -40;
-  sun.shadow.camera.right = 40;
-  sun.shadow.camera.top = 40;
-  sun.shadow.camera.bottom = -40;
-  sun.shadow.bias = -8e-4;
+  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.camera.near = 4;
+  sun.shadow.camera.far = 130;
+  sun.shadow.camera.left = -45;
+  sun.shadow.camera.right = 45;
+  sun.shadow.camera.top = 45;
+  sun.shadow.camera.bottom = -45;
+  sun.shadow.bias = -4e-4;
+  sun.shadow.normalBias = 0.025;
+  sun.shadow.radius = 2.5;
   scene.add(sun);
-  var fill = new DirectionalLight(6307920, 0.45);
-  fill.position.set(20, 10, -20);
+  scene.add(sun.target);
+  sun.target.position.set(0, 0, 10);
+  var fill = new DirectionalLight(9072768, 0.55);
+  fill.position.set(28, 16, -22);
   scene.add(fill);
-  var rim = new DirectionalLight(12880496, 0.35);
-  rim.position.set(-40, 18, 25);
+  var rim = new DirectionalLight(12624016, 0.4);
+  rim.position.set(-50, 12, 30);
   scene.add(rim);
-  var amb = new AmbientLight(3811360, 0.28);
+  var amb = new AmbientLight(6967360, 0.42);
   scene.add(amb);
+  var skyDome = new Mesh(
+    new SphereGeometry(180, 32, 16),
+    new MeshBasicMaterial({ map: skyMap, side: BackSide, depthWrite: false })
+  );
+  scene.add(skyDome);
   var world = buildGreenville(scene);
   var heat = createHeat();
+  var composer = null;
+  function buildComposer() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    const bloom = new UnrealBloomPass(new Vector2(w, h), 0.28, 0.45, 0.82);
+    composer.addPass(bloom);
+    composer.addPass(new OutputPass());
+  }
+  buildComposer();
   var horseCtrl = null;
   var horseProfile = null;
   var phase = "title";
@@ -21313,6 +23821,7 @@ void main() {
     camera.updateProjectionMatrix();
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(w, h, false);
+    if (composer) composer.setSize(w, h);
   }
   window.addEventListener("resize", resize);
   function yawToward(from, to) {
@@ -21367,6 +23876,7 @@ void main() {
     phase = "title";
     ui.showScreen("title");
     input.setTouchVisible(false);
+    ui.hidePlayControls();
   });
   function startColdOpen() {
     cineIndex = 0;
@@ -21417,12 +23927,15 @@ void main() {
     ui.playMode();
     ui.setObjective("Reach the alley \u2014 grab the case");
     ui.setPrompt("Rae: Alley west of hitch \u2014 case glows blood.");
-    input.setTouchVisible(wantTouch());
+    const touch = wantTouch();
+    input.setTouchVisible(touch);
+    ui.showPlayControls(touch);
   }
   function finish(end) {
     phase = "end";
     input.setTouchVisible(false);
     ui.setCompass(0, null);
+    ui.hidePlayControls();
     ui.showEnd(end);
   }
   function updatePlay(dt, sample, nowSec) {
@@ -21521,26 +24034,28 @@ void main() {
     camera.lookAt(titlePivot);
   }
   var last = performance.now();
-  function frame(now) {
-    const dt = Math.min(0.05, (now - last) / 1e3);
-    last = now;
+  function frame(now2) {
+    const dt = Math.min(0.05, (now2 - last) / 1e3);
+    last = now2;
     if (phase === "title" || phase === "cold" || phase === "prep" || phase === "end") {
-      updateTitle(now / 1e3);
+      updateTitle(now2 / 1e3);
     } else if (phase === "play" && horseCtrl) {
       const sample = input.sample();
-      updatePlay(dt, sample, now / 1e3);
+      updatePlay(dt, sample, now2 / 1e3);
     }
-    renderer.render(scene, camera);
+    if (composer) composer.render();
+    else renderer.render(scene, camera);
     requestAnimationFrame(frame);
   }
   ui.showScreen("title");
   input.setTouchVisible(false);
+  ui.hidePlayControls();
   if (new URLSearchParams(location.search).get("touch") === "1") {
     document.getElementById("opt-touch").checked = true;
   }
   resize();
   requestAnimationFrame(frame);
-  console.info(`[RED COUNTY] Soft Open Quiet  tip=${true ? "8a984de" : "dev"}  build=${true ? "0.1.0-17b93bcf" : "?"}`);
+  console.info(`[RED COUNTY] Soft Open Quiet  tip=${true ? "2ada79e" : "dev"}  build=${true ? "0.1.0-24d01871" : "?"}`);
 })();
 /*! Bundled license information:
 

@@ -6,7 +6,7 @@
 
 **Repo:** https://github.com/C-00974/lone-star-red-county
 
-**Tip SHA:** (see latest commit on `main` · fidelity pass · CT America/Chicago Sep 24, 2026)
+**Tip SHA:** `d5b6d94` (fidelity pass · CT America/Chicago Sep 24, 2026)
 
 ## What works (Quiet path)
 

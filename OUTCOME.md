@@ -6,7 +6,7 @@
 
 **Repo:** https://github.com/C-00974/lone-star-red-county
 
-**Tip SHA:** `5ba1b0e` · graphics parity swing vs GH render class · CT America/Chicago Sep 24, 2026
+**Tip SHA:** `01b921f` · graphics parity swing vs GH render class · CT America/Chicago Sep 24, 2026
 
 ## What works (Quiet path)
 

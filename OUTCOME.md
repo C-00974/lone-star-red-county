@@ -6,7 +6,7 @@
 
 **Repo:** https://github.com/C-00974/lone-star-red-county
 
-**Tip SHA:** `TIP_PLACEHOLDER` · hero GLB horse (Quaternius CC0), no procedural mount · CT America/Chicago Sep 24, 2026
+**Tip SHA:** `039153e` · hero GLB horse (Quaternius CC0), no procedural mount · CT America/Chicago Sep 24, 2026
 
 ## What works (Quiet path)
 

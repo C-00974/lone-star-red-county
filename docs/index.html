@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-7c9b7c88dde8">
-<meta name="lsgh-tip" content="21257d4">
+<meta name="lsgh-build" content="0.35.0-next.0-fc37046dcd1b">
+<meta name="lsgh-tip" content="8744b2c">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -421,7 +421,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip 21257d4</div>
+    <div class="kicker">Soft Open · Quiet · tip 8744b2c</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -43285,6 +43285,8 @@ void main() {
       const recovery = crewRecovery(g2);
       return make("Car disabled", "Recovery", recovery.label + ".", key2("R", "X"), recovery.detail);
     }
+    if (g2.softOpen?.active) return g2.softOpen.describe();
+    if (g2.redCounty) return g2.softOpen?.describeTitle?.() || { title: "Red County", phase: "Soft Open", action: "Start Soft Open from the title.", control: "", tip: "Horses only. No Greenville freeroam.", steps: [], target: null, distance: "", urgent: false };
     if (g2.forecourt?.active) return g2.forecourt.describe();
     if (g2.workingSet?.active) return g2.workingSet.describe();
     if (g2.economy?.active) return g2.economy.describe();
@@ -56572,6 +56574,25 @@ void main() {
     const local2 = new Group();
     root.add(local2);
     const kit = createWesternMaterials();
+    const key2 = new DirectionalLight(16760976, 1.35);
+    key2.name = "rc-key-dusk";
+    key2.position.set(18, 22, -8);
+    key2.castShadow = true;
+    key2.shadow.mapSize.set(2048, 2048);
+    key2.shadow.camera.left = -40;
+    key2.shadow.camera.right = 40;
+    key2.shadow.camera.top = 50;
+    key2.shadow.camera.bottom = -40;
+    key2.shadow.bias = -2e-4;
+    local2.add(key2);
+    const fill2 = new DirectionalLight(6324416, 0.35);
+    fill2.position.set(-20, 12, 16);
+    local2.add(fill2);
+    const hemi = new HemisphereLight(16765088, 2758672, 0.45);
+    local2.add(hemi);
+    const porchGlow = new PointLight(12875840, 0.55, 28, 1.8);
+    porchGlow.position.set(-8, 3.2, 6);
+    local2.add(porchGlow);
     const groundMat = kit.matWithRepeat(kit.dirt, { wu: 90, wv: 130, tile: 4.5 });
     const ground = new Mesh(new PlaneGeometry(90, 130), groundMat);
     ground.rotation.x = -Math.PI / 2;
@@ -57914,6 +57935,88 @@ void main() {
       g2.hud.banner("Soft Open checkpoint", "Back at the hitch", 2.8);
       return true;
     }
+    function describe() {
+      const hitch = strip?.points?.hitch;
+      const alley = strip?.points?.alleyCase;
+      const drop = strip?.points?.drop;
+      const mount = mountLabel();
+      if (state.stage === "prep" || state.stage === "brief") {
+        return {
+          title: HEIST_TITLE,
+          phase: "Prep \xB7 Quiet",
+          action: "Confirm Dun or Bay, then ride to the hitch.",
+          control: "Conversation",
+          tip: "Quiet only. Cars stay dark.",
+          steps: [],
+          target: hitch,
+          distance: "",
+          urgent: false
+        };
+      }
+      if (state.stage === "window" && standby) {
+        return {
+          title: HEIST_TITLE,
+          phase: "Stand by \xB7 hitch",
+          action: `Hold at the hitch on ${mount}. Rae calls the alley window.`,
+          control: "W A S D \xB7 ride",
+          tip: "E dismounts near hitch. R recovers to hitch.",
+          steps: ["Stand by", "Alley case", "Creek drop"],
+          target: hitch,
+          distance: "",
+          urgent: false
+        };
+      }
+      if (state.stage === "window") {
+        return {
+          title: HEIST_TITLE,
+          phase: "Alley pinch \xB7 window open",
+          action: "Ride quiet to the alley behind the saloon. Grab the poker case.",
+          control: "W A S D \xB7 E dismount",
+          tip: "Heat rises if you cook the street at a gallop.",
+          steps: ["Stand by", "Alley case", "Creek drop"],
+          target: alley,
+          distance: "",
+          urgent: true
+        };
+      }
+      if (state.stage === "escape") {
+        return {
+          title: HEIST_TITLE,
+          phase: state.hasCase ? "Creek soft wash" : "Abort \xB7 creek drop",
+          action: state.hasCase ? "Take the soft wash at the creek. Keep street speed down." : "Empty-handed \u2014 still hit the creek to reset.",
+          control: "W A S D",
+          tip: "R recovers to the hitch.",
+          steps: ["Stand by", "Alley case", "Creek drop"],
+          target: drop,
+          distance: "",
+          urgent: !state.hasCase
+        };
+      }
+      return {
+        title: HEIST_TITLE,
+        phase: state.stage || "Soft Open",
+        action: "Follow Rae on the wire.",
+        control: "",
+        tip: "Quiet Soft Open.",
+        steps: [],
+        target: hitch,
+        distance: "",
+        urgent: false
+      };
+    }
+    function describeTitle() {
+      return {
+        title: "LONE STAR \u2014 RED COUNTY",
+        phase: "Soft Open",
+        action: "Start Soft Open from the title screen.",
+        control: "",
+        tip: "One product. Horses only. Phone and desktop share this page.",
+        steps: [],
+        target: null,
+        distance: "",
+        urgent: false
+      };
+    }
     function tryMountToggle() {
       if (!active || !horse || !strip || endingOpen) return false;
       const hitch = strip.points.hitch;
@@ -58030,6 +58133,8 @@ void main() {
       get strip() {
         return strip;
       },
+      describe,
+      describeTitle,
       talkDoor,
       talkBrief,
       talkPrep,
@@ -85062,7 +85167,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-7c9b7c88dde8", tipSha: false ? "" : "21257d4", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-fc37046dcd1b", tipSha: false ? "" : "8744b2c", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -85089,7 +85194,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "21257d4" : "") || "";
+      const tip = g2.tipSha || (true ? "8744b2c" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");

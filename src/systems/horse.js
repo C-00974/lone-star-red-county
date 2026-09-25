@@ -1,6 +1,11 @@
+/**
+ * Soft Open mount — Quaternius CC0 horse.glb via GLTFLoader.
+ * Dun/Bay = cloned material retints. Gait = AnimationMixer clips (Idle/Walk/Gallop).
+ * No procedural densify / toy mesh.
+ */
 import * as THREE from 'three';
-import { makeLeatherTexture, makeCoatTexture } from './textures.js';
-import { createDenseHorseMesh } from './horseMesh.js';
+import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { getHorseGltf } from './assets.js';
 
 /** Horse profiles — Dun (steady) vs Bay (sharp + burst). */
 export const HORSE_PROFILES = {
@@ -9,6 +14,8 @@ export const HORSE_PROFILES = {
     name: 'Dun',
     color: 0x9a7844,
     mane: 0x3a2a18,
+    coatDark: 0x7a5a30,
+    coatLight: 0xb09058,
     walk: 4.2,
     trot: 7.5,
     gallop: 12.5,
@@ -24,6 +31,8 @@ export const HORSE_PROFILES = {
     name: 'Bay',
     color: 0x6a321c,
     mane: 0x1a0c08,
+    coatDark: 0x4a2010,
+    coatLight: 0x8a4830,
     walk: 4.5,
     trot: 8.2,
     gallop: 14.2,
@@ -45,58 +54,7 @@ function mat(color, opts = {}) {
   });
 }
 
-/** Denser lathe barrel — more profile rings + radial segments. */
-function makeBodyLathe(bodyMat) {
-  const pts = [
-    new THREE.Vector2(0.015, -0.92),
-    new THREE.Vector2(0.18, -0.88),
-    new THREE.Vector2(0.3, -0.78),
-    new THREE.Vector2(0.38, -0.58),
-    new THREE.Vector2(0.42, -0.35),
-    new THREE.Vector2(0.44, -0.12),
-    new THREE.Vector2(0.43, 0.1),
-    new THREE.Vector2(0.4, 0.32),
-    new THREE.Vector2(0.36, 0.52),
-    new THREE.Vector2(0.3, 0.7),
-    new THREE.Vector2(0.22, 0.84),
-    new THREE.Vector2(0.1, 0.92),
-    new THREE.Vector2(0.04, 0.96),
-  ];
-  const geo = new THREE.LatheGeometry(pts, 20);
-  const mesh = new THREE.Mesh(geo, bodyMat);
-  mesh.rotation.x = Math.PI / 2;
-  mesh.scale.set(1.05, 1.08, 0.95);
-  return mesh;
-}
-
-function makeLeg(bodyMat, hoofMat) {
-  const g = new THREE.Group();
-  const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.082, 0.44, 8), bodyMat);
-  upper.position.y = -0.22;
-  upper.castShadow = true;
-  upper.receiveShadow = true;
-  g.add(upper);
-  const knee = new THREE.Group();
-  knee.position.y = -0.44;
-  g.add(knee);
-  const lower = new THREE.Mesh(new THREE.CylinderGeometry(0.072, 0.055, 0.4, 8), bodyMat);
-  lower.position.y = -0.2;
-  lower.castShadow = true;
-  knee.add(lower);
-  // Fetlock fluff
-  const fetlock = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 5), bodyMat);
-  fetlock.position.set(0, -0.38, 0.01);
-  fetlock.scale.set(1, 0.7, 1.1);
-  knee.add(fetlock);
-  const hoof = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.06, 0.09, 8), hoofMat);
-  hoof.position.set(0, -0.44, 0.02);
-  hoof.rotation.x = 0.08;
-  knee.add(hoof);
-  g.userData.upper = upper;
-  g.userData.knee = knee;
-  return g;
-}
-
+/** Compact rider — mount/dismount visibility only (not the hero mesh). */
 function makeRider(darkMat, coatMat, denimMat) {
   const rider = new THREE.Group();
   rider.name = 'rider';
@@ -153,12 +111,149 @@ function makeRider(darkMat, coatMat, denimMat) {
   brimFront.position.set(0, 0.96, 0.2);
   rider.add(brimFront);
 
+  rider.traverse((o) => {
+    if (o.isMesh) {
+      o.castShadow = true;
+      o.receiveShadow = true;
+    }
+  });
   return rider;
 }
 
-/** Dense GH-class procedural horse (see horseMesh.js). */
+function cloneMaterials(root) {
+  const map = new Map();
+  root.traverse((o) => {
+    if (!o.isMesh || !o.material) return;
+    const list = Array.isArray(o.material) ? o.material : [o.material];
+    const next = list.map((m) => {
+      if (!map.has(m.uuid)) map.set(m.uuid, m.clone());
+      return map.get(m.uuid);
+    });
+    o.material = Array.isArray(o.material) ? next : next[0];
+  });
+  return map;
+}
+
+function retintCoat(matMap, profile) {
+  const byName = {};
+  for (const m of matMap.values()) {
+    if (m?.name) byName[m.name] = m;
+  }
+  const coat = new THREE.Color(profile.color);
+  const dark = new THREE.Color(profile.coatDark);
+  const light = new THREE.Color(profile.coatLight);
+  const mane = new THREE.Color(profile.mane);
+
+  if (byName.Main) byName.Main.color.copy(coat);
+  if (byName.Main_Dark) byName.Main_Dark.color.copy(dark);
+  if (byName.Main_Light) byName.Main_Light.color.copy(light);
+  if (byName.Hair) byName.Hair.color.copy(mane);
+
+  // Fallback if names differ (horse-alt style)
+  if (!byName.Main) {
+    for (const m of matMap.values()) {
+      const n = (m.name || '').toLowerCase();
+      if (n.includes('hair') || n.includes('mane')) m.color.copy(mane);
+      else if (n.includes('main') || n.includes('material')) m.color.copy(coat);
+    }
+  }
+}
+
+function pickClip(animations, names) {
+  for (const want of names) {
+    const hit = animations.find((a) => a.name === want || a.name.endsWith(`|${want}`));
+    if (hit) return hit;
+  }
+  return null;
+}
+
+/**
+ * Hero mount from preloaded horse.glb.
+ * Returns { root, body, rider, legs, mixer, actions, clipsOk }.
+ */
 export function createHorseMesh(profile) {
-  return createDenseHorseMesh(profile);
+  const gltf = getHorseGltf();
+  const root = new THREE.Group();
+  root.name = 'horse';
+
+  const model = cloneSkinned(gltf.scene);
+  const matMap = cloneMaterials(model);
+  retintCoat(matMap, profile);
+
+  // Quaternius Animal Pack is oversized (~4.8u tall). Fit Soft Open strip.
+  const TARGET_HEIGHT = 2.05;
+  const box = new THREE.Box3().setFromObject(model);
+  const size = box.getSize(new THREE.Vector3());
+  const scale = TARGET_HEIGHT / Math.max(size.y, 0.01);
+  model.scale.setScalar(scale);
+  // Ground feet (minY → 0)
+  model.updateMatrixWorld(true);
+  const grounded = new THREE.Box3().setFromObject(model);
+  model.position.y -= grounded.min.y;
+
+  model.traverse((o) => {
+    if (o.isMesh) {
+      o.castShadow = true;
+      o.receiveShadow = true;
+      if (o.isSkinnedMesh) o.frustumCulled = false;
+    }
+  });
+
+  const body = new THREE.Group();
+  body.name = 'horseBody';
+  body.add(model);
+  root.add(body);
+
+  const dark = mat(0x1a1008, { roughness: 0.75 });
+  const coatMat = mat(0x2a1810, { roughness: 0.85 });
+  const denimMat = mat(0x2a2838, { roughness: 0.9 });
+  const rider = makeRider(dark, coatMat, denimMat);
+  // Sit on withers — Quaternius torso ~ mid height after scale
+  rider.position.set(0, TARGET_HEIGHT * 0.72, size.z * scale * 0.02);
+  rider.scale.setScalar(0.95);
+  root.add(rider);
+
+  // AnimationMixer on the cloned model (shares bone names with clips)
+  const mixer = new THREE.AnimationMixer(model);
+  const clips = {
+    idle: pickClip(gltf.animations, ['Idle', 'Idle_2']),
+    walk: pickClip(gltf.animations, ['Walk']),
+    // No dedicated Trot in this pack — Walk at higher timeScale
+    trot: pickClip(gltf.animations, ['Walk']),
+    gallop: pickClip(gltf.animations, ['Gallop']),
+  };
+  const actions = {};
+  for (const [key, clip] of Object.entries(clips)) {
+    if (!clip) continue;
+    // Avoid sharing Action state across Dun/Bay instances for same clip name
+    const action = mixer.clipAction(clip.clone());
+    action.enabled = true;
+    action.setEffectiveWeight(0);
+    action.play();
+    actions[key] = action;
+  }
+  const clipsOk = !!(actions.idle && actions.walk && actions.gallop);
+  if (actions.idle) {
+    actions.idle.setEffectiveWeight(1);
+    actions.idle.setEffectiveTimeScale(1);
+  }
+
+  // Empty legs stub — controller no longer drives procedural IK
+  const legs = [];
+
+  return {
+    root,
+    body,
+    rider,
+    legs,
+    neck: null,
+    head: null,
+    tail: null,
+    mixer,
+    actions,
+    clipsOk,
+    model,
+  };
 }
 
 export function createHorseController(profile, mesh) {
@@ -172,20 +267,33 @@ export function createHorseController(profile, mesh) {
   };
   const pos = mesh.root.position;
   const tmp = new THREE.Vector3();
+  let currentAction = 'idle';
 
-  const restUpper = 0.08;
-  const restKnee = 0.12;
+  function crossfadeTo(next, fade = 0.22) {
+    if (!mesh.actions || !mesh.actions[next]) return;
+    if (currentAction === next) return;
+    const incoming = mesh.actions[next];
+    const outgoing = mesh.actions[currentAction];
+    incoming.reset();
+    incoming.setEffectiveWeight(1);
+    incoming.play();
+    if (outgoing && outgoing !== incoming) {
+      outgoing.crossFadeTo(incoming, fade, false);
+    } else {
+      incoming.fadeIn(fade);
+    }
+    currentAction = next;
+  }
 
   function update(dt, input, groundY = 0) {
     if (!state.mounted) {
       state.speed = THREE.MathUtils.damp(state.speed, 0, 12, dt);
       state.gait = 'idle';
       mesh.rider.visible = false;
-      mesh.legs.forEach((leg) => {
-        leg.rotation.x = THREE.MathUtils.damp(leg.rotation.x, 0, 8, dt);
-        leg.userData.knee.rotation.x = THREE.MathUtils.damp(leg.userData.knee.rotation.x, restKnee, 8, dt);
-      });
-      mesh.body.position.y = THREE.MathUtils.damp(mesh.body.position.y, 1.15, 8, dt);
+      crossfadeTo('idle', 0.35);
+      if (mesh.mixer) mesh.mixer.update(dt);
+      // Settle body bob
+      mesh.body.position.y = THREE.MathUtils.damp(mesh.body.position.y, 0, 8, dt);
       mesh.body.rotation.x = THREE.MathUtils.damp(mesh.body.rotation.x, 0, 8, dt);
       return;
     }
@@ -230,42 +338,41 @@ export function createHorseController(profile, mesh) {
     else if (abs < profile.trot * 1.1) state.gait = 'trot';
     else state.gait = 'gallop';
 
-    const freq =
-      state.gait === 'gallop' ? 11 :
-      state.gait === 'trot' ? 8.5 :
-      state.gait === 'walk' ? 5.2 : 0;
-    state.bob += freq * dt;
-
-    const speedN = THREE.MathUtils.clamp(abs / profile.gallop, 0, 1);
-    const amp =
-      state.gait === 'gallop' ? 0.55 :
-      state.gait === 'trot' ? 0.38 :
-      state.gait === 'walk' ? 0.28 : 0;
-
-    const phases = [0, Math.PI, Math.PI, 0];
-    mesh.legs.forEach((leg, i) => {
-      const phase = state.bob + phases[i];
-      const swing = Math.sin(phase) * amp * (0.45 + speedN * 0.55);
-      const gallopBias = state.gait === 'gallop' ? (i < 2 ? 0.12 : -0.08) : 0;
-      leg.rotation.x = restUpper + swing + gallopBias * speedN;
-      const lift = Math.max(0, Math.sin(phase));
-      leg.userData.knee.rotation.x = restKnee + lift * amp * 0.85;
-    });
-
-    const bobY = state.gait === 'idle' ? 0 : Math.abs(Math.sin(state.bob * (state.gait === 'gallop' ? 1 : 2))) * 0.06 * (0.5 + speedN);
-    mesh.body.position.y = 1.15 + bobY;
-    const pitch =
-      state.gait === 'gallop' ? Math.sin(state.bob) * 0.08 * speedN - 0.04 * speedN :
-      state.gait === 'trot' ? Math.sin(state.bob * 2) * 0.03 :
-      0;
-    mesh.body.rotation.x = pitch;
-
-    if (mesh.neck) {
-      mesh.neck.rotation.x = -0.55 + pitch * 0.6;
-    }
-    if (mesh.tail) {
-      mesh.tail.rotation.y = Math.sin(state.bob * 0.7) * 0.15 * speedN;
-      mesh.tail.rotation.x = 0.1 + Math.sin(state.bob) * 0.08 * speedN;
+    // Mixer clips + timeScale for trot (reuse Walk faster)
+    if (mesh.clipsOk) {
+      if (state.gait === 'idle') {
+        crossfadeTo('idle');
+        if (mesh.actions.idle) mesh.actions.idle.setEffectiveTimeScale(1);
+      } else if (state.gait === 'walk') {
+        crossfadeTo('walk');
+        if (mesh.actions.walk) mesh.actions.walk.setEffectiveTimeScale(state.speed < 0 ? -0.9 : 1);
+      } else if (state.gait === 'trot') {
+        crossfadeTo('trot');
+        if (mesh.actions.trot) mesh.actions.trot.setEffectiveTimeScale(1.55);
+      } else {
+        crossfadeTo('gallop');
+        if (mesh.actions.gallop) mesh.actions.gallop.setEffectiveTimeScale(1);
+      }
+      mesh.mixer.update(dt);
+      // Light root bob on top of clips so camera still feels gait
+      const speedN = THREE.MathUtils.clamp(abs / profile.gallop, 0, 1);
+      state.bob += (state.gait === 'gallop' ? 10 : state.gait === 'trot' ? 8 : 5) * dt;
+      const bobY = state.gait === 'idle' ? 0 : Math.abs(Math.sin(state.bob)) * 0.025 * (0.4 + speedN);
+      mesh.body.position.y = bobY;
+      mesh.body.rotation.x = state.gait === 'gallop' ? -0.03 * speedN : 0;
+    } else {
+      // Fallback — root bob only (no procedural legs)
+      const freq =
+        state.gait === 'gallop' ? 11 :
+        state.gait === 'trot' ? 8.5 :
+        state.gait === 'walk' ? 5.2 : 0;
+      state.bob += freq * dt;
+      const speedN = THREE.MathUtils.clamp(abs / profile.gallop, 0, 1);
+      const bobY = state.gait === 'idle' ? 0 : Math.abs(Math.sin(state.bob * 2)) * 0.06 * (0.5 + speedN);
+      mesh.body.position.y = bobY;
+      mesh.body.rotation.x =
+        state.gait === 'gallop' ? Math.sin(state.bob) * 0.06 * speedN - 0.03 * speedN :
+        state.gait === 'trot' ? Math.sin(state.bob * 2) * 0.025 : 0;
     }
   }
 

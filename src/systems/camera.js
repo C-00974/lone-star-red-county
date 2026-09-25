@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 
-/** Third-person follow cam — tighter + higher so horse silhouette reads in frame. */
+/** Third-person follow cam — framed for Quaternius GLB hero horse (~2m). */
 export function createFollowCamera(camera) {
-  const offset = new THREE.Vector3(0, 4.1, -6.2);
-  const look = new THREE.Vector3(0, 1.55, 2.0);
+  const offset = new THREE.Vector3(0, 3.6, -7.4);
+  const look = new THREE.Vector3(0, 1.35, 1.6);
   const cur = new THREE.Vector3();
   const target = new THREE.Vector3();
   const lookAt = new THREE.Vector3();
@@ -18,7 +18,6 @@ export function createFollowCamera(camera) {
     worldLook.copy(look).applyQuaternion(quat);
     target.copy(horseRoot.position).add(worldOff);
     lookAt.copy(horseRoot.position).add(worldLook);
-    // Slightly snappier follow so horse stays framed
     cur.lerp(target, 1 - Math.exp(-5.8 * dt));
     camera.position.copy(cur);
     camera.lookAt(lookAt);

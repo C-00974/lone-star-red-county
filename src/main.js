@@ -9,6 +9,7 @@ import { COLD_OPEN, END_CLEAN, END_BOTCHED, END_TIMEOUT } from './scenes/dialogu
 import { createRenderer } from './render/renderer.js';
 import { createSky } from './render/sky.js';
 import { createLighting } from './render/lighting.js';
+import { preloadSoftOpenAssets } from './systems/assets.js';
 
 const WINDOW_SEC = 150;
 const CASE_RADIUS = 3.0;
@@ -29,7 +30,7 @@ gfx.setScene(scene);
 gfx.setBloom(0.32);
 const followCam = createFollowCamera(camera);
 
-const world = buildGreenville(scene);
+let world = null;
 const heat = createHeat();
 
 
@@ -161,6 +162,10 @@ function teardownHorse() {
 }
 
 function beginPlay(horseId) {
+  if (!world) {
+    console.warn('[RED COUNTY] world not ready');
+    return;
+  }
   teardownHorse();
   horseProfile = HORSE_PROFILES[horseId];
   const mesh = createHorseMesh(horseProfile);
@@ -344,14 +349,37 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
-// Boot
-ui.showScreen('title');
-input.setTouchVisible(false);
-ui.hidePlayControls();
-if (new URLSearchParams(location.search).get('touch') === '1') {
-  document.getElementById('opt-touch').checked = true;
+// Boot — preload Quaternius GLBs then start Quiet loop
+async function boot() {
+  input.setTouchVisible(false);
+  ui.hidePlayControls();
+  if (new URLSearchParams(location.search).get('touch') === '1') {
+    document.getElementById('opt-touch').checked = true;
+  }
+  const startBtn = document.getElementById('btn-start');
+  if (startBtn) {
+    startBtn.disabled = true;
+    startBtn.textContent = 'Loading…';
+  }
+  try {
+    await preloadSoftOpenAssets();
+  } catch (err) {
+    console.error('[RED COUNTY] GLB preload failed', err);
+    if (startBtn) {
+      startBtn.disabled = true;
+      startBtn.textContent = 'Load failed — refresh';
+    }
+    return;
+  }
+  world = buildGreenville(scene);
+  if (startBtn) {
+    startBtn.disabled = false;
+    startBtn.textContent = 'Start Soft Open';
+  }
+  ui.showScreen('title');
+  resize();
+  requestAnimationFrame(frame);
+  console.info(`[RED COUNTY] Soft Open Quiet  tip=${typeof __TIP_SHA__ !== 'undefined' ? __TIP_SHA__ : 'dev'}  build=${typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : '?'}  horse=glb`);
 }
-resize();
-requestAnimationFrame(frame);
 
-console.info(`[RED COUNTY] Soft Open Quiet  tip=${typeof __TIP_SHA__ !== 'undefined' ? __TIP_SHA__ : 'dev'}  build=${typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : '?'}`);
+boot();

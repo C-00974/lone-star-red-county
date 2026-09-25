@@ -1,10 +1,16 @@
 // RED COUNTY build — bundles src/main.js into docs/index.html for GitHub Pages
 import { build } from 'esbuild';
-import { readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, cpSync, existsSync } from 'fs';
 import { execSync } from 'child_process';
 import { createHash } from 'crypto';
 
 mkdirSync('docs', { recursive: true });
+
+// Publish vendored GLBs + attribution next to index.html for Pages
+if (existsSync('assets')) {
+  mkdirSync('docs/assets', { recursive: true });
+  cpSync('assets', 'docs/assets', { recursive: true });
+}
 
 let tipSha = 'dev';
 try { tipSha = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim(); } catch {}

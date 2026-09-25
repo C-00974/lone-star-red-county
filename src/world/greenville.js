@@ -8,6 +8,7 @@ import {
   makeWaterTexture,
   makeCrateWoodTexture,
 } from '../systems/textures.js';
+import { getStableGltf } from '../systems/assets.js';
 
 /**
  * Authored Greenville strip — Soft Open fidelity pass.
@@ -186,6 +187,60 @@ function hitchRope(group, x0, y0, z0, x1, y1, z1, mat) {
   const rope = new THREE.Mesh(geo, mat);
   rope.castShadow = true;
   group.add(rope);
+}
+
+
+/** Quaternius Fantasy Stable — western retint (mute teal roof), landmark by LIVERY. */
+function placeStableLandmark(group) {
+  const gltf = getStableGltf();
+  const model = gltf.scene.clone(true);
+  // Clone materials so we can retint without mutating the cache
+  const seen = new Map();
+  model.traverse((o) => {
+    if (!o.isMesh || !o.material) return;
+    const list = Array.isArray(o.material) ? o.material : [o.material];
+    const next = list.map((m) => {
+      if (!seen.has(m.uuid)) {
+        const c = m.clone();
+        seen.set(m.uuid, c);
+        if (c.name === 'RoofTiles') {
+          c.color.setHex(0x6a3420); // rust / weathered western roof (was teal)
+          c.roughness = 0.92;
+        } else if (c.name === 'Stone_Light' || c.name === 'Stone_Dark') {
+          c.color.offsetHSL(0.02, -0.15, -0.05); // warmer, less castle
+        } else if (c.name === 'Beige') {
+          c.color.setHex(0xa08058);
+        }
+      }
+      return seen.get(m.uuid);
+    });
+    o.material = Array.isArray(o.material) ? next : next[0];
+    o.castShadow = true;
+    o.receiveShadow = true;
+  });
+
+  // Fit beside LIVERY false-front (~6u wide buildings)
+  const box = new THREE.Box3().setFromObject(model);
+  const size = box.getSize(new THREE.Vector3());
+  const targetW = 7.2;
+  const s = targetW / Math.max(size.x, 0.01);
+  model.scale.setScalar(s);
+  model.updateMatrixWorld(true);
+  const g = new THREE.Box3().setFromObject(model);
+  // Center model on local origin, ground to y=0
+  const center = g.getCenter(new THREE.Vector3());
+  model.position.x -= center.x;
+  model.position.z -= center.z;
+  model.position.y -= g.min.y;
+
+  const wrap = new THREE.Group();
+  wrap.name = 'stableLandmark';
+  wrap.add(model);
+  // West side of strip, south of hitch — faces street (+X)
+  wrap.position.set(-14.2, 0, -14.5);
+  wrap.rotation.y = Math.PI / 2; // entrance toward street
+  group.add(wrap);
+  return wrap;
 }
 
 export function buildGreenville(scene) {
@@ -599,6 +654,8 @@ export function buildGreenville(scene) {
   ls.position.set(-10.5, 4.0, -16 + 3 + 0.28);
   root.add(ls);
 
+  // Real Quaternius stable GLB landmark (western roof retint)
+  placeStableLandmark(root);
 
   scene.add(root);
 

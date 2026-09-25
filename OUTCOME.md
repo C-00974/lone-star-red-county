@@ -1,15 +1,15 @@
 # RED COUNTY Soft Open — Next western face
 
-**Tip:** `fb865e3`
+**Tip:** `00f08ff`
 **Source:** LoneStar-Next branch `red-county`
-**Published:** 2026-09-25T14:05:14.265Z
+**Published:** 2026-09-25T14:06:37.142Z
 
 ## Play
 
 - Desktop: https://c-00974.github.io/lone-star-red-county/
-- Phone: https://c-00974.github.io/lone-star-red-county/?touch=1&v=fb865e3
+- Phone: https://c-00974.github.io/lone-star-red-county/?touch=1&v=00f08ff
 
-Mirror (GH play repo): https://c-00974.github.io/lone-star-golden-hour-next-play/red-county.html?touch=1&v=fb865e3
+Mirror (GH play repo): https://c-00974.github.io/lone-star-golden-hour-next-play/red-county.html?touch=1&v=00f08ff
 
 ## Notes
 

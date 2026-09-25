@@ -1,16 +1,19 @@
-# RED COUNTY Soft Open — Next western face
+# RED COUNTY Soft Open — product face
 
-**Tip:** `3457c8a`
+**Tip:** `21257d4`
 **Source:** LoneStar-Next branch `red-county`
-**Published:** 2026-09-25T15:03:41.271Z
+**Published:** 2026-09-25T15:43:42.082Z
 
-## Play
+## Play (one link — phone + desktop)
 
-- Desktop: https://c-00974.github.io/lone-star-red-county/
-- Phone: https://c-00974.github.io/lone-star-red-county/?touch=1&v=3457c8a
+**https://c-00974.github.io/lone-star-red-county/**
 
-Mirror (GH play repo): https://c-00974.github.io/lone-star-golden-hour-next-play/red-county.html?touch=1&v=3457c8a
+Single `index.html`. Touch UI auto-detects (same pattern as Golden Hour). Optional `?v=21257d4` busts cache; `?touch=1` is not required.
+
+This face is **Red County Soft Open only** — never Golden Hour Lotus / Greenville drive.
+
+Mirror (engine play repo, not the product face): https://c-00974.github.io/lone-star-golden-hour-next-play/red-county.html?v=21257d4
 
 ## Notes
 
-Built on Golden Hour / Next craft stack (sky, lighting, post, character walk). Soft Open Quiet uses Dun/Bay horse GLB + isolated western strip. Not the rejected greenfield Roblox tip.
+Next craft stack. Soft Open Quiet · Dun/Bay · isolated western strip. GH product stays on lone-star-golden-hour-next-play/index.html.

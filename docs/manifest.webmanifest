@@ -1,7 +1,7 @@
 {
   "name": "Red County · Soft Open",
   "short_name": "Red County",
-  "start_url": "./red-county.html?touch=1&v=3457c8a",
+  "start_url": "./?v=21257d4",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",

@@ -30,7 +30,7 @@ export function createLighting(scene, renderer, sky) {
   // Soft playability floor so dusk never goes pitch-black (Chris: always be able to see).
   const playAmb = new THREE.AmbientLight(0xb8a090, 0.0); scene.add(playAmb);
   // Cool fill from the east — opposite the rust/amber western sun
-  const fill = new THREE.DirectionalLight(0x8a90b0, 0.28); fill.position.set(40, 28, -20); scene.add(fill);
+  const fill = new THREE.DirectionalLight(0x8a90b0, 0.36); fill.position.set(40, 28, -20); scene.add(fill);
   scene.fog = new THREE.FogExp2(0xb88868, 0.0045);
   const pmrem = new ReusableSkyPMREMGenerator(renderer); pmrem.compileEquirectangularShader();
   const envScene = new THREE.Scene(); envScene.add(sky.mesh.clone());
@@ -96,9 +96,9 @@ export function createLighting(scene, renderer, sky) {
       hemi.color.setRGB(...s.hemiSky); hemi.groundColor.setRGB(...s.hemiGround); hemi.intensity = s.hemiI;
       fill.color.setRGB(...s.fill); fill.intensity = s.fillI;
       // Ambient floor ramps with night so riding stays readable without killing day contrast.
-      playAmb.intensity = Math.max(0, (s.night - 0.15) / 0.85) * 0.55;
-      // Soft Open always has a minimum floor so dusk never caves out
-      if (playAmb.intensity < 0.18) playAmb.intensity = 0.18 + s.night * 0.12;
+      playAmb.intensity = Math.max(0, (s.night - 0.15) / 0.85) * 0.65;
+      // Soft Open always has a minimum floor so dusk never caves out the mount
+      if (playAmb.intensity < 0.28) playAmb.intensity = 0.28 + s.night * 0.14;
       scene.fog.color.setRGB(...s.fog); scene.fog.density = s.fogDensity;
       api.envI = s.envI; scene.environmentIntensity = s.envI;
       updateEnv(false);

@@ -12,10 +12,11 @@ export const HORSE_PROFILES = {
   dun: {
     id: 'dun',
     name: 'Dun',
-    color: 0x9a7844,
-    mane: 0x3a2a18,
-    coatDark: 0x7a5a30,
-    coatLight: 0xb09058,
+    // Lifted albedos so coats read at Soft Open dusk (ACES + low sun)
+    color: 0xd4b078,
+    mane: 0x4a3420,
+    coatDark: 0xa87840,
+    coatLight: 0xe8c890,
     walk: 4.2,
     trot: 7.5,
     gallop: 12.5,
@@ -29,10 +30,11 @@ export const HORSE_PROFILES = {
   bay: {
     id: 'bay',
     name: 'Bay',
-    color: 0x6a321c,
-    mane: 0x1a0c08,
-    coatDark: 0x4a2010,
-    coatLight: 0x8a4830,
+    // Distinct warm chestnut vs Dun sand — raised so silhouette isn't crushed
+    color: 0xc46838,
+    mane: 0x2a1410,
+    coatDark: 0x8a3820,
+    coatLight: 0xe09058,
     walk: 4.5,
     trot: 8.2,
     gallop: 14.2,
@@ -157,6 +159,15 @@ function retintCoat(matMap, profile) {
       else if (n.includes('main') || n.includes('material')) m.color.copy(coat);
     }
   }
+
+  // Quaternius ships metalness ~0.4 — crushes coats into dusk. Force cloth-like PBR.
+  for (const m of matMap.values()) {
+    if (!m) continue;
+    m.metalness = 0.04;
+    m.roughness = Math.max(0.72, m.roughness ?? 0.8);
+    if ('envMapIntensity' in m) m.envMapIntensity = 0.9;
+    m.needsUpdate = true;
+  }
 }
 
 function pickClip(animations, names) {
@@ -180,16 +191,20 @@ export function createHorseMesh(profile) {
   const matMap = cloneMaterials(model);
   retintCoat(matMap, profile);
 
-  // Quaternius Animal Pack is oversized (~4.8u tall). Fit Soft Open strip.
+  // Calibrated once from horse.glb mesh vertex extents (NOT skinned Box3.setFromObject —
+  // bind-pose skinned AABBs are unreliable and can collapse TARGET_HEIGHT / size.y to a speck).
+  // Measured (Node/three 0.170, mesh verts after armature scale=100): H=4.8239 W=1.4069 L=5.6761
+  // → CALIBRATED_SCALE = 2.05 / 4.8239 ≈ 0.424963. Head faces +Z (matches controller yaw=0).
   const TARGET_HEIGHT = 2.05;
-  const box = new THREE.Box3().setFromObject(model);
-  const size = box.getSize(new THREE.Vector3());
-  const scale = TARGET_HEIGHT / Math.max(size.y, 0.01);
+  const CALIBRATED_SCALE = 0.424963;
+  const BIND_LENGTH = 5.6761; // world Z extent before scale
+  const BIND_MIN_Y = -0.01122;
+  const scale = CALIBRATED_SCALE;
   model.scale.setScalar(scale);
-  // Ground feet (minY → 0)
-  model.updateMatrixWorld(true);
-  const grounded = new THREE.Box3().setFromObject(model);
-  model.position.y -= grounded.min.y;
+  // Ground feet from calibrated bind minY (avoid setFromObject)
+  model.position.y = -BIND_MIN_Y * scale;
+  // Face +Z (Quaternius GLB already does after Y-up convert; keep explicit for clarity)
+  model.rotation.y = 0;
 
   model.traverse((o) => {
     if (o.isMesh) {
@@ -208,10 +223,17 @@ export function createHorseMesh(profile) {
   const coatMat = mat(0x2a1810, { roughness: 0.85 });
   const denimMat = mat(0x2a2838, { roughness: 0.9 });
   const rider = makeRider(dark, coatMat, denimMat);
-  // Sit on withers — Quaternius torso ~ mid height after scale
-  rider.position.set(0, TARGET_HEIGHT * 0.72, size.z * scale * 0.02);
+  // Sit on withers (~70% of target height, slight forward bias along +Z)
+  rider.position.set(0, TARGET_HEIGHT * 0.70, BIND_LENGTH * scale * 0.02);
   rider.scale.setScalar(0.95);
   root.add(rider);
+
+  if (typeof console !== 'undefined') {
+    console.info(
+      `[RED COUNTY] horse scale=${scale.toFixed(6)} targetH=${TARGET_HEIGHT} ` +
+      `(calibrated; skip skinned Box3)`,
+    );
+  }
 
   // AnimationMixer on the cloned model (shares bone names with clips)
   const mixer = new THREE.AnimationMixer(model);

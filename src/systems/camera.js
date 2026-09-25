@@ -2,8 +2,10 @@ import * as THREE from 'three';
 
 /** Third-person follow cam — framed for Quaternius GLB hero horse (~2m). */
 export function createFollowCamera(camera) {
-  const offset = new THREE.Vector3(0, 3.6, -7.4);
-  const look = new THREE.Vector3(0, 1.35, 1.6);
+  // Closer frame so the GLB fills the view (was ~7.4m back → mount read as a speck)
+  const offset = new THREE.Vector3(0, 2.55, -4.6);
+  // Look at withers / rider torso
+  const look = new THREE.Vector3(0, 1.45, 0.35);
   const cur = new THREE.Vector3();
   const target = new THREE.Vector3();
   const lookAt = new THREE.Vector3();

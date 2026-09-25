@@ -245,7 +245,7 @@ h2 { font-size: clamp(1.6rem, 5vw, 2.4rem); color: var(--bone); letter-spacing: 
   <!-- TITLE -->
   <div id="screen-title" class="screen active">
     <div class="brand">
-      <div class="kicker">Soft Open · Quiet · tip 039153e</div>
+      <div class="kicker">Soft Open · Quiet · tip e27c0bc</div>
       <h1>RED COUNTY</h1>
       <p class="tag">Horses. Heist. Blood on the dust.</p>
       <p class="sub">Greenville strip — Quiet approach. You ride for Rae.</p>
@@ -26727,10 +26727,11 @@ void main() {
     dun: {
       id: "dun",
       name: "Dun",
-      color: 10123332,
-      mane: 3811864,
-      coatDark: 8018480,
-      coatLight: 11571288,
+      // Lifted albedos so coats read at Soft Open dusk (ACES + low sun)
+      color: 13938808,
+      mane: 4863008,
+      coatDark: 11040832,
+      coatLight: 15255696,
       walk: 4.2,
       trot: 7.5,
       gallop: 12.5,
@@ -26744,10 +26745,11 @@ void main() {
     bay: {
       id: "bay",
       name: "Bay",
-      color: 6959644,
-      mane: 1707016,
-      coatDark: 4857872,
-      coatLight: 9062448,
+      // Distinct warm chestnut vs Dun sand — raised so silhouette isn't crushed
+      color: 12871736,
+      mane: 2757648,
+      coatDark: 9058336,
+      coatLight: 14717016,
       walk: 4.5,
       trot: 8.2,
       gallop: 14.2,
@@ -26856,6 +26858,13 @@ void main() {
         else if (n.includes("main") || n.includes("material")) m.color.copy(coat);
       }
     }
+    for (const m of matMap.values()) {
+      if (!m) continue;
+      m.metalness = 0.04;
+      m.roughness = Math.max(0.72, m.roughness ?? 0.8);
+      if ("envMapIntensity" in m) m.envMapIntensity = 0.9;
+      m.needsUpdate = true;
+    }
   }
   function pickClip(animations, names) {
     for (const want of names) {
@@ -26872,13 +26881,13 @@ void main() {
     const matMap = cloneMaterials(model);
     retintCoat(matMap, profile);
     const TARGET_HEIGHT = 2.05;
-    const box2 = new Box3().setFromObject(model);
-    const size = box2.getSize(new Vector3());
-    const scale = TARGET_HEIGHT / Math.max(size.y, 0.01);
+    const CALIBRATED_SCALE = 0.424963;
+    const BIND_LENGTH = 5.6761;
+    const BIND_MIN_Y = -0.01122;
+    const scale = CALIBRATED_SCALE;
     model.scale.setScalar(scale);
-    model.updateMatrixWorld(true);
-    const grounded = new Box3().setFromObject(model);
-    model.position.y -= grounded.min.y;
+    model.position.y = -BIND_MIN_Y * scale;
+    model.rotation.y = 0;
     model.traverse((o) => {
       if (o.isMesh) {
         o.castShadow = true;
@@ -26894,9 +26903,14 @@ void main() {
     const coatMat = mat(2758672, { roughness: 0.85 });
     const denimMat = mat(2762808, { roughness: 0.9 });
     const rider = makeRider(dark, coatMat, denimMat);
-    rider.position.set(0, TARGET_HEIGHT * 0.72, size.z * scale * 0.02);
+    rider.position.set(0, TARGET_HEIGHT * 0.7, BIND_LENGTH * scale * 0.02);
     rider.scale.setScalar(0.95);
     root.add(rider);
+    if (typeof console !== "undefined") {
+      console.info(
+        `[RED COUNTY] horse scale=${scale.toFixed(6)} targetH=${TARGET_HEIGHT} (calibrated; skip skinned Box3)`
+      );
+    }
     const mixer = new AnimationMixer(model);
     const clips = {
       idle: pickClip(gltf.animations, ["Idle", "Idle_2"]),
@@ -27042,8 +27056,8 @@ void main() {
 
   // src/systems/camera.js
   function createFollowCamera(camera2) {
-    const offset = new Vector3(0, 3.6, -7.4);
-    const look = new Vector3(0, 1.35, 1.6);
+    const offset = new Vector3(0, 2.55, -4.6);
+    const look = new Vector3(0, 1.45, 0.35);
     const cur = new Vector3();
     const target = new Vector3();
     const lookAt = new Vector3();
@@ -29344,7 +29358,7 @@ void main() {
     });
     renderer2.outputColorSpace = SRGBColorSpace;
     renderer2.toneMapping = ACESFilmicToneMapping;
-    renderer2.toneMappingExposure = 1.22;
+    renderer2.toneMappingExposure = 1.38;
     renderer2.shadowMap.enabled = !mobile;
     renderer2.shadowMap.type = PCFSoftShadowMap;
     renderer2.setClearColor(2758672, 1);
@@ -29953,7 +29967,7 @@ void main(){
     scene2.add(hemi);
     const playAmb = new AmbientLight(12099728, 0);
     scene2.add(playAmb);
-    const fill = new DirectionalLight(9081008, 0.28);
+    const fill = new DirectionalLight(9081008, 0.36);
     fill.position.set(40, 28, -20);
     scene2.add(fill);
     scene2.fog = new FogExp2(12093544, 45e-4);
@@ -30044,8 +30058,8 @@ void main(){
         hemi.intensity = s.hemiI;
         fill.color.setRGB(...s.fill);
         fill.intensity = s.fillI;
-        playAmb.intensity = Math.max(0, (s.night - 0.15) / 0.85) * 0.55;
-        if (playAmb.intensity < 0.18) playAmb.intensity = 0.18 + s.night * 0.12;
+        playAmb.intensity = Math.max(0, (s.night - 0.15) / 0.85) * 0.65;
+        if (playAmb.intensity < 0.28) playAmb.intensity = 0.28 + s.night * 0.14;
         scene2.fog.color.setRGB(...s.fog);
         scene2.fog.density = s.fogDensity;
         api.envI = s.envI;
@@ -30378,7 +30392,7 @@ void main(){
     ui.showScreen("title");
     resize();
     requestAnimationFrame(frame);
-    console.info(`[RED COUNTY] Soft Open Quiet  tip=${true ? "039153e" : "dev"}  build=${true ? "0.1.0-3ab49144" : "?"}  horse=glb`);
+    console.info(`[RED COUNTY] Soft Open Quiet  tip=${true ? "e27c0bc" : "dev"}  build=${true ? "0.1.0-3ab49144" : "?"}  horse=glb`);
   }
   boot();
 })();

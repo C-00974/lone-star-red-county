@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-c18f8e99b1e8">
-<meta name="lsgh-tip" content="466da22">
+<meta name="lsgh-build" content="0.35.0-next.0-dd3b3a211eef">
+<meta name="lsgh-tip" content="f7af177">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -421,7 +421,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip 466da22</div>
+    <div class="kicker">Soft Open · Quiet · tip f7af177</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -56229,7 +56229,7 @@ void main() {
   function clamp014(x) {
     return Math.max(0, Math.min(1, x));
   }
-  function woodPlankTex(size = 512, { tint: tint2 = [84, 58, 34], aniso = 0 } = {}) {
+  function woodPlankTex(size = 512, { tint: tint2 = [118, 82, 48], aniso = 0 } = {}) {
     const S4 = texRes(size, 128, 1024);
     const an = aniso || defaultAniso();
     return cached("rc-wood|" + S4 + "|" + tint2.join(), () => {
@@ -56256,7 +56256,7 @@ void main() {
       return { map };
     });
   }
-  function woodSidingTex(size = 512, { tint: tint2 = [72, 48, 28], aniso = 0 } = {}) {
+  function woodSidingTex(size = 512, { tint: tint2 = [102, 70, 42], aniso = 0 } = {}) {
     const S4 = texRes(size, 128, 1024);
     const an = aniso || defaultAniso();
     return cached("rc-siding|" + S4 + "|" + tint2.join(), () => {
@@ -56281,13 +56281,13 @@ void main() {
   function dirtYardTex(size = 512, { aniso = 0 } = {}) {
     const S4 = texRes(size, 128, 1024);
     const an = aniso || defaultAniso();
-    return cached("rc-dirt|" + S4, () => {
+    return cached("rc-dirt|v2|" + S4, () => {
       const c = generate(S4, S4, (x, y2, u, v) => {
-        const base = [106, 74, 46];
+        const base = [178, 132, 86];
         const mott = (pfbm(u, v, 6, 4, 0.5, 9) - 0.5) * 0.42;
         const grit = (thash(x, y2, 3) - 0.5) * 0.12;
         const rut = Math.abs(u - 0.32) < 0.02 || Math.abs(u - 0.68) < 0.02 ? -0.12 - pfbm(u * 2, v, 20, 2, 0.5, 5) * 0.08 : 0;
-        let l = 0.78 + mott + grit + rut;
+        let l = 0.88 + mott + grit + rut;
         const pebble = thash(x, y2, 88) > 0.985 ? 0.2 : 0;
         l = clamp014(l + pebble);
         return [base[0] * l, base[1] * l, base[2] * l];
@@ -56298,13 +56298,13 @@ void main() {
   function streetBedTex(size = 512, { aniso = 0 } = {}) {
     const S4 = texRes(size, 128, 1024);
     const an = aniso || defaultAniso();
-    return cached("rc-street|" + S4, () => {
+    return cached("rc-street|v2|" + S4, () => {
       const c = generate(S4, S4, (x, y2, u, v) => {
-        const base = [58, 38, 24];
+        const base = [128, 92, 58];
         const mott = (pfbm(u, v, 8, 3, 0.5, 21) - 0.5) * 0.28;
         const rutL = Math.exp(-(((u - 0.28) * 18) ** 2)) * 0.22;
         const rutR = Math.exp(-(((u - 0.72) * 18) ** 2)) * 0.22;
-        let l = 0.7 + mott - rutL - rutR;
+        let l = 0.82 + mott - rutL - rutR;
         l += (thash(x, y2, 7) - 0.5) * 0.1;
         l = clamp014(l);
         return [base[0] * l, base[1] * l, base[2] * l];
@@ -56395,10 +56395,10 @@ void main() {
       creekMap: creek.map,
       barkMap: bark.map,
       gravelMap: gravel.map,
-      wood: new MeshStandardMaterial({ map: wood.map, roughness: 0.9, metalness: 0.02, color: 16777215 }),
+      wood: new MeshStandardMaterial({ map: wood.map, roughness: 0.9, metalness: 0.02, color: 15786184 }),
       siding: new MeshStandardMaterial({ map: siding.map, roughness: 0.92, metalness: 0.02, color: 16777215 }),
-      dirt: new MeshStandardMaterial({ map: dirt.map, roughness: 0.97, metalness: 0, color: 16777215 }),
-      street: new MeshStandardMaterial({ map: street.map, roughness: 1, metalness: 0, color: 16777215 }),
+      dirt: new MeshStandardMaterial({ map: dirt.map, roughness: 0.97, metalness: 0, color: 16771264 }),
+      street: new MeshStandardMaterial({ map: street.map, roughness: 1, metalness: 0, color: 15782048 }),
       adobe: new MeshStandardMaterial({ map: adobe.map, roughness: 0.94, metalness: 0.01, color: 16777215 }),
       adobeDark: new MeshStandardMaterial({ map: adobeDark.map, roughness: 0.94, metalness: 0.01, color: 16777215 }),
       tin: new MeshStandardMaterial({ map: tin.map, roughness: 0.55, metalness: 0.35, color: 16777215 }),
@@ -56408,7 +56408,7 @@ void main() {
       rust: solid(10111012, 0.7, 0.15),
       blood: solid(12855336, 0.55, 0.05),
       rope: solid(9072720, 0.95),
-      falseFront: new MeshStandardMaterial({ map: siding.map, roughness: 0.9, metalness: 0.02, color: 12097648 }),
+      falseFront: new MeshStandardMaterial({ map: siding.map, roughness: 0.92, metalness: 0.02, color: 9070656 }),
       solid,
       matWithRepeat,
       westernSign
@@ -56434,11 +56434,16 @@ void main() {
             const hsl = { h: 0, s: 0, l: 0 };
             c.color.getHSL(hsl);
             const warm = hsl.h < 0.15 || hsl.h > 0.85 || hsl.h > 0.05 && hsl.h < 0.2;
-            c.color.setHSL(
-              warm ? 0.08 + hsl.h * 0.05 : 0.07,
-              Math.min(0.42, hsl.s * 0.55 + 0.12),
-              Math.min(0.62, Math.max(0.18, hsl.l * 0.85 + 0.05))
-            );
+            const isBright = hsl.l > 0.58 || hsl.s < 0.18 && hsl.l > 0.42;
+            if (isBright) {
+              c.color.setHSL(0.078, 0.32, 0.32);
+            } else {
+              c.color.setHSL(
+                warm ? 0.07 + hsl.h * 0.04 : 0.065,
+                Math.min(0.42, hsl.s * 0.4 + 0.16),
+                Math.min(0.42, Math.max(0.14, hsl.l * 0.62 + 0.03))
+              );
+            }
           }
           if ("roughness" in c) c.roughness = Math.max(0.72, c.roughness ?? 0.85);
           if ("metalness" in c) c.metalness = Math.min(0.25, (c.metalness ?? 0.05) * 0.4);
@@ -56504,13 +56509,27 @@ void main() {
   var DOOR_W = 1.05;
   var HITCH_RAIL_Y = 1.08;
   var STORY_H = 3.7;
-  var FALSE_EXTRA = 1.35;
+  var FALSE_EXTRA = 1.75;
   function boxMesh(w, h, d, mat2, x, y2, z) {
     const mesh2 = new Mesh(new BoxGeometry(w, h, d), mat2);
     mesh2.position.set(x, y2, z);
     mesh2.castShadow = true;
     mesh2.receiveShadow = true;
     return mesh2;
+  }
+  function contactShadow(group, x, z, r = 1.2, opacity = 0.42) {
+    const mat2 = new MeshBasicMaterial({
+      color: 656900,
+      transparent: true,
+      opacity,
+      depthWrite: false
+    });
+    const disc3 = new Mesh(new CircleGeometry(r, 18), mat2);
+    disc3.rotation.x = -Math.PI / 2;
+    disc3.position.set(x, 0.035, z);
+    disc3.renderOrder = 1;
+    group.add(disc3);
+    return disc3;
   }
   function faceMat(kit, kind, wu, wv, tile = 2.2) {
     const base = kit[kind];
@@ -56701,23 +56720,34 @@ void main() {
     const kit = createWesternMaterials();
     const key2 = new DirectionalLight(16760976, 1.35);
     key2.name = "rc-key-dusk";
-    key2.position.set(18, 22, -8);
+    key2.position.set(14, 20, -10);
     key2.castShadow = true;
     key2.shadow.mapSize.set(2048, 2048);
-    key2.shadow.camera.left = -40;
-    key2.shadow.camera.right = 40;
-    key2.shadow.camera.top = 50;
-    key2.shadow.camera.bottom = -40;
-    key2.shadow.bias = -2e-4;
+    key2.shadow.camera.left = -42;
+    key2.shadow.camera.right = 42;
+    key2.shadow.camera.top = 52;
+    key2.shadow.camera.bottom = -42;
+    key2.shadow.bias = -15e-5;
+    key2.shadow.normalBias = 0.04;
+    key2.shadow.radius = 2.5;
     local2.add(key2);
-    const fill2 = new DirectionalLight(6324416, 0.35);
-    fill2.position.set(-20, 12, 16);
+    const fill2 = new DirectionalLight(10533080, 0.75);
+    fill2.position.set(-18, 14, 14);
     local2.add(fill2);
-    const hemi = new HemisphereLight(16765088, 2758672, 0.45);
+    const rim = new DirectionalLight(16744512, 0.28);
+    rim.position.set(4, 6, 28);
+    local2.add(rim);
+    const hemi = new HemisphereLight(16771272, 4861984, 1.05);
     local2.add(hemi);
-    const porchGlow = new PointLight(12875840, 0.55, 28, 1.8);
-    porchGlow.position.set(-8, 3.2, 6);
+    const porchGlow = new PointLight(14719048, 1.35, 36, 1.5);
+    porchGlow.position.set(-8, 3.4, 7);
     local2.add(porchGlow);
+    const streetLamp = new PointLight(14190656, 0.95, 28, 1.6);
+    streetLamp.position.set(2, 3.6, -2);
+    local2.add(streetLamp);
+    const amb = new AmbientLight(13150328, 0.42);
+    amb.name = "rc-amb-dusk";
+    local2.add(amb);
     const groundMat = kit.matWithRepeat(kit.dirt, { wu: 90, wv: 130, tile: 4.5 });
     const ground = new Mesh(new PlaneGeometry(90, 130), groundMat);
     ground.rotation.x = -Math.PI / 2;
@@ -56733,25 +56763,49 @@ void main() {
       patch2.receiveShadow = true;
       local2.add(patch2);
     }
-    const streetMat = kit.matWithRepeat(kit.street, { wu: 10, wv: 90, tile: 3.5 });
-    const street = new Mesh(new PlaneGeometry(10, 90), streetMat);
+    const streetMat = kit.matWithRepeat(kit.street, { wu: 11, wv: 92, tile: 2.8 });
+    const street = new Mesh(new PlaneGeometry(11, 92), streetMat);
     street.rotation.x = -Math.PI / 2;
     street.position.set(0, 0.02, 10);
     street.receiveShadow = true;
     local2.add(street);
-    const plankMat = kit.matWithRepeat(kit.wood, { wu: 2.3, wv: 1.5, tile: 1.2 });
+    for (const side2 of [-1, 1]) {
+      const shoulder = new Mesh(
+        new PlaneGeometry(2.4, 88),
+        kit.matWithRepeat(kit.dirt, { wu: 2.4, wv: 88, tile: 2.2, color: 12886128 })
+      );
+      shoulder.rotation.x = -Math.PI / 2;
+      shoulder.position.set(side2 * 6.2, 0.028, 8);
+      shoulder.receiveShadow = true;
+      local2.add(shoulder);
+    }
+    for (const [pz2, s, col3] of [[-8, 2.4, 12097640], [4, 3, 11044952], [18, 2.6, 11571296], [32, 3.2, 10518608]]) {
+      const worn = new Mesh(
+        new CircleGeometry(s, 14),
+        kit.matWithRepeat(kit.dirt, { wu: s * 2, wv: s * 2, tile: 2.5, color: col3 })
+      );
+      worn.rotation.x = -Math.PI / 2;
+      worn.position.set(pz2 * 0.03 % 1.2, 0.032, pz2);
+      worn.receiveShadow = true;
+      local2.add(worn);
+    }
+    const plankMat = kit.matWithRepeat(kit.wood, { wu: 2.3, wv: 1.5, tile: 1.2, color: 14205072 });
+    const wornPlank = kit.matWithRepeat(kit.wood, { wu: 2.3, wv: 1.5, tile: 1.4, color: 9070656 });
     for (const side2 of [-1, 1]) {
       local2.add(boxMesh(2.4, 0.14, 54, faceMat(kit, "wood", 2.4, 54, 3), side2 * 6.2, 0.08, 5));
       local2.add(boxMesh(0.12, 0.28, 54, faceMat(kit, "wood", 0.12, 54, 2), side2 * 5.05, 0.16, 5));
       for (let i = 0; i < 34; i++) {
         const pz2 = -20 + i * 1.55;
-        const plank = boxMesh(2.25, 0.05, 1.4, plankMat, side2 * 6.2, 0.17, pz2);
+        const mat2 = i % 5 === 0 || i % 7 === 3 ? wornPlank : plankMat;
+        const plank = boxMesh(2.25, 0.05, 1.4, mat2, side2 * 6.2, 0.17, pz2);
         plank.rotation.y = (i % 3 - 1) * 0.012;
+        if (i % 4 === 1) plank.position.y = 0.155;
         local2.add(plank);
         if (i % 2 === 0) {
           local2.add(boxMesh(0.035, 0.015, 0.035, kit.bone, side2 * 5.35, 0.2, pz2));
           local2.add(boxMesh(0.035, 0.015, 0.035, kit.bone, side2 * 7, 0.2, pz2));
         }
+        if (i % 6 === 0) contactShadow(local2, side2 * 6.2, pz2, 1.1, 0.28);
       }
     }
     const saloonSign = kit.westernSign("SALOON", { bg: "#6a2818", fg: "#e8dcc8" });
@@ -56808,18 +56862,56 @@ void main() {
       }
       return placed;
     };
-    addHero("blacksmith", { x: -11.2, z: 8, yaw: Math.PI / 2, targetWidth: 9.2, sign: saloonSign, signX: -7.6, signZ: 8 });
-    addHero("farmhouse", { x: -11, z: -5, yaw: Math.PI / 2, targetWidth: 7.5 });
-    addHero("storage-shed", { x: -10.4, z: 19.5, yaw: Math.PI / 2, targetWidth: 6.2 });
+    {
+      const saloon = building(local2, kit, {
+        w: 9.4,
+        h: 4.15,
+        d: 8,
+        x: -11,
+        z: 8,
+        wall: "adobe",
+        sign: saloonSign,
+        porch: true,
+        brickAccent: true
+      });
+      buildings.push(saloon);
+      contactShadow(local2, -11, 8, 5.5, 0.38);
+      const frontZ = 8 + 8 / 2;
+      for (const sx of [-2.6, 2.6]) {
+        const glass = kit.solid(1708040, 0.35, 0.05);
+        glass.emissive = new Color(9062936);
+        glass.emissiveIntensity = 0.7;
+        local2.add(boxMesh(0.85, 0.95, 0.08, glass, -11 + sx, 3.15, frontZ + 0.1));
+        local2.add(boxMesh(0.95, 0.08, 0.1, faceMat(kit, "wood", 1, 0.1, 1), -11 + sx, 3.15 + 0.52, frontZ + 0.12));
+      }
+      local2.add(boxMesh(8.6, 0.1, 1.4, faceMat(kit, "wood", 8.6, 1.4, 1.4), -11, 2.55, frontZ + 1.1));
+      for (const sx of [-3.6, 3.6]) {
+        local2.add(boxMesh(0.12, 2.5, 0.12, faceMat(kit, "wood", 0.12, 2.5, 1), -11 + sx, 1.35, frontZ + 1.55));
+      }
+    }
+    addHero("farmhouse", { x: -11, z: -5.5, yaw: Math.PI / 2, targetWidth: 7.2 });
+    contactShadow(local2, -11, -5.5, 4.2, 0.35);
+    addHero("blacksmith", { x: -10.6, z: 20.5, yaw: Math.PI / 2, targetWidth: 7, sign: smithSign, signX: -7.4, signZ: 20.5 });
+    contactShadow(local2, -10.6, 20.5, 4, 0.34);
     addHero("hut", { x: -10.2, z: -16, yaw: Math.PI / 2, targetWidth: 5.5, sign: liverySign, signX: -7.8, signZ: -16 });
+    contactShadow(local2, -10.2, -16, 3.2, 0.32);
     addHero("mill", { x: 11.4, z: 7, yaw: -Math.PI / 2, targetWidth: 8.5, sign: hotelSign, signX: 7.8, signZ: 7 });
+    contactShadow(local2, 11.4, 7, 4.8, 0.36);
     addHero("silo-house", { x: 10.8, z: -6, yaw: -Math.PI / 2, targetWidth: 6.8 });
+    contactShadow(local2, 10.8, -6, 3.8, 0.34);
     addHero("barn", { x: 11, z: -17, yaw: -Math.PI / 2, targetWidth: 7.2 });
-    addHero("sawmill", { x: 10.6, z: 20, yaw: -Math.PI / 2, targetWidth: 6.4, sign: smithSign, signX: 7.6, signZ: 20 });
+    contactShadow(local2, 11, -17, 4, 0.34);
+    addHero("storage-shed", { x: 10.6, z: 20, yaw: -Math.PI / 2, targetWidth: 6.2 });
+    contactShadow(local2, 10.6, 20, 3.5, 0.32);
     addHero("tower", { x: 16.5, z: 28, yaw: 0.4, targetHeight: 9.5 });
+    contactShadow(local2, 16.5, 28, 2.4, 0.4);
     addHero("silo", { x: -16, z: 26, yaw: 0.2, targetHeight: 7.5 });
+    contactShadow(local2, -16, 26, 2.2, 0.4);
     addHero("big-barn", { x: 14.5, z: -24, yaw: -0.3, targetWidth: 10 });
+    contactShadow(local2, 14.5, -24, 5, 0.36);
     addHero("watchtower", { x: -15.5, z: -22, yaw: 0.5, targetHeight: 6.5 });
+    contactShadow(local2, -15.5, -22, 2, 0.38);
+    addHero("sawmill", { x: 17.5, z: 12, yaw: -0.6, targetWidth: 5.8 });
     const alleyZ = 2.2, alleyX = -7;
     const alleyFill = new PointLight(12875840, 0.75, 16, 1.8);
     alleyFill.position.set(-5, 2.4, alleyZ);
@@ -56874,6 +56966,8 @@ void main() {
     feed.castShadow = true;
     hitch.add(feed);
     local2.add(hitch);
+    contactShadow(local2, -4.4, -2, 2.4, 0.45);
+    contactShadow(local2, -3.2, -2.6, 1.1, 0.35);
     for (let z = -24; z < 38; z += 4) {
       for (const x of [-5.1, 5.1]) {
         local2.add(boxMesh(0.1, 1, 0.1, faceMat(kit, "wood", 0.1, 1, 1), x, 0.5, z));
@@ -57331,8 +57425,8 @@ void main() {
     body.add(model);
     root.add(body);
     const dark = mat(1708040, { roughness: 0.75 });
-    const coatMat = mat(2758672, { roughness: 0.85 });
-    const denimMat = mat(2762808, { roughness: 0.9 });
+    const coatMat = mat(1971212, { roughness: 0.88 });
+    const denimMat = mat(1710102, { roughness: 0.92 });
     const rider = makeRider(dark, coatMat, denimMat);
     rider.position.set(0, TARGET_HEIGHT * 0.7, BIND_LENGTH * scale3 * 0.02);
     rider.scale.setScalar(0.95);
@@ -57806,8 +57900,10 @@ void main() {
       strip.show();
       strip.showCase();
       try {
-        g2.lighting?.setPhase?.(0.55);
-        g2.mission.timeOfDay = 0.55;
+        g2.lighting?.setPhase?.(0.36);
+        g2.mission.timeOfDay = 0.36;
+        g2.R?.setExposure?.(1.48);
+        if (g2.lighting?.hemi) g2.lighting.hemi.intensity = Math.max(g2.lighting.hemi.intensity, 0.85);
       } catch {
       }
     }
@@ -82388,14 +82484,16 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
         if (opts.car && (target2.onFoot || st4.mode === "chase" || st4.mode === "close")) {
           const c = opts.car;
           const dx2 = tmp2.x - c.x, dz2 = tmp2.z - c.z, d = Math.hypot(dx2, dz2);
-          const minD = target2.onFoot ? 2.9 : st4.mode === "close" ? 3.6 : 4.2;
-          const roof = c.y + (target2.onFoot ? 1.7 : (c.model?.dims?.height || 1.45) * 0.55 + 1.05);
-          if (d < minD) {
-            const k2 = (minD - d) / Math.max(d, 0.01);
-            tmp2.x += dx2 * k2;
-            tmp2.z += dz2 * k2;
+          if (d < 14) {
+            const minD = target2.onFoot ? 2.9 : st4.mode === "close" ? 3.6 : 4.2;
+            const roof = c.y + (target2.onFoot ? 1.7 : (c.model?.dims?.height || 1.45) * 0.55 + 1.05);
+            if (d < minD) {
+              const k2 = (minD - d) / Math.max(d, 0.01);
+              tmp2.x += dx2 * k2;
+              tmp2.z += dz2 * k2;
+            }
+            if (tmp2.y < roof) tmp2.y = roof;
           }
-          if (tmp2.y < roof) tmp2.y = roof;
         }
         const looking = Math.abs(dx) + Math.abs(dy) > 0 || st4.freeLook && st4.idle < 0.08;
         const k = opts.snap || looking ? 1 : 1 - Math.exp(-dt * (target2.onFoot ? 4.2 : 7 + spd * 4));
@@ -85274,7 +85372,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-c18f8e99b1e8", tipSha: false ? "" : "466da22", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-dd3b3a211eef", tipSha: false ? "" : "f7af177", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -85301,7 +85399,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "466da22" : "") || "";
+      const tip = g2.tipSha || (true ? "f7af177" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");
@@ -85532,7 +85630,19 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
       g.vehicleModel = car.model;
       if (g.player) g.player.car = car;
     };
-    g.character = createCharacter({ shirt: 2832970, pants: 4866104 });
+    g.character = createCharacter(g.redCounty ? {
+      look: "scout",
+      print: false,
+      radio: false,
+      camera: false,
+      shirt: 2758672,
+      pants: 1841172,
+      boots: 1708556,
+      cap: 657414,
+      hair: 1708044,
+      skin: 12886138,
+      height: 1.03
+    } : { shirt: 2832970, pants: 4866104 });
     scene.add(g.character.group);
     g.player = createPlayer(g.character);
     g.player.car = g.vehicle;
@@ -86523,6 +86633,10 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     g.garage?.reset();
     g.downtown?.cancel();
     audio.setMusic?.(g.redCounty ? "none" : "title");
+    try {
+      g.R?.setExposure?.(g.redCounty ? 1.42 : 1.22);
+    } catch {
+    }
     g.state = "title";
     g.hud.show(false);
     g.menus.hideAll();
@@ -87156,16 +87270,20 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
       if (g.redCounty) {
         const o = RC_ORIGIN;
         const ang = T2 * 0.11;
-        const r = 26 + Math.sin(T2 * 0.07) * 3;
+        const r = 18 + Math.sin(T2 * 0.07) * 2;
         const cx2 = o.x + Math.sin(ang) * r;
-        const cz2 = o.z - 2 + Math.cos(ang) * r * 0.85;
-        const cy2 = o.y + 7.5 + Math.sin(T2 * 0.14) * 1.1;
+        const cz2 = o.z + 4 + Math.cos(ang) * r * 0.75;
+        const cy2 = o.y + 6.2 + Math.sin(T2 * 0.14) * 0.9;
         g.cam.position.set(cx2, cy2, cz2);
-        g.cam.lookAt(o.x - 1, o.y + 2.8, o.z + 6);
-        g.cam.fov = 42;
+        g.cam.lookAt(o.x - 6, o.y + 2.4, o.z + 8);
+        g.cam.fov = 40;
         g.cam.updateProjectionMatrix();
         g.lighting.follow(o.x, o.y + 4, o.z + 8, 1, 0);
-        g.lighting.setPhase(0.52 + Math.sin(T2 * 0.06) * 0.06);
+        g.lighting.setPhase(0.28 + Math.sin(T2 * 0.05) * 0.04);
+        try {
+          g.R?.setExposure?.(1.55);
+        } catch {
+        }
         g.lightPool.update(cx2, cy2, cz2);
         try {
           g._rcTitleStrip?.updateBeacons?.(T2);
@@ -87275,7 +87393,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
         g.character.setVisible(false);
       } else {
         g.character.setVisible(!g.inCar);
-        g.camera.update(cameraDt, { x: cp.x, y: cp.y, z: cp.z, heading: cp.heading, speed: cp.speed, forward: [-Math.sin(cp.heading), -Math.cos(cp.heading)], onFoot: true }, look, { snap: g.cameraSnap, car: cv });
+        g.camera.update(cameraDt, { x: cp.x, y: cp.y, z: cp.z, heading: cp.heading, speed: cp.speed, forward: [-Math.sin(cp.heading), -Math.cos(cp.heading)], onFoot: true }, look, { snap: g.cameraSnap, car: g.softOpen?.active || g.redCounty ? null : cv });
         const d = new Vector3();
         g.cam.getWorldDirection(d);
         camYawAbs = Math.atan2(-d.x, -d.z);

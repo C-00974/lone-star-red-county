@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-dd3b3a211eef">
-<meta name="lsgh-tip" content="f7af177">
+<meta name="lsgh-build" content="0.35.0-next.0-0ba395ecd7d4">
+<meta name="lsgh-tip" content="12d9b89">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -250,6 +250,7 @@ kbd.k{font-family:var(--font-head);font-size:11px;border:1px solid rgba(255,255,
 @media (max-width:680px){#challenge{gap:10px;padding:8px 10px}#challenge .set{display:none}#challenge .m{min-width:60px}#challenge .t{min-width:72px;font-size:26px}#challenge .gate{min-width:70px;font-size:11px}}
 @media (max-width:820px){#minimap{width:150px;height:150px}#speedo .v{font-size:30px}#objective{max-width:60vw}}
 
+#conversation{z-index:90;pointer-events:auto}
 .conversation-panel{width:min(560px,90vw);min-width:0;border-top:4px solid #e9b86f}
 .conversation-place{font-size:14px;letter-spacing:.12em;color:#e9b86f;margin-bottom:12px;text-transform:uppercase}
 .panel.conversation-panel h2{font-size:26px;letter-spacing:.04em;text-transform:none}
@@ -421,7 +422,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip f7af177</div>
+    <div class="kicker">Soft Open · Quiet · tip 12d9b89</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -56176,6 +56177,19 @@ void main() {
     "wagon",
     "cactus"
   ];
+  var WESTERN_KEYS_PHONE = [
+    "farmhouse",
+    "hut",
+    "blacksmith",
+    "barn",
+    "mill",
+    "storage-shed",
+    "fence",
+    "crate",
+    "barrel",
+    "wagon",
+    "cactus"
+  ];
   var horseGltf = null;
   var stableGltf = null;
   var westernGltfs = /* @__PURE__ */ Object.create(null);
@@ -56185,21 +56199,35 @@ void main() {
       loader.load(url, resolve2, void 0, reject);
     });
   }
+  function isPhoneSoftOpen() {
+    try {
+      const q = new URLSearchParams(location.search);
+      if (q.get("phone") === "1" || q.get("touch") === "1") return true;
+    } catch {
+    }
+    const touch = (navigator.maxTouchPoints || 0) > 0 || "ontouchstart" in window;
+    const coarse = typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
+    return !!(touch && (coarse || Math.min(screen.width, screen.height) <= 920));
+  }
   function preloadSoftOpenAssets({ stable = true, western = true } = {}) {
     if (loadPromise) return loadPromise;
     const loader = new GLTFLoader();
     const jobs = [loadOne(loader, HORSE_URL).then((g2) => {
       horseGltf = g2;
     })];
-    if (stable) {
+    const phone = isPhoneSoftOpen();
+    if (stable && !phone) {
       jobs.push(loadOne(loader, STABLE_URL).then((g2) => {
         stableGltf = g2;
       }).catch(() => {
         stableGltf = null;
       }));
+    } else if (stable && phone) {
+      stableGltf = null;
     }
     if (western) {
-      for (const key2 of WESTERN_KEYS) {
+      const keys2 = phone ? WESTERN_KEYS_PHONE : WESTERN_KEYS;
+      for (const key2 of keys2) {
         const url = WESTERN_DIR + key2 + ".glb";
         jobs.push(
           loadOne(loader, url).then((g2) => {
@@ -57581,7 +57609,9 @@ void main() {
   var HITCH_MOUNT_R = 3.2;
   var HORSE_MOUNT_R = 2.8;
   function horseInputFromGame(input2) {
-    const forward = input2.moveY || 0 || (input2.throttle || 0) - (input2.brake || 0);
+    const stick = input2.moveY || 0;
+    const pedals = (input2.throttle || 0) - (input2.brake || 0);
+    const forward = Math.abs(stick) >= Math.abs(pedals) ? stick : pedals;
     const steer = input2.moveX || input2.steer || 0;
     const sprint = !!(input2.run || input2.handbrake);
     return { forward, steer, sprint };
@@ -57784,6 +57814,7 @@ void main() {
       g2.inMount = false;
       try {
         g2.touch?.setMode?.(false);
+        g2.syncTouchControls?.();
       } catch {
       }
     }
@@ -57892,6 +57923,10 @@ void main() {
         g2.camera.recenter();
         g2.cameraSnap = true;
         g2.touch?.setMode?.(true);
+        try {
+          g2.syncTouchControls?.();
+        } catch {
+        }
         g2.guide?.close?.(false);
         g2.scrapbook?.close?.();
       } catch {
@@ -57899,6 +57934,10 @@ void main() {
       hideGhWorld(true);
       strip.show();
       strip.showCase();
+      try {
+        g2.syncTouchControls?.();
+      } catch {
+      }
       try {
         g2.lighting?.setPhase?.(0.36);
         g2.mission.timeOfDay = 0.36;
@@ -58262,6 +58301,7 @@ void main() {
         g2.player.place(outX, outZ, horse.state.yaw, RC_ORIGIN.y);
         try {
           g2.touch?.setMode?.(false);
+          g2.syncTouchControls?.();
         } catch {
         }
         g2.camera.recenter();
@@ -58277,6 +58317,7 @@ void main() {
       g2.player.place(hx, hz, horse.state.yaw, RC_ORIGIN.y);
       try {
         g2.touch?.setMode?.(true);
+        g2.syncTouchControls?.();
       } catch {
       }
       g2.camera.recenter();
@@ -63204,12 +63245,19 @@ void main() {
     g2.menus.panels.conversation = panel2;
     let generation = 0;
     const buttons = () => Array.from(panel2.querySelectorAll("button"));
+    function syncTouch() {
+      try {
+        g2.syncTouchControls?.();
+      } catch {
+      }
+    }
     function close() {
       generation++;
       panel2.classList.add("hidden");
       clearInput();
       g2.look.dx = g2.look.dy = g2.look.wheel = 0;
       g2.requestLock?.();
+      syncTouch();
     }
     function focus(delta) {
       const all = buttons(), at5 = all.indexOf(document.activeElement);
@@ -63254,6 +63302,7 @@ void main() {
         }
         panel2.classList.remove("hidden");
         buttons()[0]?.focus();
+        syncTouch();
       },
       handleInput(input2) {
         if (input2.pause || input2.back) {
@@ -85372,7 +85421,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-dd3b3a211eef", tipSha: false ? "" : "f7af177", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-0ba395ecd7d4", tipSha: false ? "" : "12d9b89", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -85399,7 +85448,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "f7af177" : "") || "";
+      const tip = g2.tipSha || (true ? "12d9b89" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");
@@ -86288,13 +86337,14 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
       g.touch?.hide?.();
       return;
     }
-    const open = !!g.menus?.anyOpen?.() || !!g.photo?.active;
+    const open = !!g.menus?.anyOpen?.() || !!g.photo?.active || !!g.conversation?.active;
     const play = g.state === "play" && !g.paused && !open;
     if (play) {
-      g.touch.setMode?.(!!g.inCar);
+      g.touch.setMode?.(!!(g.inCar || g.softOpen?.mounted));
       g.touch.show();
     } else g.touch.hide();
   }
+  g.syncTouchControls = syncTouchControls;
   var PLAY_SESSION_KEY = "lsgh-next-play";
   function markPlaying(extra = {}) {
     try {

@@ -2,7 +2,7 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-60b3ac948ec4">
+<meta name="lsgh-build" content="0.35.0-next.0-15168fd09ea9">
 <meta name="lsgh-tip" content="a2fdd0d">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -56723,6 +56723,49 @@ void main() {
     group.add(disc3);
     return disc3;
   }
+  function placeApproachMud(group, kit, x, z, seed = 0) {
+    const h = gritHash(x * 1.09 + seed, z * 0.88);
+    const r = 1.1 + h * 0.9;
+    const color = h > 0.5 ? 6967352 : 5915696;
+    const base = kit.matWithRepeat?.(kit.dirt, { wu: r * 2.4, wv: r * 2.4, tile: 2.2, color }) || kit.solid(color, 0.95);
+    const mat3 = base.clone ? base.clone() : base;
+    mat3.transparent = true;
+    mat3.opacity = 0.82 + h * 0.1;
+    mat3.alphaMap = gritAoMap();
+    mat3.depthWrite = false;
+    if (mat3.color) mat3.color.setHex(color);
+    const disc3 = new Mesh(new PlaneGeometry(2, 2), mat3);
+    disc3.name = "approachMud";
+    disc3.rotation.x = -Math.PI / 2;
+    disc3.rotation.z = (h - 0.5) * 1.5;
+    disc3.scale.set(r * (0.9 + h * 0.4), r * (1.15 + (1 - h) * 0.45), 1);
+    disc3.position.set(x, 0.026 + h * 2e-3, z);
+    disc3.receiveShadow = true;
+    disc3.renderOrder = 1;
+    group.add(disc3);
+    return disc3;
+  }
+  function placeApproachRut(group, kit, x, z, seed = 0) {
+    const h = gritHash(x * 0.95 + seed, z * 1.12);
+    const len = 2.4 + h * 2.2;
+    const color = 3812898;
+    const mat3 = new MeshBasicMaterial({
+      map: gritAoMap(),
+      color,
+      transparent: true,
+      opacity: 0.55 + h * 0.15,
+      depthWrite: false
+    });
+    const disc3 = new Mesh(new PlaneGeometry(2, 2), mat3);
+    disc3.name = "approachRut";
+    disc3.rotation.x = -Math.PI / 2;
+    disc3.rotation.z = (h - 0.5) * 0.35 + (seed % 2 ? 0.08 : -0.06);
+    disc3.scale.set(0.22 + h * 0.12, len * 0.5, 1);
+    disc3.position.set(x, 0.022 + h * 2e-3, z);
+    disc3.renderOrder = 1;
+    group.add(disc3);
+    return disc3;
+  }
   function foamStain(group, x, z, r = 0.55) {
     const h = gritHash(x * 0.77, z * 1.31);
     const mat3 = new MeshBasicMaterial({
@@ -58500,6 +58543,43 @@ void main() {
       const [px2, pz2] = pebbleSites[i];
       const j = gritHash(px2 * 1.1, pz2);
       placeWashPebble(wash, kit, px2 + (j - 0.5) * 0.25, pz2 + (0.5 - j) * 0.2, i + 5);
+    }
+    const mudSites = [
+      [-11, 42.4],
+      [-5.5, 43],
+      [0.5, 42.6],
+      [6, 43.2],
+      [11.2, 42.8],
+      [-9, 44.5],
+      [-2.5, 45],
+      [4, 44.2],
+      [9.5, 45.2],
+      [-12.5, 45.8],
+      [-6.5, 46.2],
+      [1.5, 45.6],
+      [7.5, 46],
+      [12, 45.5]
+    ];
+    for (let i = 0; i < mudSites.length; i++) {
+      const [mx, mz] = mudSites[i];
+      placeApproachMud(wash, kit, mx, mz, i + 2);
+    }
+    const rutSites = [
+      [-8, 43.5],
+      [-3, 44],
+      [2, 43.2],
+      [7, 44.5],
+      [-10.5, 45],
+      [-1, 45.8],
+      [5, 45.4],
+      [10, 46],
+      [-5, 42.8],
+      [3.5, 42.5],
+      [8.5, 43.8]
+    ];
+    for (let i = 0; i < rutSites.length; i++) {
+      const [rx, rz] = rutSites[i];
+      placeApproachRut(wash, kit, rx, rz, i + 4);
     }
     const drop = new Group();
     drop.name = "drop";
@@ -87449,7 +87529,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-60b3ac948ec4", tipSha: false ? "" : "a2fdd0d", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-15168fd09ea9", tipSha: false ? "" : "a2fdd0d", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {

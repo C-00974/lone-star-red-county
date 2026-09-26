@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-4cd34c7a927b">
-<meta name="lsgh-tip" content="c78329f">
+<meta name="lsgh-build" content="0.35.0-next.0-0c1a5733f65e">
+<meta name="lsgh-tip" content="c1278f8">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -473,7 +473,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip c78329f</div>
+    <div class="kicker">Soft Open · Quiet · tip c1278f8</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -57576,9 +57576,18 @@ void main() {
     alleyWarm.position.set(alleyX, 1.7, alleyZ);
     local2.add(alleyWarm);
     const mouthX = -4.55;
-    local2.add(boxMesh(0.16, 2.4, 0.16, faceMat(kit, "wood", 0.16, 2.4, 1), mouthX, 1.2, alleyZ + 1.55));
-    local2.add(boxMesh(0.16, 2.4, 0.16, faceMat(kit, "wood", 0.16, 2.4, 1), mouthX, 1.2, alleyZ - 1.55));
-    local2.add(boxMesh(0.12, 0.12, 3.4, kit.bone, mouthX, 2.35, alleyZ));
+    const mouthPostH = 4.35;
+    const mouthBeamY = 4.18;
+    const mouthWood = faceMat(kit, "wood", 0.16, mouthPostH, 1);
+    const mouthPostA = boxMesh(0.16, mouthPostH, 0.16, mouthWood, mouthX, mouthPostH / 2, alleyZ + 1.55);
+    mouthPostA.name = "alleyMouthPost";
+    local2.add(mouthPostA);
+    const mouthPostB = boxMesh(0.16, mouthPostH, 0.16, mouthWood, mouthX, mouthPostH / 2, alleyZ - 1.55);
+    mouthPostB.name = "alleyMouthPost";
+    local2.add(mouthPostB);
+    const mouthBeam = boxMesh(0.12, 0.12, 3.4, kit.bone, mouthX, mouthBeamY, alleyZ);
+    mouthBeam.name = "alleyMouthBeam";
+    local2.add(mouthBeam);
     const placeProp = (key3, x, z, yaw, tw) => {
       const g2 = getWesternGltf(key3);
       if (g2) stampWesternProp(local2, g2, { name: key3, x, z, yaw, targetWidth: tw });
@@ -86859,7 +86868,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-4cd34c7a927b", tipSha: false ? "" : "c78329f", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-0c1a5733f65e", tipSha: false ? "" : "c1278f8", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -86886,7 +86895,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "c78329f" : "") || "";
+      const tip = g2.tipSha || (true ? "c1278f8" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");

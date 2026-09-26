@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-eb6954bbc5a1">
-<meta name="lsgh-tip" content="d2fbdb1">
+<meta name="lsgh-build" content="0.35.0-next.0-b5e05ae0102b">
+<meta name="lsgh-tip" content="6b538e6">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -518,7 +518,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip d2fbdb1</div>
+    <div class="kicker">Soft Open · Quiet · tip 6b538e6</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -56508,13 +56508,22 @@ void main() {
       creekMap: creek.map,
       barkMap: bark.map,
       gravelMap: gravel.map,
-      wood: new MeshStandardMaterial({ map: wood.map, roughness: 0.9, metalness: 0.02, color: 15786184 }),
+      // Soft Open Quiet tip 98 — porch wood dusk: tip 96 warmed adobe only;
+      // kit.wood stayed black-emissive so porch deck/posts crushed flat under ACES.
+      wood: new MeshStandardMaterial({
+        map: wood.map,
+        roughness: 0.88,
+        metalness: 0.02,
+        color: 15786184,
+        emissive: new Color(5912600),
+        emissiveIntensity: 0.1
+      }),
       siding: new MeshStandardMaterial({ map: siding.map, roughness: 0.92, metalness: 0.02, color: 16777215 }),
       dirt: new MeshStandardMaterial({ map: dirt.map, roughness: 0.98, metalness: 0, color: 16777215 }),
       street: new MeshStandardMaterial({ map: street.map, roughness: 1, metalness: 0, color: 16777215 }),
       // Soft Open Quiet tip 96 — adobe dusk wall read: white+map mats shipped black
       // emissive (ei unused) so street adobe crushed flat under Soft Open ACES dusk.
-      // WarmEi nudge (mesa/coat family, quieter) — falseFront/wood untouched.
+      // WarmEi nudge (mesa/coat family, quieter).
       adobe: new MeshStandardMaterial({
         map: adobe.map,
         roughness: 0.9,
@@ -56538,7 +56547,16 @@ void main() {
       rust: solid(10111012, 0.7, 0.15),
       blood: solid(12855336, 0.55, 0.05),
       rope: solid(9072720, 0.95),
-      falseFront: new MeshStandardMaterial({ map: siding.map, roughness: 0.92, metalness: 0.02, color: 9070656 }),
+      // Soft Open Quiet tip 98 — falseFront dusk: adobe warmEi left painted fronts
+      // flat (scout ffWarm 0 / eBright 0). Peer adobe family, slightly quieter.
+      falseFront: new MeshStandardMaterial({
+        map: siding.map,
+        roughness: 0.9,
+        metalness: 0.02,
+        color: 9070656,
+        emissive: new Color(6961684),
+        emissiveIntensity: 0.11
+      }),
       solid,
       matWithRepeat,
       westernSign
@@ -87680,7 +87698,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-eb6954bbc5a1", tipSha: false ? "" : "d2fbdb1", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-b5e05ae0102b", tipSha: false ? "" : "6b538e6", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -87707,7 +87725,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "d2fbdb1" : "") || "";
+      const tip = g2.tipSha || (true ? "6b538e6" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");

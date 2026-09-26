@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-66cc9687fec7">
-<meta name="lsgh-tip" content="28abfd9">
+<meta name="lsgh-build" content="0.35.0-next.0-bc609c4babcb">
+<meta name="lsgh-tip" content="06f8a0e">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -518,7 +518,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip 28abfd9</div>
+    <div class="kicker">Soft Open · Quiet · tip 06f8a0e</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -84951,7 +84951,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
         const ddx = tmp2.x - lx, ddy = tmp2.y - ly, ddz = tmp2.z - lz, len = Math.hypot(ddx, ddy, ddz) || 1;
         const t = raycast(lx, ly, lz, ddx / len, ddy / len, ddz / len, len, "bounds", CAMERA_BLOCKER);
         if (t < len) {
-          const floor = opts.softOpen ? target2.onFoot ? opts.softOpenAlley ? 4.2 : 3 : opts.softOpenAlley ? 5.1 : 4.2 : 0.6;
+          const floor = opts.softOpen ? target2.onFoot ? 6.2 : opts.softOpenAlley ? 6.5 : 6.2 : 0.6;
           const tt = Math.max(floor, t - 0.35);
           tmp2.set(lx + ddx / len * tt, ly + ddy / len * tt, lz + ddz / len * tt);
           if (opts.softOpen && !target2.onFoot && tt < len * 0.82) {
@@ -84964,7 +84964,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
             const ewHit2 = Math.abs(Math.sin(target2.heading));
             const oddHit2 = ewHit2 < 0.78 ? 1 - ewHit2 / 0.78 : 0;
             tmp2.y = Math.max(tmp2.y, target2.y + height + (0.35 - oddHit2 * 0.18));
-            const back = Math.max(tt, target2.onFoot ? 4.4 : 5);
+            const back = Math.max(tt, target2.onFoot ? 6 : 6.4);
             let px2 = target2.x + Math.sin(yaw) * back * Math.cos(pitch);
             let pz2 = target2.z + Math.cos(yaw) * back * Math.cos(pitch);
             if (px2 < target2.x + 0.85) px2 = target2.x + 0.85;
@@ -85001,6 +85001,21 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
             if (tmp2.y < roof) tmp2.y = roof;
           }
         }
+        if (opts.softOpen) {
+          const xzFloor = target2.onFoot ? 6.2 : opts.softOpenAlley ? 6.5 : 6.2;
+          const back = Math.sin(yaw) * (tmp2.x - target2.x) + Math.cos(yaw) * (tmp2.z - target2.z);
+          if (back > 0.2 && back < xzFloor) {
+            const add = xzFloor - back;
+            tmp2.x += Math.sin(yaw) * add;
+            tmp2.z += Math.cos(yaw) * add;
+          }
+          if (opts.softOpenAlley) {
+            const maxStreet = target2.onFoot ? 2.6 : 3.6;
+            if (tmp2.x > target2.x + maxStreet) {
+              tmp2.x = target2.x + maxStreet + (tmp2.x - target2.x - maxStreet) * 0.22;
+            }
+          }
+        }
         const looking = Math.abs(dx) + Math.abs(dy) > 0 || st4.freeLook && st4.idle < 0.08;
         const followRate = target2.onFoot ? opts.softOpen ? 9 : 4.2 : opts.softOpen ? 14 + clamp3(target2.speed, 0, 14) * 1.1 : 7 + spd * 4;
         const k = opts.snap || looking ? 1 : 1 - Math.exp(-dt * followRate);
@@ -85016,7 +85031,14 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
           tmp2.multiplyScalar(1 / sightLength);
           const nearRadius = camera.near * Math.hypot(1, Math.tan(Math.max(camera.fov, fovT) * Math.PI / 360) * Math.hypot(1, camera.aspect));
           const ceilingT = raycast(st4.look.x, st4.look.y, st4.look.z, tmp2.x, tmp2.y, tmp2.z, sightLength, "bounds", OVERHEAD_BLOCKER, nearRadius);
-          if (ceilingT < sightLength) st4.pos.copy(st4.look).addScaledVector(tmp2, Math.max(0, ceilingT - 0.35));
+          if (ceilingT < sightLength) {
+            let pull = Math.max(0, ceilingT - 0.35);
+            if (opts.softOpen) {
+              const sightFloor = target2.onFoot ? 6.2 : opts.softOpenAlley ? 6.5 : 6.2;
+              pull = Math.min(sightLength, Math.max(pull, Math.min(sightFloor, sightLength)));
+            }
+            st4.pos.copy(st4.look).addScaledVector(tmp2, pull);
+          }
         }
         camera.position.copy(st4.pos);
         if (st4.shake > 1e-3 && motion > 0) {
@@ -87925,7 +87947,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-66cc9687fec7", tipSha: false ? "" : "28abfd9", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-bc609c4babcb", tipSha: false ? "" : "06f8a0e", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -87952,7 +87974,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "28abfd9" : "") || "";
+      const tip = g2.tipSha || (true ? "06f8a0e" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");

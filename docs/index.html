@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-fef1d774c531">
-<meta name="lsgh-tip" content="a72ea67">
+<meta name="lsgh-build" content="0.35.0-next.0-902f2f3f2448">
+<meta name="lsgh-tip" content="f672a1f">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -518,7 +518,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip a72ea67</div>
+    <div class="kicker">Soft Open · Quiet · tip f672a1f</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -84774,14 +84774,19 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
           st4.freeLook = true;
         } else st4.idle += dt;
         const moving = target2.speed > 1.5;
-        if (!target2.onFoot && st4.idle > 1.2 && moving) {
-          const k2 = 1 - Math.exp(-dt * 1.8 * clamp3(target2.speed / 8, 0.3, 1));
+        if (!target2.onFoot && moving && st4.idle > (opts.softOpen ? 0.5 : 1.2)) {
+          const rate = opts.softOpen ? 4.2 * clamp3(target2.speed / 6, 0.45, 1) : 1.8 * clamp3(target2.speed / 8, 0.3, 1);
+          const k2 = 1 - Math.exp(-dt * rate);
           const pitchHome = opts.softOpen ? 0.1 : 0.16;
           st4.yaw = lerp2(st4.yaw, 0, k2);
           st4.pitch = lerp2(st4.pitch, pitchHome, k2);
-          if (Math.abs(st4.yaw) < 0.01) st4.freeLook = false;
+          if (opts.softOpen) {
+            if (Math.abs(st4.yaw) < 0.025 && Math.abs(st4.pitch - pitchHome) < 0.05) st4.freeLook = false;
+          } else if (Math.abs(st4.yaw) < 0.01) {
+            st4.freeLook = false;
+          }
         }
-        if (opts.softOpen && !target2.onFoot && st4.freeLook && st4.idle > 1 && !moving) {
+        if (opts.softOpen && !target2.onFoot && st4.freeLook && st4.idle > 0.4 && !moving) {
           const k2 = 1 - Math.exp(-dt * 5.5);
           const pitchHome = 0.12;
           st4.yaw = lerp2(st4.yaw, 0, k2);
@@ -87902,7 +87907,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-fef1d774c531", tipSha: false ? "" : "a72ea67", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-902f2f3f2448", tipSha: false ? "" : "f672a1f", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -87929,7 +87934,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "a72ea67" : "") || "";
+      const tip = g2.tipSha || (true ? "f672a1f" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");

@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-5efea87fc858">
-<meta name="lsgh-tip" content="0b8eeb8">
+<meta name="lsgh-build" content="0.35.0-next.0-8277b22ad843">
+<meta name="lsgh-tip" content="a715054">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -471,7 +471,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip 0b8eeb8</div>
+    <div class="kicker">Soft Open · Quiet · tip a715054</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -57006,6 +57006,81 @@ void main() {
     }
     return { w, h: h + ffH * 0.5, d, x, z };
   }
+  function dressRanchBase(group, kit, x, z, {
+    style = "tower"
+    // tower | mill | barn | shed | adobe
+  } = {}) {
+    const wood = faceMat(kit, "wood", 0.5, 0.5, 1.2);
+    const hay = kit.solid(10125384, 0.95);
+    const barrel = kit.solid(4861968, 0.85);
+    const fill2 = new PointLight(14190664, style === "barn" ? 0.95 : 0.72, style === "barn" ? 22 : 16, 1.65);
+    fill2.name = "ranchDuskFill";
+    fill2.position.set(x + 0.4, style === "tower" || style === "mill" ? 4.2 : 2.8, z + 1.8);
+    group.add(fill2);
+    const rim = new PointLight(16760976, 0.38, 11, 1.85);
+    rim.name = "ranchDuskRim";
+    rim.position.set(x - 2.2, 2.2, z - 1.4);
+    group.add(rim);
+    contactShadow(group, x, z, style === "barn" ? 6.2 : 3.4, 0.4);
+    contactShadow(group, x + 1.6, z + 1.3, 1.3, 0.36);
+    contactShadow(group, x - 1.5, z - 1.1, 1.15, 0.34);
+    const post = faceMat(kit, "wood", 0.14, 1.1, 1);
+    for (const [px2, pz2] of [[-2.1, -1.6], [2.2, -1.5], [-2, 1.8], [2.1, 1.7], [0, -2.2]]) {
+      group.add(boxMesh(0.12, 1.05, 0.12, post, x + px2, 0.52, z + pz2));
+      group.add(boxMesh(0.16, 0.08, 0.16, kit.bone, x + px2, 1.08, z + pz2));
+    }
+    if (style === "tower" || style === "mill") {
+      group.add(boxMesh(4.2, 0.07, 0.08, post, x, 0.85, z - 1.6));
+      group.add(boxMesh(4.2, 0.07, 0.08, post, x, 0.85, z + 1.7));
+    }
+    group.add(boxMesh(0.55, 0.45, 0.5, wood, x + 2, 0.28, z + 1.4));
+    group.add(boxMesh(0.45, 0.35, 0.4, wood, x + 2.15, 0.62, z + 1.35));
+    group.add(boxMesh(0.42, 0.5, 0.42, barrel, x - 2.1, 0.3, z + 1.2));
+    group.add(boxMesh(0.44, 0.05, 0.44, kit.bone, x - 2.1, 0.56, z + 1.2));
+    group.add(boxMesh(0.65, 0.38, 0.48, hay, x - 1.7, 0.22, z - 1.8));
+    group.add(boxMesh(0.55, 0.32, 0.42, hay, x - 1.55, 0.55, z - 1.75));
+    if (style === "tower") {
+      for (const [px2, pz2] of [[-0.85, -0.85], [0.85, -0.85], [-0.85, 0.85], [0.85, 0.85]]) {
+        group.add(boxMesh(0.45, 0.18, 0.45, kit.solid(5918784, 0.95), x + px2, 0.09, z + pz2));
+      }
+      const drum = new Mesh(new CylinderGeometry(0.45, 0.48, 0.9, 10), kit.solid(6977648, 0.5, 0.2));
+      drum.position.set(x + 2.6, 0.45, z - 0.6);
+      drum.castShadow = true;
+      group.add(drum);
+      contactShadow(group, x + 2.6, z - 0.6, 0.7, 0.4);
+    }
+    if (style === "mill") {
+      group.add(boxMesh(1.4, 0.35, 0.55, wood, x + 1.8, 0.2, z + 0.2));
+      group.add(boxMesh(1.2, 0.05, 0.4, kit.solid(3824216, 0.35, 0.15), x + 1.8, 0.38, z + 0.2));
+      contactShadow(group, x + 1.8, z + 0.2, 1.1, 0.4);
+    }
+    if (style === "barn") {
+      for (let i = 0; i < 5; i++) {
+        const px2 = x - 4 + i * 2;
+        group.add(boxMesh(0.14, 1.2, 0.14, post, px2, 0.6, z + 4));
+      }
+      group.add(boxMesh(8.2, 0.08, 0.1, post, x, 1.05, z + 4));
+      group.add(boxMesh(0.8, 0.45, 0.55, hay, x + 4.2, 0.25, z + 2.2));
+      group.add(boxMesh(0.7, 0.4, 0.5, hay, x + 4.35, 0.65, z + 2.15));
+      group.add(boxMesh(0.55, 0.5, 0.55, barrel, x - 4.5, 0.3, z + 2.5));
+      contactShadow(group, x + 4.2, z + 2.2, 1, 0.4);
+      contactShadow(group, x - 4.5, z + 2.5, 0.7, 0.4);
+    }
+    if (style === "shed" || style === "adobe") {
+      group.add(boxMesh(0.7, 0.5, 0.6, wood, x + 2.4, 0.3, z - 1.2));
+      group.add(boxMesh(0.5, 0.55, 0.5, barrel, x - 2.3, 0.32, z - 1.4));
+      contactShadow(group, x + 2.4, z - 1.2, 0.8, 0.4);
+      contactShadow(group, x - 2.3, z - 1.4, 0.65, 0.4);
+    }
+    const lantern = kit.solid(12875840, 0.4, 0.05);
+    lantern.emissive = new Color(10504216);
+    lantern.emissiveIntensity = 0.85;
+    group.add(boxMesh(0.12, 0.16, 0.12, lantern, x + 2.1, 1.35, z + 1.7));
+    const glow2 = new PointLight(16756832, 0.55, 8, 1.8);
+    glow2.name = "ranchLantern";
+    glow2.position.set(x + 2.1, 1.35, z + 1.7);
+    group.add(glow2);
+  }
   function placeWaterTower(group, kit, x, z) {
     const g2 = new Group();
     g2.name = "ranch-water-tower";
@@ -57022,6 +57097,8 @@ void main() {
       g2.add(boxMesh(0.08, 0.08, 1.9, post, 0.85, y2, 0));
     }
     g2.add(boxMesh(2.6, 0.14, 2.6, tin, 0, 6.25, 0));
+    tank.emissive = new Color(3819592);
+    tank.emissiveIntensity = 0.22;
     const cyl5 = new Mesh(new CylinderGeometry(1.15, 1.2, 1.7, 12), tank);
     cyl5.position.set(0, 7.2, 0);
     cyl5.castShadow = true;
@@ -57471,10 +57548,15 @@ void main() {
     farLandmarks.name = "farLandmarks";
     local2.add(farLandmarks);
     placeWaterTower(farLandmarks, kit, 16.5, 28);
+    dressRanchBase(farLandmarks, kit, 16.5, 28, { style: "tower" });
     placeWindmill(farLandmarks, kit, -16, 26);
+    dressRanchBase(farLandmarks, kit, -16, 26, { style: "mill" });
     placeRanchBarn(farLandmarks, kit, 14.5, -24, -0.35);
+    dressRanchBase(farLandmarks, kit, 14.5, -24, { style: "barn" });
     placeAdobeOutbuilding(farLandmarks, kit, -15.5, -22, 0.45);
+    dressRanchBase(farLandmarks, kit, -15.5, -22, { style: "adobe" });
     placeTankShed(farLandmarks, kit, 17.5, 12);
+    dressRanchBase(farLandmarks, kit, 17.5, 12, { style: "shed" });
     buildings.push(
       { w: 3.2, h: 8.5, d: 3.2, x: 16.5, z: 28 },
       { w: 2.4, h: 8.5, d: 2.4, x: -16, z: 26 },
@@ -86734,7 +86816,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-5efea87fc858", tipSha: false ? "" : "0b8eeb8", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-8277b22ad843", tipSha: false ? "" : "a715054", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -86761,7 +86843,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "0b8eeb8" : "") || "";
+      const tip = g2.tipSha || (true ? "a715054" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");

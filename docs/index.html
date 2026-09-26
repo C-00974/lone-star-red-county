@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-96b8c7fba554">
-<meta name="lsgh-tip" content="fce40e3">
+<meta name="lsgh-build" content="0.35.0-next.0-7740a50b0119">
+<meta name="lsgh-tip" content="dd02196">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -518,7 +518,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip fce40e3</div>
+    <div class="kicker">Soft Open · Quiet · tip dd02196</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -58351,6 +58351,22 @@ void main() {
         if (z % 8 === 0) local2.add(boxMesh(0.05, 0.05, 3.6, faceMat(kit, "wood", 0.05, 3.6, 2), x, 0.82, z + 1.8));
       }
     }
+    const streetDressSolid = (color, rough = 0.95, metal) => {
+      const m = metal != null ? kit.solid(color, rough, metal) : kit.solid(color, rough);
+      const hayish = color === 10125384 || color === 9072704 || color === 10520656;
+      const cool = color === 3824216;
+      if (cool) {
+        m.emissive = new Color(1716272);
+        m.emissiveIntensity = 0.06;
+      } else if (hayish) {
+        m.emissive = new Color(5914648);
+        m.emissiveIntensity = 0.07;
+      } else {
+        m.emissive = new Color(3809296);
+        m.emissiveIntensity = 0.07;
+      }
+      return m;
+    };
     const streetDress = new Group();
     streetDress.name = "streetDress";
     local2.add(streetDress);
@@ -58374,10 +58390,10 @@ void main() {
       contactShadow(streetDress, wx + 2.45, wz - 0.2, 0.58, 0.46);
       contactShadow(streetDress, wx - 0.9, wz + 2.35, 0.55, 0.44);
       contactShadow(streetDress, wx + 0.6, wz + 2.5, 0.55, 0.44);
-      streetDress.add(boxMesh(0.7, 0.42, 0.5, kit.solid(10125384, 0.95), wx - 1.7, 0.22, wz + 1.35));
-      streetDress.add(boxMesh(0.65, 0.38, 0.48, kit.solid(9072704, 0.95), wx - 1.55, 0.58, wz + 1.4));
-      streetDress.add(boxMesh(0.55, 0.35, 0.42, kit.solid(10520656, 0.95), wx + 2.1, 0.2, wz - 1.1));
-      const sack2 = new Mesh(new SphereGeometry(0.28, 10, 8), kit.solid(9072704, 0.95));
+      streetDress.add(boxMesh(0.7, 0.42, 0.5, streetDressSolid(10125384, 0.95), wx - 1.7, 0.22, wz + 1.35));
+      streetDress.add(boxMesh(0.65, 0.38, 0.48, streetDressSolid(9072704, 0.95), wx - 1.55, 0.58, wz + 1.4));
+      streetDress.add(boxMesh(0.55, 0.35, 0.42, streetDressSolid(10520656, 0.95), wx + 2.1, 0.2, wz - 1.1));
+      const sack2 = new Mesh(new SphereGeometry(0.28, 10, 8), streetDressSolid(9072704, 0.95));
       sack2.position.set(wx + 1.55, 0.28, wz + 1.5);
       sack2.scale.set(1.2, 0.75, 1);
       sack2.castShadow = true;
@@ -58400,7 +58416,7 @@ void main() {
       }
       streetDress.add(boxMesh(0.7, 0.55, 0.65, faceMat(kit, "wood", 0.7, 0.65, 1.2), wx + 2, 0.3, wz + 1.2));
       streetDress.add(boxMesh(0.55, 0.4, 0.5, faceMat(kit, "wood", 0.55, 0.5, 1.1), wx + 2.15, 0.75, wz + 1.15));
-      streetDress.add(boxMesh(0.48, 0.42, 0.48, kit.solid(4861968, 0.85), wx - 0.4, 0.24, wz + 2.1));
+      streetDress.add(boxMesh(0.48, 0.42, 0.48, streetDressSolid(4861968, 0.85), wx - 0.4, 0.24, wz + 2.1));
       streetDress.add(boxMesh(0.5, 0.05, 0.5, kit.bone, wx - 0.4, 0.48, wz + 2.1));
       const crateG = getWesternGltf("crate");
       if (crateG) {
@@ -58429,9 +58445,9 @@ void main() {
       contactShadow(streetDress, sx + 1.1, sz - 0.9, 0.58, 0.44);
       streetDress.add(boxMesh(0.75, 0.55, 0.7, faceMat(kit, "wood", 0.75, 0.7, 1.2), sx, 0.3, sz));
       streetDress.add(boxMesh(0.6, 0.45, 0.55, faceMat(kit, "wood", 0.6, 0.55, 1.1), sx + 0.15, 0.75, sz - 0.1));
-      streetDress.add(boxMesh(0.5, 0.55, 0.5, kit.solid(4861968, 0.85), sx - 0.85, 0.3, sz + 0.6));
+      streetDress.add(boxMesh(0.5, 0.55, 0.5, streetDressSolid(4861968, 0.85), sx - 0.85, 0.3, sz + 0.6));
       streetDress.add(boxMesh(0.52, 0.05, 0.52, kit.bone, sx - 0.85, 0.58, sz + 0.6));
-      streetDress.add(boxMesh(0.55, 0.35, 0.4, kit.solid(10125384, 0.95), sx + 0.9, 0.2, sz + 0.8));
+      streetDress.add(boxMesh(0.55, 0.35, 0.4, streetDressSolid(10125384, 0.95), sx + 0.9, 0.2, sz + 0.8));
       const crateG = getWesternGltf("crate");
       if (crateG) stampWesternProp(streetDress, crateG, { name: "streetCrate", x: sx - 0.2, z: sz + 1.3, yaw: 0.3, targetWidth: 0.8 });
       const barrelG = getWesternGltf("barrel");
@@ -58440,7 +58456,7 @@ void main() {
     {
       for (const [px2, pz2] of [[-5.5, 4], [-5.3, 16], [-5.6, 28], [5.5, 6], [5.35, 32]]) {
         contactShadow(streetDress, px2, pz2, 1.1, 0.3);
-        streetDress.add(boxMesh(0.45, 0.5, 0.45, kit.solid(4861968, 0.85), px2, 0.28, pz2));
+        streetDress.add(boxMesh(0.45, 0.5, 0.45, streetDressSolid(4861968, 0.85), px2, 0.28, pz2));
         streetDress.add(boxMesh(0.47, 0.05, 0.47, kit.bone, px2, 0.55, pz2));
       }
       const crateG = getWesternGltf("crate");
@@ -58488,9 +58504,9 @@ void main() {
       troughWater.position.set(tx, 0.46, tz);
       streetDress.add(troughWater);
       contactShadow(streetDress, tx, tz, 2, 0.4);
-      streetDress.add(boxMesh(0.3, 0.34, 0.3, kit.solid(3814440, 0.85), tx + 1.35, 0.2, tz + 0.55));
-      streetDress.add(boxMesh(0.24, 0.04, 0.24, kit.solid(3824216, 0.35, 0.15), tx + 1.35, 0.38, tz + 0.55));
-      streetDress.add(boxMesh(0.5, 0.32, 0.38, kit.solid(10125384, 0.95), tx - 1.4, 0.18, tz + 0.5));
+      streetDress.add(boxMesh(0.3, 0.34, 0.3, streetDressSolid(3814440, 0.85), tx + 1.35, 0.2, tz + 0.55));
+      streetDress.add(boxMesh(0.24, 0.04, 0.24, streetDressSolid(3824216, 0.35, 0.15), tx + 1.35, 0.38, tz + 0.55));
+      streetDress.add(boxMesh(0.5, 0.32, 0.38, streetDressSolid(10125384, 0.95), tx - 1.4, 0.18, tz + 0.5));
       streetDress.add(boxMesh(0.12, 0.55, 0.12, faceMat(kit, "wood", 0.12, 0.55, 1), tx - 1.15, 0.35, tz - 0.45));
       contactShadow(streetDress, tx + 1.35, tz + 0.55, 0.4, 0.4);
       contactShadow(streetDress, tx - 1.4, tz + 0.5, 0.55, 0.42);
@@ -87826,7 +87842,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-96b8c7fba554", tipSha: false ? "" : "fce40e3", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-7740a50b0119", tipSha: false ? "" : "dd02196", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -87853,7 +87869,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "fce40e3" : "") || "";
+      const tip = g2.tipSha || (true ? "dd02196" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");

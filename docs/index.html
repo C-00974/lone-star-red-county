@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-e171a2730656">
-<meta name="lsgh-tip" content="f544d08">
+<meta name="lsgh-build" content="0.35.0-next.0-4cd34c7a927b">
+<meta name="lsgh-tip" content="c78329f">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -473,7 +473,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip f544d08</div>
+    <div class="kicker">Soft Open · Quiet · tip c78329f</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -56965,7 +56965,9 @@ void main() {
     }
     if (brickAccent) {
       const bm = faceMat(kit, "brick", 0.5, h * 0.6, 1.2);
-      group.add(boxMesh(0.45, h * 0.55, 0.45, bm, x + w * 0.42, h * 0.35, z - d * 0.35));
+      const pier = boxMesh(0.45, h * 0.55, 0.45, bm, x + w * 0.42, h * 0.35, frontZ - 0.15);
+      pier.name = "brickAccentPier";
+      group.add(pier);
     }
     if (porch) {
       const porchZ = frontZ + 1.25;
@@ -57566,16 +57568,17 @@ void main() {
       { w: 5.5, h: 3.2, d: 4.2, x: -15.5, z: -22 },
       { w: 5.5, h: 3, d: 4, x: 17.5, z: 12 }
     );
-    const alleyZ = 2.2, alleyX = -7;
+    const alleyZ = 2.2, alleyX = -6.2;
     const alleyFill = new PointLight(12875840, 0.75, 16, 1.8);
-    alleyFill.position.set(-5, 2.4, alleyZ);
+    alleyFill.position.set(-4.2, 2.4, alleyZ);
     local2.add(alleyFill);
     const alleyWarm = new PointLight(10504232, 0.4, 11, 2);
     alleyWarm.position.set(alleyX, 1.7, alleyZ);
     local2.add(alleyWarm);
-    local2.add(boxMesh(0.16, 2.4, 0.16, faceMat(kit, "wood", 0.16, 2.4, 1), -5.3, 1.2, alleyZ + 1.5));
-    local2.add(boxMesh(0.16, 2.4, 0.16, faceMat(kit, "wood", 0.16, 2.4, 1), -5.3, 1.2, alleyZ - 1.5));
-    local2.add(boxMesh(0.12, 0.12, 3.2, kit.bone, -5.3, 2.35, alleyZ));
+    const mouthX = -4.55;
+    local2.add(boxMesh(0.16, 2.4, 0.16, faceMat(kit, "wood", 0.16, 2.4, 1), mouthX, 1.2, alleyZ + 1.55));
+    local2.add(boxMesh(0.16, 2.4, 0.16, faceMat(kit, "wood", 0.16, 2.4, 1), mouthX, 1.2, alleyZ - 1.55));
+    local2.add(boxMesh(0.12, 0.12, 3.4, kit.bone, mouthX, 2.35, alleyZ));
     const placeProp = (key3, x, z, yaw, tw) => {
       const g2 = getWesternGltf(key3);
       if (g2) stampWesternProp(local2, g2, { name: key3, x, z, yaw, targetWidth: tw });
@@ -83851,6 +83854,15 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
             lookH = 1.25;
             fovT = 58 + spd * 6 * motion;
           }
+          if (opts.softOpenAlley) {
+            if (target2.onFoot) {
+              dist = Math.max(dist, 5.6);
+              height += 0.12;
+            } else {
+              dist = Math.max(dist, 6.8);
+              height += 0.22;
+            }
+          }
         }
         const dims = opts.car?.model?.dims;
         const tall = Math.max(0, (dims?.height || 1.5) - 1.5);
@@ -83862,8 +83874,12 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
           lookH += tall * (close ? 0.6 : 0.55);
         }
         const pitch = st4.pitch;
-        const bx2 = target2.x + Math.sin(yaw) * dist * Math.cos(pitch), bz2 = target2.z + Math.cos(yaw) * dist * Math.cos(pitch);
+        let bx2 = target2.x + Math.sin(yaw) * dist * Math.cos(pitch), bz2 = target2.z + Math.cos(yaw) * dist * Math.cos(pitch);
         let by2 = target2.y + height + Math.sin(pitch) * dist;
+        if (opts.softOpenAlley) {
+          const preferX = target2.x + (target2.onFoot ? 1.25 : 1.7);
+          bx2 += (preferX - bx2) * 0.28;
+        }
         if (cabin2) {
           const body = opts.car.model.body || opts.car.group;
           body.updateWorldMatrix(true, false);
@@ -83916,8 +83932,14 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
           const tt = Math.max(floor, t - 0.35);
           tmp2.set(lx + ddx / len * tt, ly + ddy / len * tt, lz + ddz / len * tt);
           if (opts.softOpen && !target2.onFoot && tt < len * 0.82) {
-            tmp2.y = Math.max(tmp2.y, target2.y + height + 0.45);
+            tmp2.y = Math.max(tmp2.y, target2.y + height + (opts.softOpenAlley ? 0.55 : 0.45));
           }
+          if (opts.softOpenAlley && tt < len * 0.88) {
+            tmp2.y = Math.max(tmp2.y, target2.y + height + 0.35);
+          }
+        }
+        if (opts.softOpenAlley) {
+          tmp2.x = Math.max(tmp2.x, target2.x + (target2.onFoot ? 0.55 : 0.85));
         }
         if (opts.car && (target2.onFoot || st4.mode === "chase" || st4.mode === "close")) {
           const c = opts.car;
@@ -86837,7 +86859,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-e171a2730656", tipSha: false ? "" : "f544d08", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-4cd34c7a927b", tipSha: false ? "" : "c78329f", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -86864,7 +86886,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "f544d08" : "") || "";
+      const tip = g2.tipSha || (true ? "c78329f" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");
@@ -88858,6 +88880,8 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
         if (ht) {
           if (g.camera.state.mode === "hood" || g.camera.state.mode === "cockpit") g.camera.setMode("close");
           g.character.setVisible(false);
+          const alley = g.softOpen.strip?.points?.alleyCase;
+          const softOpenAlley = !!(alley && Math.hypot(ht.x - alley.x, ht.z - alley.z) < 14);
           g.camera.update(cameraDt, {
             x: ht.x,
             y: ht.y,
@@ -88874,6 +88898,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
           }, look, {
             snap: g.cameraSnap,
             softOpen: true,
+            softOpenAlley,
             car: { x: ht.x, y: ht.y, z: ht.z, model: { dims: { height: 2.05, length: 2.4, width: 0.7 } } }
           });
         }
@@ -88897,7 +88922,11 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
         g.character.setVisible(false);
       } else {
         g.character.setVisible(!g.inCar);
-        g.camera.update(cameraDt, { x: cp.x, y: cp.y, z: cp.z, heading: cp.heading, speed: cp.speed, forward: [-Math.sin(cp.heading), -Math.cos(cp.heading)], onFoot: true }, look, { snap: g.cameraSnap, softOpen: !!g.softOpen?.active, car: g.softOpen?.active || g.redCounty ? null : cv });
+        {
+          const alley = g.softOpen?.active ? g.softOpen.strip?.points?.alleyCase : null;
+          const softOpenAlley = !!(alley && Math.hypot(cp.x - alley.x, cp.z - alley.z) < 14);
+          g.camera.update(cameraDt, { x: cp.x, y: cp.y, z: cp.z, heading: cp.heading, speed: cp.speed, forward: [-Math.sin(cp.heading), -Math.cos(cp.heading)], onFoot: true }, look, { snap: g.cameraSnap, softOpen: !!g.softOpen?.active, softOpenAlley, car: g.softOpen?.active || g.redCounty ? null : cv });
+        }
         const d = new Vector3();
         g.cam.getWorldDirection(d);
         camYawAbs = Math.atan2(-d.x, -d.z);

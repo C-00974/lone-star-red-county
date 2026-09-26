@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-aea67a22f81a">
-<meta name="lsgh-tip" content="d6f4cc9">
+<meta name="lsgh-build" content="0.35.0-next.0-118f6d6e99a1">
+<meta name="lsgh-tip" content="b96c843">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -518,7 +518,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip d6f4cc9</div>
+    <div class="kicker">Soft Open · Quiet · tip b96c843</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -57766,6 +57766,16 @@ void main() {
     contactShadow(group, x, z, 2.2, 0.38);
     return g2;
   }
+  function ranchDarkWarm(kit, rough = 0.45) {
+    if (!kit._ranchDarkWarm) kit._ranchDarkWarm = /* @__PURE__ */ new Map();
+    const key2 = String(rough);
+    if (kit._ranchDarkWarm.has(key2)) return kit._ranchDarkWarm.get(key2);
+    const m = kit.solid(1708040, rough);
+    m.emissive = new Color(2758672);
+    m.emissiveIntensity = 0.06;
+    kit._ranchDarkWarm.set(key2, m);
+    return m;
+  }
   function placeRanchBarn(group, kit, x, z, yaw = 0) {
     const g2 = new Group();
     g2.name = "ranch-barn";
@@ -57777,9 +57787,9 @@ void main() {
     g2.add(boxMesh(11, 0.9, 0.35, tin, 0, 4.4, 0));
     g2.add(boxMesh(0.12, 2.8, 2.6, wood, 0, 1.5, 3.2));
     g2.add(boxMesh(0.08, 2.8, 0.12, kit.bone, 0, 1.5, 3.28));
-    g2.add(boxMesh(0.1, 0.7, 1.1, kit.solid(1708040, 0.5), 0, 3.2, 3.15));
+    g2.add(boxMesh(0.1, 0.7, 1.1, ranchDarkWarm(kit, 0.5), 0, 3.2, 3.15));
     for (const sx of [-3.8, 3.8]) {
-      g2.add(boxMesh(0.08, 0.9, 0.7, kit.solid(1708040, 0.45), sx, 2, 3.15));
+      g2.add(boxMesh(0.08, 0.9, 0.7, ranchDarkWarm(kit, 0.45), sx, 2, 3.15));
     }
     g2.position.set(x, 0, z);
     g2.rotation.y = yaw;
@@ -57817,8 +57827,8 @@ void main() {
     g2.add(boxMesh(5.5, 2.9, 4.2, adobe, 0, 1.45, 0));
     g2.add(boxMesh(5.9, 0.22, 4.6, tin, 0, 3, 0));
     g2.add(boxMesh(0.1, 1.9, 1.1, faceMat(kit, "wood", 0.1, 1.9, 1), 0, 1.05, 2.2));
-    g2.add(boxMesh(0.08, 0.7, 0.6, kit.solid(1708040, 0.4), -1.6, 1.7, 2.15));
-    g2.add(boxMesh(0.08, 0.7, 0.6, kit.solid(1708040, 0.4), 1.6, 1.7, 2.15));
+    g2.add(boxMesh(0.08, 0.7, 0.6, ranchDarkWarm(kit, 0.4), -1.6, 1.7, 2.15));
+    g2.add(boxMesh(0.08, 0.7, 0.6, ranchDarkWarm(kit, 0.4), 1.6, 1.7, 2.15));
     g2.position.set(x, 0, z);
     g2.rotation.y = yaw;
     group.add(g2);
@@ -87884,7 +87894,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-aea67a22f81a", tipSha: false ? "" : "d6f4cc9", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-118f6d6e99a1", tipSha: false ? "" : "b96c843", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -87911,7 +87921,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "d6f4cc9" : "") || "";
+      const tip = g2.tipSha || (true ? "b96c843" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");

@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-7740a50b0119">
-<meta name="lsgh-tip" content="dd02196">
+<meta name="lsgh-build" content="0.35.0-next.0-8143f9361f11">
+<meta name="lsgh-tip" content="8bcce33">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -518,7 +518,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip dd02196</div>
+    <div class="kicker">Soft Open · Quiet · tip 8bcce33</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -58275,6 +58275,25 @@ void main() {
     caseBeacon.name = "caseBeacon";
     caseBeacon.position.set(alleyX + 0.55, 0, alleyZ + 0.55);
     local2.add(caseBeacon);
+    const hitchSolid = (color, rough = 0.95, metal) => {
+      const m = metal != null ? kit.solid(color, rough, metal) : kit.solid(color, rough);
+      const hayish = color === 10125384 || color === 9072704 || color === 10520656;
+      const cool = color === 3824216;
+      if (cool) {
+        m.emissive = new Color(1716272);
+        m.emissiveIntensity = 0.06;
+      } else if (hayish) {
+        m.emissive = new Color(5914648);
+        m.emissiveIntensity = 0.07;
+      } else {
+        m.emissive = new Color(3809296);
+        m.emissiveIntensity = 0.07;
+      }
+      return m;
+    };
+    const hitchRopeMat = kit.rope.clone();
+    hitchRopeMat.emissive = new Color(3811352);
+    hitchRopeMat.emissiveIntensity = 0.06;
     const hitch = new Group();
     hitch.name = "hitch";
     hitch.position.set(-4.4, 0, -2);
@@ -58292,9 +58311,9 @@ void main() {
     hitch.add(boxMesh(1.55, 0.07, 0.07, faceMat(kit, "wood", 1.55, 0.07, 1), 0.55, 0.78, -0.04));
     hitch.children[hitch.children.length - 1].rotation.z = -0.55;
     hitch.add(boxMesh(2.95, 0.05, 0.55, hitchPlank, 0, 0.03, 0));
-    hitchRope(hitch, -1.3, HITCH_RAIL_Y - 0.04, 0.03, 0, HITCH_RAIL_Y - 0.12, 0.05, kit.rope);
-    hitchRope(hitch, 0, HITCH_RAIL_Y - 0.12, 0.05, 1.3, HITCH_RAIL_Y - 0.04, 0.03, kit.rope);
-    hitchRope(hitch, -1.3, HITCH_RAIL_Y - 0.14, -0.04, 1.3, HITCH_RAIL_Y - 0.14, -0.04, kit.rope);
+    hitchRope(hitch, -1.3, HITCH_RAIL_Y - 0.04, 0.03, 0, HITCH_RAIL_Y - 0.12, 0.05, hitchRopeMat);
+    hitchRope(hitch, 0, HITCH_RAIL_Y - 0.12, 0.05, 1.3, HITCH_RAIL_Y - 0.04, 0.03, hitchRopeMat);
+    hitchRope(hitch, -1.3, HITCH_RAIL_Y - 0.14, -0.04, 1.3, HITCH_RAIL_Y - 0.14, -0.04, hitchRopeMat);
     for (const rx of [-1.35, 0, 1.35]) {
       hitch.add(boxMesh(0.08, 0.08, 0.08, kit.bone, rx, HITCH_RAIL_Y - 0.06, 0.12));
     }
@@ -58314,9 +58333,9 @@ void main() {
       hitch.add(plaque);
     }
     {
-      const hang = boxMesh(0.04, 0.22, 0.04, kit.solid(1708560, 0.9), -1.35, HITCH_RAIL_Y + 0.32, 0.18);
+      const hang = boxMesh(0.04, 0.22, 0.04, hitchSolid(1708560, 0.9), -1.35, HITCH_RAIL_Y + 0.32, 0.18);
       hitch.add(hang);
-      const lantern2 = boxMesh(0.14, 0.18, 0.14, kit.solid(12875840, 0.4, 0.05), -1.35, HITCH_RAIL_Y + 0.12, 0.18);
+      const lantern2 = boxMesh(0.14, 0.18, 0.14, hitchSolid(12875840, 0.4, 0.05), -1.35, HITCH_RAIL_Y + 0.12, 0.18);
       lantern2.material = lantern2.material.clone();
       lantern2.material.emissive = new Color(10504216);
       lantern2.material.emissiveIntensity = 0.95;
@@ -58325,22 +58344,22 @@ void main() {
       glow2.position.set(-1.35, HITCH_RAIL_Y + 0.12, 0.25);
       hitch.add(glow2);
     }
-    const feed = new Mesh(new SphereGeometry(0.26, 10, 8), kit.solid(9072704, 0.95));
+    const feed = new Mesh(new SphereGeometry(0.26, 10, 8), hitchSolid(9072704, 0.95));
     feed.position.set(0.15, 0.26, -0.55);
     feed.scale.set(1.15, 0.7, 0.95);
     feed.castShadow = true;
     hitch.add(feed);
     hitch.add(boxMesh(0.55, 0.32, 0.38, faceMat(kit, "wood", 0.55, 0.32, 1.2), 1.05, 0.18, -0.55));
-    hitch.add(boxMesh(0.48, 0.28, 0.34, kit.solid(10125384, 0.95), 1.05, 0.48, -0.55));
+    hitch.add(boxMesh(0.48, 0.28, 0.34, hitchSolid(10125384, 0.95), 1.05, 0.48, -0.55));
     for (const [cy, cr] of [[0.08, 0.22], [0.14, 0.18], [0.2, 0.14]]) {
-      const coil = new Mesh(new TorusGeometry(cr, 0.035, 6, 14), kit.rope);
+      const coil = new Mesh(new TorusGeometry(cr, 0.035, 6, 14), hitchRopeMat);
       coil.rotation.x = Math.PI / 2;
       coil.position.set(-0.95, cy, -0.55);
       coil.castShadow = true;
       hitch.add(coil);
     }
-    hitch.add(boxMesh(0.28, 0.32, 0.28, kit.solid(3814440, 0.85), 1.55, 0.18, 0.35));
-    hitch.add(boxMesh(0.22, 0.04, 0.22, kit.solid(3824216, 0.35, 0.15), 1.55, 0.34, 0.35));
+    hitch.add(boxMesh(0.28, 0.32, 0.28, hitchSolid(3814440, 0.85), 1.55, 0.18, 0.35));
+    hitch.add(boxMesh(0.22, 0.04, 0.22, hitchSolid(3824216, 0.35, 0.15), 1.55, 0.34, 0.35));
     local2.add(hitch);
     contactShadow(local2, -4.4, -2, 2.8, 0.5);
     contactShadow(local2, -3.2, -2.6, 1.2, 0.38);
@@ -87842,7 +87861,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-7740a50b0119", tipSha: false ? "" : "dd02196", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-8143f9361f11", tipSha: false ? "" : "8bcce33", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -87869,7 +87888,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "dd02196" : "") || "";
+      const tip = g2.tipSha || (true ? "8bcce33" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");

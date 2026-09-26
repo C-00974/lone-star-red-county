@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-8277b22ad843">
-<meta name="lsgh-tip" content="a715054">
+<meta name="lsgh-build" content="0.35.0-next.0-e171a2730656">
+<meta name="lsgh-tip" content="f544d08">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -112,6 +112,8 @@ html.red-county #banner .sm,html.rc-heist #banner .sm{letter-spacing:.28em;opaci
 
 /* Soft Open Quiet — slim live HUD (Chris play: too much chrome over the strip) */
 html.rc-heist #controls{display:none!important}
+/* Soft Open Quiet — GPS route card drowned hitch postcard (redundant with crew-hud) */
+html.rc-heist #gps{display:none!important}
 html.rc-heist #minimap{width:148px;height:148px;opacity:.84;bottom:18px;left:18px;border-width:1px}
 html.rc-heist #minimap .n{font-size:9px;top:4px}
 html.rc-heist #speedo .rpm,
@@ -471,7 +473,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip a715054</div>
+    <div class="kicker">Soft Open · Quiet · tip f544d08</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -58713,7 +58715,7 @@ void main() {
     function currentGuideTarget() {
       if (!active || !strip || endingOpen || state.stage === "complete") return null;
       const hitch = strip.points.hitch, alley = strip.points.alleyCase, drop = strip.points.drop;
-      if (standby && !windowOpen) return { id: "soft-open-hitch", name: "Hitch \xB7 stand by", point: hitch, color: 15258792 };
+      if (standby && !windowOpen) return { id: "soft-open-hitch", name: "Hitch \xB7 stand by", point: hitch, color: 11028527 };
       if (windowOpen && !state.hasCase && !state.botched) return { id: "soft-open-alley", name: "Alley \xB7 behind the saloon", point: alley, color: 12860459 };
       if (state.hasCase || state.botched || state.stage === "escape") {
         return { id: "soft-open-drop", name: "Creek soft wash", point: drop, color: state.hasCase ? 7208872 : 16747883 };
@@ -58724,57 +58726,71 @@ void main() {
       if (guideArrow) return guideArrow;
       const root = new Group();
       root.name = "soft-open-guide-arrow";
-      const mat3 = new MeshStandardMaterial({
-        color: 12860459,
-        emissive: 9052176,
-        emissiveIntensity: 0.85,
-        roughness: 0.55,
-        metalness: 0.1
+      const postMat = new MeshStandardMaterial({
+        color: 1708560,
+        roughness: 0.92,
+        metalness: 0.05
       });
-      const post = new Mesh(new BoxGeometry(0.12, 2.2, 0.12), mat3);
-      post.position.y = 1.1;
+      const tipMat = new MeshStandardMaterial({
+        color: 11018264,
+        emissive: 6952976,
+        emissiveIntensity: 0.55,
+        roughness: 0.55,
+        metalness: 0.12
+      });
+      const post = new Mesh(new BoxGeometry(0.11, 1.85, 0.11), postMat);
+      post.name = "guidePost";
+      post.position.y = 0.92;
       post.castShadow = true;
       root.add(post);
-      const head = new Mesh(new ConeGeometry(0.42, 0.7, 4), mat3);
-      head.position.y = 2.55;
-      head.rotation.y = Math.PI / 4;
+      const cap = new Mesh(new BoxGeometry(0.2, 0.08, 0.2), postMat);
+      cap.position.y = 1.88;
+      root.add(cap);
+      const head = new Mesh(new ConeGeometry(0.28, 0.48, 5), tipMat);
+      head.name = "guideHead";
+      head.position.y = 2.2;
       head.castShadow = true;
       root.add(head);
-      const ring = new Mesh(new TorusGeometry(0.55, 0.05, 6, 18), mat3);
+      const ring = new Mesh(
+        new TorusGeometry(0.42, 0.04, 6, 16),
+        new MeshStandardMaterial({ color: 2759700, roughness: 0.85, metalness: 0.08 })
+      );
       ring.rotation.x = Math.PI / 2;
-      ring.position.y = 0.08;
+      ring.position.y = 0.06;
       root.add(ring);
-      const light = new PointLight(12860459, 0.7, 10, 1.8);
-      light.position.y = 2.2;
+      const light = new PointLight(12860459, 0.45, 8, 1.9);
+      light.position.y = 2;
       root.add(light);
-      root.userData = { mat: mat3, light, head, bob: 0 };
+      root.userData = { tipMat, light, head, postMat, bob: 0 };
       guideArrow = root;
       g2.scene.add(root);
       return root;
     }
     function syncGuideArrow(elapsed2 = 0) {
       const tgt = currentGuideTarget();
-      if (!tgt?.point) {
+      if (!tgt?.point || tgt.id === "soft-open-hitch") {
         if (guideArrow) guideArrow.visible = false;
         return;
       }
       const arrow = ensureGuideArrow();
       arrow.visible = true;
       const p = tgt.point;
-      const bob = Math.sin(elapsed2 * 2.4) * 0.12;
+      const bob = Math.sin(elapsed2 * 2.1) * 0.08;
       arrow.position.set(p.x, (p.y || RC_ORIGIN.y) + bob, p.z);
-      arrow.rotation.y = elapsed2 * 0.7;
-      const { mat: mat3, light, head } = arrow.userData || {};
-      if (mat3) {
-        mat3.color.setHex(tgt.color);
-        mat3.emissive.setHex(tgt.color);
-        mat3.emissiveIntensity = 0.55 + Math.sin(elapsed2 * 3.1) * 0.25;
+      arrow.rotation.y = elapsed2 * 0.35;
+      const { tipMat, light, head } = arrow.userData || {};
+      const tip = tgt.id === "soft-open-drop" ? state.hasCase ? 3836504 : 11033128 : 11018264;
+      const em = tgt.id === "soft-open-drop" ? state.hasCase ? 1722928 : 6959120 : 6952976;
+      if (tipMat) {
+        tipMat.color.setHex(tip);
+        tipMat.emissive.setHex(em);
+        tipMat.emissiveIntensity = 0.42 + Math.sin(elapsed2 * 2.6) * 0.12;
       }
       if (light) {
-        light.color.setHex(tgt.color);
-        light.intensity = 0.55 + Math.sin(elapsed2 * 3.1) * 0.25;
+        light.color.setHex(tip);
+        light.intensity = 0.35 + Math.sin(elapsed2 * 2.6) * 0.12;
       }
-      if (head) head.rotation.y = Math.PI / 4 + elapsed2 * 0.9;
+      if (head) head.rotation.y = elapsed2 * 0.55;
     }
     function destroyGuideArrow() {
       if (!guideArrow) return;
@@ -59401,6 +59417,11 @@ void main() {
       g2.hud.banner("Soft Open checkpoint", "Back at the hitch", 2.8);
       return true;
     }
+    function guideDistM(point10) {
+      if (!point10) return "";
+      const a2 = actorPos();
+      return Math.hypot(a2.x - point10.x, a2.z - point10.z);
+    }
     function describe() {
       const hitch = strip?.points?.hitch;
       const alley = strip?.points?.alleyCase;
@@ -59428,7 +59449,7 @@ void main() {
           tip: "E \xB7 slow to dismount. R recovers to hitch.",
           steps: ["Stand by", "Alley case", "Creek drop"],
           target: hitch,
-          distance: "",
+          distance: guideDistM(hitch),
           urgent: false
         };
       }
@@ -59441,7 +59462,7 @@ void main() {
           tip: "Slow \xB7 E to dismount. Walk to the horse \xB7 E remounts.",
           steps: ["Stand by", "Alley case", "Creek drop"],
           target: alley,
-          distance: "",
+          distance: guideDistM(alley),
           urgent: true
         };
       }
@@ -59454,7 +59475,7 @@ void main() {
           tip: "Walk up to your horse \xB7 E remounts. R recovers to hitch.",
           steps: ["Stand by", "Alley case", "Creek drop"],
           target: drop,
-          distance: "",
+          distance: guideDistM(drop),
           urgent: !state.hasCase
         };
       }
@@ -86816,7 +86837,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-8277b22ad843", tipSha: false ? "" : "a715054", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-e171a2730656", tipSha: false ? "" : "f544d08", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -86843,7 +86864,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "a715054" : "") || "";
+      const tip = g2.tipSha || (true ? "f544d08" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");

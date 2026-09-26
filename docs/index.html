@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-93e691c7b538">
-<meta name="lsgh-tip" content="57db790">
+<meta name="lsgh-build" content="0.35.0-next.0-bedfa00f4de3">
+<meta name="lsgh-tip" content="5ec64b8">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -497,7 +497,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip 57db790</div>
+    <div class="kicker">Soft Open · Quiet · tip 5ec64b8</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -58412,7 +58412,26 @@ void main() {
       [-8.5, 50.8],
       [-1.2, 51.4],
       [5.5, 50.6],
-      [9, 51.2]
+      [9, 51.2],
+      // Soft Open Quiet tip 50 — approach-corridor edge stones: tip 46 waterline
+      // rocks stopped at z≈47 (edgeA 0); street→wash still read bare dirt under
+      // tip 48 cattails. Scatter grounding stones through z≈42–46.
+      [-13.8, 42.5],
+      [-9.6, 43.1],
+      [-5.2, 42.7],
+      [-0.8, 43.3],
+      [3.6, 42.9],
+      [7.8, 43.5],
+      [12.2, 42.6],
+      [-11.4, 44.6],
+      [-6.8, 45.1],
+      [-2.2, 44.4],
+      [2.4, 45],
+      [6.6, 44.8],
+      [10.8, 45.3],
+      [-8, 46.2],
+      [0.6, 46],
+      [9.2, 46.4]
     ];
     for (let i = 0; i < edgeStoneSites.length; i++) {
       const [sx, sz] = edgeStoneSites[i];
@@ -87366,7 +87385,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-93e691c7b538", tipSha: false ? "" : "57db790", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-bedfa00f4de3", tipSha: false ? "" : "5ec64b8", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -87393,7 +87412,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "57db790" : "") || "";
+      const tip = g2.tipSha || (true ? "5ec64b8" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");

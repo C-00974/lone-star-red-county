@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-01937a417a4a">
-<meta name="lsgh-tip" content="31cd59f">
+<meta name="lsgh-build" content="0.35.0-next.0-5a7d675c7f6b">
+<meta name="lsgh-tip" content="acf6fa8">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -497,7 +497,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip 31cd59f</div>
+    <div class="kicker">Soft Open · Quiet · tip acf6fa8</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -58064,7 +58064,6 @@ void main() {
     placeProp("crate", alleyX - 1.15, alleyZ, 0.2, 0.95);
     placeProp("crate", alleyX - 0.25, alleyZ - 1, -0.4, 0.8);
     placeProp("crate", alleyX - 1.35, alleyZ + 1.05, 0.7, 0.7);
-    placeProp("barrel", alleyX + 0.45, alleyZ + 0.75, 0, 0.7);
     placeProp("barrel-alt", alleyX + 0.85, alleyZ - 0.55, 0.3, 0.65);
     placeProp("barrel", alleyX - 0.6, alleyZ + 1.4, -0.2, 0.6);
     const caseGroup = new Group();
@@ -87610,7 +87609,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-01937a417a4a", tipSha: false ? "" : "31cd59f", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-5a7d675c7f6b", tipSha: false ? "" : "acf6fa8", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -87637,7 +87636,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "31cd59f" : "") || "";
+      const tip = g2.tipSha || (true ? "acf6fa8" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");

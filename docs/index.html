@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-95dcf9cb1f92">
-<meta name="lsgh-tip" content="7856f53">
+<meta name="lsgh-build" content="0.35.0-next.0-49601792a696">
+<meta name="lsgh-tip" content="b8ca910">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -497,7 +497,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip 7856f53</div>
+    <div class="kicker">Soft Open · Quiet · tip b8ca910</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -56952,9 +56952,10 @@ void main() {
       g2.name = "horizonFill";
       g2.position.set(x, 0, z);
       const h0 = gritHash(x * 1.13 + seed, z * 0.87);
-      const rw = 1.4 + h0 * 1.8;
-      const rh = 0.35 + h0 * 0.55 + seed % 3 * 0.12;
-      const rd = 0.55 + (1 - h0) * 0.7;
+      const distant = z >= 45 || Math.abs(x) >= 26;
+      const rw = 1.4 + h0 * 1.8 + (distant ? 0.8 : 0);
+      const rh = distant ? 1.6 + h0 * 1.4 + seed % 3 * 0.35 : 0.35 + h0 * 0.55 + seed % 3 * 0.12;
+      const rd = 0.55 + (1 - h0) * 0.7 + (distant ? 0.35 : 0);
       const ridge = boxMesh(
         rw,
         rh,
@@ -56964,11 +56965,38 @@ void main() {
         rh * 0.48,
         0
       );
-      ridge.name = "horizonRidge";
+      ridge.name = distant ? "horizonMesa" : "horizonRidge";
       ridge.rotation.y = (h0 - 0.5) * 0.9;
       g2.add(ridge);
+      if (distant) {
+        const stepH = 0.7 + h0 * 0.9;
+        const step2 = boxMesh(
+          rw * 0.72,
+          stepH,
+          rd * 0.75,
+          kit.solid(ridgeCols[(seed + 1) % ridgeCols.length], 0.95),
+          (h0 - 0.5) * 0.35,
+          rh + stepH * 0.45,
+          (0.5 - h0) * 0.25
+        );
+        step2.name = "horizonMesaStep";
+        step2.rotation.y = (h0 - 0.5) * 0.4;
+        g2.add(step2);
+        const capH = 0.35 + (1 - h0) * 0.4;
+        const cap = boxMesh(
+          rw * 0.45,
+          capH,
+          rd * 0.5,
+          kit.solid(ridgeCols[(seed + 3) % ridgeCols.length], 0.94),
+          0,
+          rh + stepH + capH * 0.4,
+          0
+        );
+        cap.name = "horizonMesaCap";
+        g2.add(cap);
+      }
       const rw2 = 0.7 + (1 - h0) * 0.9;
-      const rh2 = 0.22 + h0 * 0.28;
+      const rh2 = 0.22 + h0 * 0.28 + (distant ? 0.25 : 0);
       const lump = boxMesh(
         rw2,
         rh2,
@@ -56997,7 +57025,7 @@ void main() {
         sage.name = "horizonSage";
         g2.add(sage);
       }
-      contactShadow(g2, 0, 0, 1.2 + h0 * 0.6, 0.32);
+      contactShadow(g2, 0, 0, 1.2 + h0 * 0.6 + (distant ? 0.8 : 0), 0.32);
       group.add(g2);
     }
   }
@@ -87152,7 +87180,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-95dcf9cb1f92", tipSha: false ? "" : "7856f53", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-49601792a696", tipSha: false ? "" : "b8ca910", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -87179,7 +87207,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "7856f53" : "") || "";
+      const tip = g2.tipSha || (true ? "b8ca910" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");

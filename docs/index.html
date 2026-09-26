@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-8aa508438e56">
-<meta name="lsgh-tip" content="d1ab978">
+<meta name="lsgh-build" content="0.35.0-next.0-8339ac139b8d">
+<meta name="lsgh-tip" content="fc54973">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -473,7 +473,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip d1ab978</div>
+    <div class="kicker">Soft Open · Quiet · tip fc54973</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -56779,6 +56779,51 @@ void main() {
     group.add(g2);
     return g2;
   }
+  function placeScrubClump(group, kit, x, z, seed = 0) {
+    const g2 = new Group();
+    g2.name = "scrubClump";
+    g2.position.set(x, 0, z);
+    const h0 = gritHash(x * 1.07 + seed, z * 0.91);
+    const moundCols = [4871480, 4082224, 5595200, 3818544, 5924936];
+    const stemCols = [2764832, 3422248, 2238488];
+    const mounds = 2 + Math.floor(h0 * 2);
+    for (let i = 0; i < mounds; i++) {
+      const hh = gritHash(x + i * 2.1, z + seed + i);
+      const rw = 0.28 + hh * 0.22;
+      const rh = 0.12 + hh * 0.1;
+      const col3 = moundCols[(i + seed) % moundCols.length];
+      const mound = boxMesh(
+        rw * 2,
+        rh * 2.2,
+        rw * 1.6,
+        kit.solid(col3, 0.96),
+        (hh - 0.5) * 0.35,
+        rh * 0.95,
+        (1 - hh - 0.5) * 0.3
+      );
+      mound.name = "scrubMound";
+      mound.rotation.y = (hh - 0.5) * 0.8;
+      g2.add(mound);
+    }
+    const stems = 2 + Math.floor((1 - h0) * 3);
+    for (let i = 0; i < stems; i++) {
+      const hh = gritHash(x + i * 3.3 + seed, z - i);
+      const sh = 0.35 + hh * 0.45;
+      const stem = new Mesh(
+        new CylinderGeometry(0.012, 0.02, sh, 4),
+        kit.solid(stemCols[(i + seed) % stemCols.length], 0.95)
+      );
+      stem.name = "scrubStem";
+      stem.position.set((hh - 0.5) * 0.4, sh / 2, (1 - hh - 0.5) * 0.35);
+      stem.rotation.z = (hh - 0.5) * 0.35;
+      stem.rotation.x = ((seed + i) % 3 - 1) * 0.12;
+      stem.castShadow = true;
+      g2.add(stem);
+    }
+    contactShadow(g2, 0, 0, 0.55 + h0 * 0.25, 0.4);
+    group.add(g2);
+    return g2;
+  }
   function faceMat(kit, kind, wu, wv, tile = 2.2) {
     const base = kit[kind];
     if (!base?.map) return kit.solid?.(8947848) || base;
@@ -57084,6 +57129,24 @@ void main() {
     glow2.name = "ranchLantern";
     glow2.position.set(x + 2.1, 1.35, z + 1.7);
     group.add(glow2);
+    const scrubRing = style === "barn" ? [[-5.2, 2.8, 0], [-3.4, -4, 1], [4.6, -3.2, 2], [5.4, 3, 3], [0.2, 5.2, 4], [-1.8, 4.4, 5], [3.2, 4.8, 6]] : [[-3.4, 2.6, 0], [3.6, -2.8, 1], [-2.9, -3.4, 2], [3.8, 2.2, 3], [0.4, 3.6, 4]];
+    for (const [dx, dz2, s] of scrubRing) {
+      placeScrubClump(group, kit, x + dx, z + dz2, Math.abs(Math.floor(x * 3 + z * 5 + s * 17) % 97));
+    }
+    const cactusG = getWesternGltf("cactus");
+    if (cactusG) {
+      const cactusSites = style === "barn" ? [[-5.6, 0.4, 1.2], [5.2, 2.4, 1.45], [1.2, -5, 1.1]] : [[-4, 1.2, 1.15], [3.9, 3, 1.35]];
+      for (const [dx, dz2, h] of cactusSites) {
+        stampWesternProp(group, cactusG, {
+          name: "farCactus",
+          x: x + dx,
+          z: z + dz2,
+          yaw: dx * 0.15 + dz2 * 0.05,
+          targetHeight: h + 0.85
+        });
+        contactShadow(group, x + dx, z + dz2, 0.75, 0.28);
+      }
+    }
   }
   function placeWaterTower(group, kit, x, z) {
     const g2 = new Group();
@@ -86879,7 +86942,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-8aa508438e56", tipSha: false ? "" : "d1ab978", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-8339ac139b8d", tipSha: false ? "" : "fc54973", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -86906,7 +86969,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "d1ab978" : "") || "";
+      const tip = g2.tipSha || (true ? "fc54973" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");

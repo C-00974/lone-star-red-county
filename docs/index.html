@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-2f82051f552e">
-<meta name="lsgh-tip" content="d0001c4">
+<meta name="lsgh-build" content="0.35.0-next.0-95dcf9cb1f92">
+<meta name="lsgh-tip" content="7856f53">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -497,7 +497,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip d0001c4</div>
+    <div class="kicker">Soft Open · Quiet · tip 7856f53</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -56910,6 +56910,97 @@ void main() {
     group.add(g2);
     return g2;
   }
+  function placeFarHorizonFill(group, kit) {
+    const ridgeCols = [5917240, 4865584, 6969412, 4076584, 5918780];
+    const sageCols = [4871480, 4082224, 5595200];
+    const sites = [
+      // North corridor beyond pad rings → wash approaches
+      [-22, 36.5, 0],
+      [-14.5, 39, 1],
+      [-6.5, 37.5, 2],
+      [2, 40.5, 3],
+      [10.5, 38, 4],
+      [18.5, 41, 5],
+      [24, 37, 6],
+      [-20.5, 46, 7],
+      [-11, 49.5, 8],
+      [-2.5, 47.5, 9],
+      [7.5, 51, 10],
+      [16, 48.5, 11],
+      [23.5, 45.5, 12],
+      // Far north beyond wash (long-range strip)
+      [-18, 58, 13],
+      [-6, 61, 14],
+      [5, 59.5, 15],
+      [14, 62, 16],
+      [22, 57.5, 17],
+      // East / west flanks past pad rings
+      [-27, 22, 18],
+      [-28.5, 10, 19],
+      [-26, -8, 20],
+      [27, 20, 21],
+      [28.5, 6, 22],
+      [26.5, -10, 23],
+      // South beyond barn / adobe pads
+      [-22, -34, 24],
+      [-8, -38, 25],
+      [6, -36.5, 26],
+      [20, -35, 27]
+    ];
+    for (const [x, z, seed] of sites) {
+      const g2 = new Group();
+      g2.name = "horizonFill";
+      g2.position.set(x, 0, z);
+      const h0 = gritHash(x * 1.13 + seed, z * 0.87);
+      const rw = 1.4 + h0 * 1.8;
+      const rh = 0.35 + h0 * 0.55 + seed % 3 * 0.12;
+      const rd = 0.55 + (1 - h0) * 0.7;
+      const ridge = boxMesh(
+        rw,
+        rh,
+        rd,
+        kit.solid(ridgeCols[seed % ridgeCols.length], 0.96),
+        0,
+        rh * 0.48,
+        0
+      );
+      ridge.name = "horizonRidge";
+      ridge.rotation.y = (h0 - 0.5) * 0.9;
+      g2.add(ridge);
+      const rw2 = 0.7 + (1 - h0) * 0.9;
+      const rh2 = 0.22 + h0 * 0.28;
+      const lump = boxMesh(
+        rw2,
+        rh2,
+        rw2 * 0.7,
+        kit.solid(ridgeCols[(seed + 2) % ridgeCols.length], 0.95),
+        (h0 - 0.5) * 1.1,
+        rh2 * 0.55,
+        (1 - h0 - 0.5) * 0.6
+      );
+      lump.name = "horizonLump";
+      g2.add(lump);
+      const nSage = 1 + Math.floor(h0 * 2);
+      for (let i = 0; i < nSage; i++) {
+        const hh = gritHash(x + i * 2.3, z + seed);
+        const sw = 0.3 + hh * 0.25;
+        const sh = 0.14 + hh * 0.12;
+        const sage = boxMesh(
+          sw * 2,
+          sh * 2.1,
+          sw * 1.5,
+          kit.solid(sageCols[(i + seed) % sageCols.length], 0.96),
+          (hh - 0.5) * 1.4,
+          sh * 0.95,
+          (1 - hh - 0.5) * 0.9
+        );
+        sage.name = "horizonSage";
+        g2.add(sage);
+      }
+      contactShadow(g2, 0, 0, 1.2 + h0 * 0.6, 0.32);
+      group.add(g2);
+    }
+  }
   function faceMat(kit, kind, wu, wv, tile = 2.2) {
     const base = kit[kind];
     if (!base?.map) return kit.solid?.(8947848) || base;
@@ -57718,6 +57809,7 @@ void main() {
     dressRanchBase(farLandmarks, kit, -15.5, -22, { style: "adobe" });
     placeTankShed(farLandmarks, kit, 17.5, 12);
     dressRanchBase(farLandmarks, kit, 17.5, 12, { style: "shed" });
+    placeFarHorizonFill(farLandmarks, kit);
     buildings.push(
       { w: 3.2, h: 8.5, d: 3.2, x: 16.5, z: 28 },
       { w: 2.4, h: 8.5, d: 2.4, x: -16, z: 26 },
@@ -87060,7 +87152,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-2f82051f552e", tipSha: false ? "" : "d0001c4", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-95dcf9cb1f92", tipSha: false ? "" : "7856f53", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -87087,7 +87179,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "d0001c4" : "") || "";
+      const tip = g2.tipSha || (true ? "7856f53" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");

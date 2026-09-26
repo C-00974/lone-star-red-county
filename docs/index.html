@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-8143f9361f11">
-<meta name="lsgh-tip" content="8bcce33">
+<meta name="lsgh-build" content="0.35.0-next.0-098db930938f">
+<meta name="lsgh-tip" content="9e69a12">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -518,7 +518,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip 8bcce33</div>
+    <div class="kicker">Soft Open · Quiet · tip 9e69a12</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -58091,6 +58091,8 @@ void main() {
       facade.add(boxMesh(w * 0.72, 0.08, 0.4, wood(w, 0.4), sx0, 0.05, porchZ + 1.35));
       facade.add(boxMesh(w * 0.9, 0.12, 0.08, wood(w, 0.1), sx0, 0.22, porchZ + 0.55));
       const wing = kit.solid(3810324, 0.85);
+      wing.emissive = new Color(3809296);
+      wing.emissiveIntensity = 0.07;
       for (const sx of [-0.42, 0.42]) {
         const door = boxMesh(0.48, 1.15, 0.06, wing, sx0 + sx, 1.05, frontZ + 0.22);
         door.rotation.y = sx < 0 ? 0.18 : -0.18;
@@ -58122,6 +58124,8 @@ void main() {
       facade.add(boxMesh(0.1, 0.45, 0.38, wood(0.1, 0.45), sx0 + 3.3, 0.35, porchZ - 0.2));
       for (const [bx2, bz2] of [[sx0 + 3.6, porchZ + 0.35], [sx0 - 3.85, porchZ + 0.4]]) {
         const barrel = kit.solid(4861968, 0.8);
+        barrel.emissive = new Color(3809296);
+        barrel.emissiveIntensity = 0.07;
         facade.add(boxMesh(0.42, 0.55, 0.42, barrel, bx2, 0.45, bz2));
         facade.add(boxMesh(0.44, 0.05, 0.44, bone, bx2, 0.72, bz2));
       }
@@ -87861,7 +87865,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-8143f9361f11", tipSha: false ? "" : "8bcce33", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-098db930938f", tipSha: false ? "" : "9e69a12", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -87888,7 +87892,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "8bcce33" : "") || "";
+      const tip = g2.tipSha || (true ? "9e69a12" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");

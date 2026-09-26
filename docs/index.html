@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-6c916e90f543">
-<meta name="lsgh-tip" content="ef3bd9e">
+<meta name="lsgh-build" content="0.35.0-next.0-cd6bdf2ccbef">
+<meta name="lsgh-tip" content="38c2192">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -497,7 +497,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip ef3bd9e</div>
+    <div class="kicker">Soft Open · Quiet · tip 38c2192</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -56770,8 +56770,8 @@ void main() {
   }
   function placeApproachTwinRut(group, kit, x, z, seed = 0) {
     const h = gritHash(x * 1.03 + seed, z * 0.97);
-    const gauge = 0.68 + h * 0.18;
-    const yaw = (h - 0.5) * 0.28;
+    const gauge = 0.58 + h * 0.14;
+    const yaw = (h - 0.5) * 0.18;
     placeApproachRut(group, kit, x - gauge, z + (h - 0.5) * 0.15, seed * 2 + 1, yaw);
     placeApproachRut(group, kit, x + gauge, z + (0.5 - h) * 0.12, seed * 2 + 2, yaw);
     const mark = new Object3D();
@@ -58604,15 +58604,15 @@ void main() {
       placeApproachMud(wash, kit, mx, mz, i + 2);
     }
     const twinRutSites = [
-      [-8, 43.5],
-      [-3, 44],
-      [2, 43.2],
-      [7, 44.5],
-      [-10.5, 45],
-      [-1, 45.8],
-      [5, 45.4],
-      [10, 46],
-      [3.5, 42.5]
+      [14, 42],
+      [2.5, 42],
+      [11.5, 42],
+      [14, 46],
+      [-5.5, 42],
+      [-9.5, 42],
+      [-1.5, 44.5],
+      [-14, 42],
+      [-14, 46]
     ];
     for (let i = 0; i < twinRutSites.length; i++) {
       const [rx, rz] = twinRutSites[i];
@@ -87588,7 +87588,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-6c916e90f543", tipSha: false ? "" : "ef3bd9e", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-cd6bdf2ccbef", tipSha: false ? "" : "38c2192", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -87615,7 +87615,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "ef3bd9e" : "") || "";
+      const tip = g2.tipSha || (true ? "38c2192" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");

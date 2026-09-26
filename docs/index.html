@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-02c4166b957b">
-<meta name="lsgh-tip" content="cb5c73e">
+<meta name="lsgh-build" content="0.35.0-next.0-b5132aa84e5f">
+<meta name="lsgh-tip" content="798e39b">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -518,7 +518,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip cb5c73e</div>
+    <div class="kicker">Soft Open · Quiet · tip 798e39b</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -84729,6 +84729,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
         st4.reverseYaw = null;
         st4.alleyStreetT = 0;
         st4._softExitBias = null;
+        st4._softEnterBias = null;
         st4._softRevLook = false;
         st4._softSpd = null;
         st4._softDecel = false;
@@ -85241,6 +85242,32 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
             const s = xzFloor / rdist;
             st4.pos.x = target2.x + rdx * s;
             st4.pos.z = target2.z + rdz * s;
+          }
+          const T2 = st4.alleyStreetT || 0;
+          const tip181EastEnter = Math.sin(target2.heading) < -0.4;
+          if (tip181EastEnter && (st4._softEnterBias != null || T2 > 0.02 && T2 < 0.97)) {
+            const openWant = Math.max(7.2, 7 + clamp3(target2.speed, 0, 14) * 0.12);
+            const floor = T2 < 0.97 ? 6.5 + (openWant - 6.5) * (1 - T2) : 6.5;
+            const streetBias = 3.2;
+            const maxDb = 0.45;
+            let next;
+            if (st4._softEnterBias == null) {
+              next = st4.pos.x - target2.x;
+            } else {
+              next = st4._softEnterBias;
+              const step2 = streetBias - next;
+              if (Math.abs(step2) > maxDb) next += Math.sign(step2) * maxDb;
+              else next = streetBias;
+            }
+            const x = Math.max(-floor + 0.05, Math.min(floor - 0.05, next));
+            const zSign = st4.pos.z - target2.z < 0 ? -1 : 1;
+            const z = zSign * Math.sqrt(Math.max(0.01, floor * floor - x * x));
+            st4.pos.x = target2.x + x;
+            st4.pos.z = target2.z + z;
+            st4._softEnterBias = x;
+            if (Math.abs(st4._softEnterBias - streetBias) < 0.5) st4._softEnterBias = null;
+          } else if (!tip181EastEnter) {
+            st4._softEnterBias = null;
           }
         }
         if (opts.softOpen && !target2.onFoot && !opts.softOpenAlley && !opts.snap && !looking) {
@@ -88255,7 +88282,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-02c4166b957b", tipSha: false ? "" : "cb5c73e", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-b5132aa84e5f", tipSha: false ? "" : "798e39b", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -88282,7 +88309,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "cb5c73e" : "") || "";
+      const tip = g2.tipSha || (true ? "798e39b" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");

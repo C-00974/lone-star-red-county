@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-96f47dad2997">
-<meta name="lsgh-tip" content="5a0e593">
+<meta name="lsgh-build" content="0.35.0-next.0-f4c7cd510e20">
+<meta name="lsgh-tip" content="fb85120">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -497,7 +497,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip 5a0e593</div>
+    <div class="kicker">Soft Open · Quiet · tip fb85120</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -56803,6 +56803,76 @@ void main() {
     group.add(g2);
     return g2;
   }
+  function placeCattailClump(group, kit, x, z, seed = 0) {
+    const g2 = new Group();
+    g2.name = "cattailClump";
+    g2.position.set(x, 0, z);
+    const h0 = gritHash(x * 1.19 + seed, z * 0.83);
+    const stalks = 2 + Math.floor(h0 * 2);
+    const stalkCols = [3029538, 2371608, 3687464];
+    const headCols = [5913116, 6965280, 4861972, 8017456];
+    for (let i = 0; i < stalks; i++) {
+      const hh = gritHash(x + i * 2.1, z + seed + i);
+      const height = 1.15 + hh * 0.7 + i % 2 * 0.15;
+      const stalk = new Mesh(
+        new CylinderGeometry(0.016, 0.028, height, 5),
+        kit.solid(stalkCols[(i + seed) % stalkCols.length], 0.95)
+      );
+      stalk.name = "cattailStalk";
+      stalk.castShadow = true;
+      stalk.position.set((hh - 0.5) * 0.22, height / 2, (1 - hh - 0.5) * 0.18);
+      stalk.rotation.z = (hh - 0.5) * 0.18;
+      g2.add(stalk);
+      const headH = 0.28 + hh * 0.18;
+      const head = new Mesh(
+        new CylinderGeometry(0.045 + hh * 0.02, 0.05, headH, 6),
+        kit.solid(headCols[(i + seed) % headCols.length], 0.92)
+      );
+      head.name = "cattailHead";
+      head.position.set(stalk.position.x, height + headH * 0.35, stalk.position.z);
+      head.rotation.copy(stalk.rotation);
+      g2.add(head);
+      const tip = new Mesh(
+        new CylinderGeometry(8e-3, 0.012, 0.18 + hh * 0.1, 4),
+        kit.solid(2761752, 0.9)
+      );
+      tip.name = "cattailTip";
+      tip.position.set(stalk.position.x, height + headH * 0.75 + 0.12, stalk.position.z);
+      g2.add(tip);
+    }
+    contactShadow(g2, 0, 0, 0.4 + h0 * 0.15, 0.32);
+    group.add(g2);
+    return g2;
+  }
+  function placeWashEdgeStone(group, kit, x, z, seed = 0) {
+    const g2 = new Group();
+    g2.name = "washEdgeStone";
+    g2.position.set(x, 0, z);
+    const h0 = gritHash(x * 0.91 + seed, z * 1.07);
+    const cols = [4866100, 5918784, 3814440, 6969928, 3025442];
+    const n = 1 + Math.floor(h0 * 2);
+    for (let i = 0; i < n; i++) {
+      const hh = gritHash(x + i * 1.8, z - i + seed);
+      const rw = 0.28 + hh * 0.32 + i * 0.05;
+      const rh = 0.1 + hh * 0.14;
+      const stone = boxMesh(
+        rw * 1.7,
+        rh * 1.5,
+        rw * 1.3,
+        kit.solid(cols[(i + seed) % cols.length], 0.94),
+        (hh - 0.5) * 0.2,
+        rh * 0.7,
+        (1 - hh - 0.5) * 0.15
+      );
+      stone.name = "washEdgeStoneChunk";
+      stone.rotation.y = (hh - 0.5) * 1.2;
+      stone.rotation.z = (hh - 0.5) * 0.2;
+      g2.add(stone);
+    }
+    contactShadow(g2, 0, 0, 0.45 + h0 * 0.2, 0.36);
+    group.add(g2);
+    return g2;
+  }
   function placeScrubClump(group, kit, x, z, seed = 0) {
     const g2 = new Group();
     g2.name = "scrubClump";
@@ -58288,6 +58358,53 @@ void main() {
     }
     for (let i = 0; i < 8; i++) {
       foamStain(wash, -7.5 + i * 1.7, 54 + i % 3 * 0.35, 0.38 + i % 2 * 0.12);
+    }
+    const cattailSites = [
+      [-12.4, 48.6],
+      [-6.8, 49.8],
+      [-0.5, 50.6],
+      [5.2, 49.2],
+      [11, 50.4],
+      [-9.2, 52.8],
+      [-2.4, 53.4],
+      [3.8, 52.2],
+      [9.6, 53],
+      [-14, 46.4],
+      [1.2, 47.2],
+      [12.8, 46.8]
+    ];
+    for (let i = 0; i < cattailSites.length; i++) {
+      const [cx, cz] = cattailSites[i];
+      const j = gritHash(cx, cz);
+      placeCattailClump(wash, kit, cx + (j - 0.5) * 0.3, cz + (0.5 - j) * 0.25, i + 7);
+    }
+    const edgeStoneSites = [
+      // Near bank waterline
+      [-13.5, 47.4],
+      [-10, 47.1],
+      [-6.2, 47.6],
+      [-2.8, 47],
+      [1, 47.5],
+      [4.6, 47.2],
+      [8.2, 47.7],
+      [11.8, 47.1],
+      // Far bank waterline
+      [-12, 54.2],
+      [-7.5, 54.6],
+      [-3, 54.1],
+      [1.8, 54.5],
+      [6.4, 54],
+      [10.5, 54.4],
+      [13.2, 54.1],
+      // Mid shoulders wet rocks
+      [-8.5, 50.8],
+      [-1.2, 51.4],
+      [5.5, 50.6],
+      [9, 51.2]
+    ];
+    for (let i = 0; i < edgeStoneSites.length; i++) {
+      const [sx, sz] = edgeStoneSites[i];
+      placeWashEdgeStone(wash, kit, sx, sz, i + 3);
     }
     const drop = new Group();
     drop.name = "drop";
@@ -87230,7 +87347,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-96f47dad2997", tipSha: false ? "" : "5a0e593", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-f4c7cd510e20", tipSha: false ? "" : "fb85120", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -87257,7 +87374,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "5a0e593" : "") || "";
+      const tip = g2.tipSha || (true ? "fb85120" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");

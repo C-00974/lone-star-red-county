@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-3e183b74e3b7">
-<meta name="lsgh-tip" content="f8d19fd">
+<meta name="lsgh-build" content="0.35.0-next.0-53b64d3dfecc">
+<meta name="lsgh-tip" content="69d40d0">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -497,7 +497,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip f8d19fd</div>
+    <div class="kicker">Soft Open · Quiet · tip 69d40d0</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -56848,6 +56848,68 @@ void main() {
     group.add(g2);
     return g2;
   }
+  function placeYucca(group, kit, x, z, seed = 0) {
+    const g2 = new Group();
+    g2.name = "farYucca";
+    g2.position.set(x, 0, z);
+    const h0 = gritHash(x * 1.21 + seed, z * 0.77);
+    const leafCols = [4874304, 5597256, 4083768, 5926984];
+    const leaves = 5 + Math.floor(h0 * 3);
+    for (let i = 0; i < leaves; i++) {
+      const hh = gritHash(x + i * 1.9, z + seed * 0.4 + i);
+      const len = 0.55 + hh * 0.55 + i % 2 * 0.12;
+      const leaf = boxMesh(0.045, len, 0.09, kit.solid(leafCols[(i + seed) % leafCols.length], 0.95), 0, len * 0.42, 0);
+      leaf.name = "yuccaLeaf";
+      const ang = i / leaves * Math.PI * 2 + hh;
+      leaf.position.x = Math.sin(ang) * 0.08;
+      leaf.position.z = Math.cos(ang) * 0.08;
+      leaf.rotation.z = (hh - 0.35) * 0.85;
+      leaf.rotation.y = ang;
+      leaf.rotation.x = (0.15 + hh * 0.35) * (i % 2 * 2 - 1);
+      g2.add(leaf);
+    }
+    const spikeH = 0.9 + h0 * 0.55;
+    const spike = new Mesh(
+      new CylinderGeometry(0.018, 0.028, spikeH, 5),
+      kit.solid(6969920, 0.92)
+    );
+    spike.name = "yuccaSpike";
+    spike.position.y = spikeH / 2 + 0.08;
+    spike.castShadow = true;
+    g2.add(spike);
+    contactShadow(g2, 0, 0, 0.45 + h0 * 0.15, 0.36);
+    group.add(g2);
+    return g2;
+  }
+  function placeScrubRock(group, kit, x, z, seed = 0) {
+    const g2 = new Group();
+    g2.name = "scrubRock";
+    g2.position.set(x, 0, z);
+    const h0 = gritHash(x * 0.93 + seed, z * 1.11);
+    const cols = [6969928, 5917242, 8022616, 4866100, 9075304];
+    const n = 1 + Math.floor(h0 * 2);
+    for (let i = 0; i < n; i++) {
+      const hh = gritHash(x + i * 2.4, z - i + seed);
+      const rw = 0.22 + hh * 0.28 + i * 0.06;
+      const rh = 0.1 + hh * 0.14;
+      const rock = boxMesh(
+        rw * 1.8,
+        rh * 1.6,
+        rw * 1.4,
+        kit.solid(cols[(i + seed) % cols.length], 0.94),
+        (hh - 0.5) * 0.25,
+        rh * 0.75,
+        (1 - hh - 0.5) * 0.2
+      );
+      rock.name = "scrubRockChunk";
+      rock.rotation.y = (hh - 0.5) * 1.4;
+      rock.rotation.z = (hh - 0.5) * 0.25;
+      g2.add(rock);
+    }
+    contactShadow(g2, 0, 0, 0.5 + h0 * 0.2, 0.38);
+    group.add(g2);
+    return g2;
+  }
   function faceMat(kit, kind, wu, wv, tile = 2.2) {
     const base = kit[kind];
     if (!base?.map) return kit.solid?.(8947848) || base;
@@ -57170,6 +57232,14 @@ void main() {
         });
         contactShadow(group, x + dx, z + dz2, 0.75, 0.28);
       }
+    }
+    const yuccaSites = style === "barn" ? [[-6.2, -2.2, 0], [6, 1.4, 1], [-2.4, 5.8, 2], [4.4, -5.2, 3]] : [[-4.6, -1.8, 0], [4.8, 0.6, 1], [-1.2, 4.4, 2]];
+    for (const [dx, dz2, s] of yuccaSites) {
+      placeYucca(group, kit, x + dx, z + dz2, Math.abs(Math.floor(x * 5 + z * 3 + s * 13) % 89));
+    }
+    const rockSites = style === "barn" ? [[-4.8, 4.2, 0], [5.6, -1.6, 1], [0.8, -5.4, 2], [-6, 2, 3], [3, 5.6, 4]] : [[-3.8, 3.2, 0], [4.2, -3, 1], [1.6, 4, 2], [-4.4, -2.6, 3]];
+    for (const [dx, dz2, s] of rockSites) {
+      placeScrubRock(group, kit, x + dx, z + dz2, Math.abs(Math.floor(x * 7 + z * 2 + s * 11) % 83));
     }
   }
   function placeWaterTower(group, kit, x, z) {
@@ -86971,7 +87041,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-3e183b74e3b7", tipSha: false ? "" : "f8d19fd", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-53b64d3dfecc", tipSha: false ? "" : "69d40d0", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -86998,7 +87068,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "f8d19fd" : "") || "";
+      const tip = g2.tipSha || (true ? "69d40d0" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");

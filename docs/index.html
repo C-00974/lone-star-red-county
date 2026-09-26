@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-a57fff2807bb">
-<meta name="lsgh-tip" content="5d22d38">
+<meta name="lsgh-build" content="0.35.0-next.0-5efea87fc858">
+<meta name="lsgh-tip" content="0b8eeb8">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -471,7 +471,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip 5d22d38</div>
+    <div class="kicker">Soft Open · Quiet · tip 0b8eeb8</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -56651,24 +56651,27 @@ void main() {
     const n = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453;
     return n - Math.floor(n);
   }
-  function contactShadow(group, x, z, r = 1.2, opacity = 0.42) {
+  function contactShadow(group, x, z, r = 1.2, opacity = 0.42, y2 = 0.034) {
     const mat3 = new MeshBasicMaterial({
       map: gritAoMap(),
-      color: 2759698,
+      color: 1708040,
       transparent: true,
-      opacity: Math.min(0.55, opacity * 0.92),
-      depthWrite: false
+      opacity: Math.min(0.62, opacity * 0.98),
+      depthWrite: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2
     });
     const disc3 = new Mesh(new PlaneGeometry(2, 2), mat3);
-    disc3.name = "gritAo";
+    disc3.name = "contactShadow";
     disc3.rotation.x = -Math.PI / 2;
     const h = gritHash(x, z);
     disc3.rotation.z = h * Math.PI * 2;
     const sx = r * (0.78 + h * 0.55);
     const sz = r * (1.05 + (1 - h) * 0.6);
     disc3.scale.set(sx, sz, 1);
-    disc3.position.set(x, 0.034 + h * 4e-3, z);
-    disc3.renderOrder = 1;
+    disc3.position.set(x, y2 + 0.012 + h * 3e-3, z);
+    disc3.renderOrder = 2;
     group.add(disc3);
     return disc3;
   }
@@ -57420,6 +57423,14 @@ void main() {
       if (barrelGltf) {
         stampWesternProp(facade, barrelGltf, { name: "porchBarrel", x: sx0 - 4.05, z: porchZ + 0.15, yaw: -0.2, targetWidth: 0.55 });
       }
+      const deckY2 = 0.22;
+      contactShadow(facade, sx0 - 3.4, porchZ - 0.15, 0.78, 0.58, deckY2);
+      contactShadow(facade, sx0 - 3.55, porchZ - 0.05, 0.6, 0.52, deckY2);
+      contactShadow(facade, sx0 + 2.8, porchZ - 0.2, 1.05, 0.5, deckY2);
+      contactShadow(facade, sx0 + 3.6, porchZ + 0.35, 0.62, 0.56, deckY2);
+      contactShadow(facade, sx0 - 3.85, porchZ + 0.4, 0.62, 0.56, deckY2);
+      contactShadow(facade, sx0 + 3.9, porchZ - 0.35, 0.78, 0.58, deckY2);
+      contactShadow(facade, sx0 - 4.05, porchZ + 0.15, 0.65, 0.58, deckY2);
       const facadeKey = new PointLight(16760952, 1.9, 20, 1.55);
       facadeKey.position.set(sx0, 3.1, frontZ + 3.4);
       facade.add(facadeKey);
@@ -57443,6 +57454,17 @@ void main() {
         const b = adobeFrontage(local2, kit, spec);
         buildings.push(b);
         contactShadow(local2, spec.x, spec.z, Math.max(spec.w, spec.d) * 0.55, 0.34);
+        if (spec.porch) {
+          const toward = spec.face === "east" ? 1 : -1;
+          const porchX = spec.x + toward * (spec.d / 2 + 1);
+          const deckY2 = 0.22;
+          const wood = faceMat(kit, "wood", 0.55, 0.45, 1.2);
+          local2.add(boxMesh(0.5, 0.42, 0.45, wood, porchX, 0.42, spec.z - spec.w * 0.22));
+          local2.add(boxMesh(0.4, 0.5, 0.4, kit.solid(4861968, 0.85), porchX, 0.4, spec.z + spec.w * 0.2));
+          local2.add(boxMesh(0.42, 0.05, 0.42, kit.bone, porchX, 0.66, spec.z + spec.w * 0.2));
+          contactShadow(local2, porchX, spec.z - spec.w * 0.22, 0.65, 0.55, deckY2);
+          contactShadow(local2, porchX, spec.z + spec.w * 0.2, 0.55, 0.55, deckY2);
+        }
       }
     }
     const farLandmarks = new Group();
@@ -57473,6 +57495,7 @@ void main() {
     const placeProp = (key3, x, z, yaw, tw) => {
       const g2 = getWesternGltf(key3);
       if (g2) stampWesternProp(local2, g2, { name: key3, x, z, yaw, targetWidth: tw });
+      contactShadow(local2, x, z, tw * 0.85, 0.46);
     };
     placeProp("crate", alleyX - 1.15, alleyZ, 0.2, 0.95);
     placeProp("crate", alleyX - 0.25, alleyZ - 1, -0.4, 0.8);
@@ -57616,6 +57639,17 @@ void main() {
       contactShadow(streetDress, wx, wz, 3.6, 0.48);
       contactShadow(streetDress, wx - 1.4, wz + 1.1, 1.4, 0.35);
       contactShadow(streetDress, wx + 1.6, wz - 0.8, 1.2, 0.32);
+      contactShadow(streetDress, wx - 1.7, wz + 1.35, 0.75, 0.45);
+      contactShadow(streetDress, wx + 2.1, wz - 1.1, 0.65, 0.42);
+      contactShadow(streetDress, wx + 2, wz + 1.2, 0.8, 0.46);
+      contactShadow(streetDress, wx - 0.4, wz + 2.1, 0.6, 0.44);
+      contactShadow(streetDress, wx + 1.55, wz + 1.5, 0.55, 0.4);
+      contactShadow(streetDress, wx - 2.4, wz - 0.9, 0.7, 0.38);
+      contactShadow(streetDress, wx + 1.9, wz + 2, 0.75, 0.46);
+      contactShadow(streetDress, wx - 2, wz - 1.5, 0.7, 0.44);
+      contactShadow(streetDress, wx + 2.45, wz - 0.2, 0.58, 0.46);
+      contactShadow(streetDress, wx - 0.9, wz + 2.35, 0.55, 0.44);
+      contactShadow(streetDress, wx + 0.6, wz + 2.5, 0.55, 0.44);
       streetDress.add(boxMesh(0.7, 0.42, 0.5, kit.solid(10125384, 0.95), wx - 1.7, 0.22, wz + 1.35));
       streetDress.add(boxMesh(0.65, 0.38, 0.48, kit.solid(9072704, 0.95), wx - 1.55, 0.58, wz + 1.4));
       streetDress.add(boxMesh(0.55, 0.35, 0.42, kit.solid(10520656, 0.95), wx + 2.1, 0.2, wz - 1.1));
@@ -57665,6 +57699,10 @@ void main() {
     {
       const sx = 5.4, sz = 22;
       contactShadow(streetDress, sx, sz, 2.2, 0.4);
+      contactShadow(streetDress, sx - 0.85, sz + 0.6, 0.6, 0.44);
+      contactShadow(streetDress, sx + 0.9, sz + 0.8, 0.55, 0.4);
+      contactShadow(streetDress, sx - 0.2, sz + 1.3, 0.75, 0.46);
+      contactShadow(streetDress, sx + 1.1, sz - 0.9, 0.58, 0.44);
       streetDress.add(boxMesh(0.75, 0.55, 0.7, faceMat(kit, "wood", 0.75, 0.7, 1.2), sx, 0.3, sz));
       streetDress.add(boxMesh(0.6, 0.45, 0.55, faceMat(kit, "wood", 0.6, 0.55, 1.1), sx + 0.15, 0.75, sz - 0.1));
       streetDress.add(boxMesh(0.5, 0.55, 0.5, kit.solid(4861968, 0.85), sx - 0.85, 0.3, sz + 0.6));
@@ -57683,15 +57721,22 @@ void main() {
       }
       const crateG = getWesternGltf("crate");
       if (crateG) {
-        stampWesternProp(streetDress, crateG, { name: "streetCrate", x: -5.4, z: 10, yaw: 0.45, targetWidth: 0.7 });
-        stampWesternProp(streetDress, crateG, { name: "streetCrate", x: 5.5, z: -6, yaw: -0.3, targetWidth: 0.75 });
-        stampWesternProp(streetDress, crateG, { name: "streetCrate", x: -3.2, z: 14, yaw: -0.5, targetWidth: 0.9 });
-        stampWesternProp(streetDress, crateG, { name: "streetCrate", x: 4.8, z: -1.2, yaw: 0.3, targetWidth: 0.85 });
+        for (const [x, z, yaw, tw] of [
+          [-5.4, 10, 0.45, 0.7],
+          [5.5, -6, -0.3, 0.75],
+          [-3.2, 14, -0.5, 0.9],
+          [4.8, -1.2, 0.3, 0.85]
+        ]) {
+          stampWesternProp(streetDress, crateG, { name: "streetCrate", x, z, yaw, targetWidth: tw });
+          contactShadow(streetDress, x, z, tw * 0.9, 0.46);
+        }
       }
       const barrelG = getWesternGltf("barrel");
       if (barrelG) {
-        stampWesternProp(streetDress, barrelG, { name: "streetBarrel", x: -5.2, z: -8, yaw: 0.15, targetWidth: 0.55 });
-        stampWesternProp(streetDress, barrelG, { name: "streetBarrel", x: 5.3, z: 18, yaw: -0.25, targetWidth: 0.5 });
+        for (const [x, z, yaw, tw] of [[-5.2, -8, 0.15, 0.55], [5.3, 18, -0.25, 0.5]]) {
+          stampWesternProp(streetDress, barrelG, { name: "streetBarrel", x, z, yaw, targetWidth: tw });
+          contactShadow(streetDress, x, z, tw * 0.95, 0.46);
+        }
       }
     }
     {
@@ -57723,6 +57768,8 @@ void main() {
       streetDress.add(boxMesh(0.24, 0.04, 0.24, kit.solid(3824216, 0.35, 0.15), tx + 1.35, 0.38, tz + 0.55));
       streetDress.add(boxMesh(0.5, 0.32, 0.38, kit.solid(10125384, 0.95), tx - 1.4, 0.18, tz + 0.5));
       streetDress.add(boxMesh(0.12, 0.55, 0.12, faceMat(kit, "wood", 0.12, 0.55, 1), tx - 1.15, 0.35, tz - 0.45));
+      contactShadow(streetDress, tx + 1.35, tz + 0.55, 0.4, 0.4);
+      contactShadow(streetDress, tx - 1.4, tz + 0.5, 0.55, 0.42);
     }
     const wash = new Group();
     wash.name = "wash";
@@ -86687,7 +86734,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-a57fff2807bb", tipSha: false ? "" : "5d22d38", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-5efea87fc858", tipSha: false ? "" : "0b8eeb8", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -86714,7 +86761,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "5d22d38" : "") || "";
+      const tip = g2.tipSha || (true ? "0b8eeb8" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");

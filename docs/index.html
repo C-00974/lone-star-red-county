@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-2938ed89667c">
-<meta name="lsgh-tip" content="ddce329">
+<meta name="lsgh-build" content="0.35.0-next.0-6c916e90f543">
+<meta name="lsgh-tip" content="ef3bd9e">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -497,7 +497,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip ddce329</div>
+    <div class="kicker">Soft Open · Quiet · tip ef3bd9e</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -58619,32 +58619,26 @@ void main() {
       placeApproachTwinRut(wash, kit, rx, rz, i + 4);
     }
     const hoofSites = [
-      // Sparse mid corridor (culled tip 58)
-      [-10.2, 42.9],
-      [-7.2, 42.6],
-      [-1.5, 42.8],
-      [8.2, 43.3],
-      [10.5, 42.5],
-      [-11.5, 44],
-      [-4.8, 44.2],
-      [2.8, 44],
-      [8.8, 44.4],
-      [11.5, 45],
-      [1.2, 43.6],
-      // Waterline band (tip 55 fade) — keep
-      [-9.5, 45.5],
-      [-6, 45.8],
-      [-2.8, 45.2],
-      [0.2, 45.6],
-      [3.8, 45.4],
-      [7, 45.8],
-      [9.8, 45.2]
+      // Soft Open Quiet tip 60 — widen mid stride sites (was siteMinNN 1.26 stamped).
+      [-12, 42.7],
+      [-5.5, 42.5],
+      [1.5, 42.8],
+      [8.5, 42.6],
+      [13.5, 42.9],
+      [-9, 44],
+      [4, 43.9],
+      [11.5, 44],
+      // Waterline band (tip 55 fade) — thinned so mid↔wet site NN stays wide
+      [-10.5, 45.6],
+      [-4, 45.5],
+      [2, 45.7],
+      [8.5, 45.4]
     ];
     for (let i = 0; i < hoofSites.length; i++) {
       const [hx, hz] = hoofSites[i];
       const j = gritHash(hx * 1.3, hz);
-      placeApproachHoof(wash, kit, hx - 0.22, hz + (j - 0.5) * 0.2, i * 2 + 1);
-      placeApproachHoof(wash, kit, hx + 0.28, hz + 0.35 + (0.5 - j) * 0.15, i * 2 + 2);
+      placeApproachHoof(wash, kit, hx - 0.28, hz + (j - 0.5) * 0.08, i * 2 + 1);
+      placeApproachHoof(wash, kit, hx + 0.28, hz + 0.12 + (0.5 - j) * 0.06, i * 2 + 2);
     }
     const drop = new Group();
     drop.name = "drop";
@@ -87594,7 +87588,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-2938ed89667c", tipSha: false ? "" : "ddce329", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-6c916e90f543", tipSha: false ? "" : "ef3bd9e", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -87621,7 +87615,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "ddce329" : "") || "";
+      const tip = g2.tipSha || (true ? "ef3bd9e" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");

@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-975253a59001">
-<meta name="lsgh-tip" content="dd28cc2">
+<meta name="lsgh-build" content="0.35.0-next.0-eb6954bbc5a1">
+<meta name="lsgh-tip" content="d2fbdb1">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -518,7 +518,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip dd28cc2</div>
+    <div class="kicker">Soft Open · Quiet · tip d2fbdb1</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -58975,14 +58975,16 @@ void main() {
       staminaDrain: 16,
       staminaRegen: 15,
       bobAmp: 0.82,
-      bobFreq: 0.86,
+      // Soft Open Quiet tip 97 — walk seat was toy hover after coat/adobe dusk
+      // (maxBob~0.026, zero pitch). Quicken walk cadence + clip so bob reads hoof.
+      bobFreq: 0.94,
       pitchAmp: 0.75,
       rollAmp: 0.7,
       reinLag: 5.5,
       // damp steer toward input (lower = heavier lag)
       hoofRate: 0.88,
       hoofPitch: 0.9,
-      animWalk: 0.92,
+      animWalk: 1.05,
       animTrot: 1.35,
       animGallop: 0.92
     },
@@ -59316,9 +59318,9 @@ void main() {
         mesh2.mixer.update(dt);
         const speedN = MathUtils.clamp(abs / profile2.gallop, 0, 1);
         state.bob += (state.gait === "gallop" ? 11 : state.gait === "trot" ? 8.5 : 5.5) * bobF * dt;
-        const amp = (state.gait === "gallop" ? 0.12 : state.gait === "trot" ? 0.08 : state.gait === "walk" ? 0.048 : 0) * bobA;
+        const amp = (state.gait === "gallop" ? 0.12 : state.gait === "trot" ? 0.08 : state.gait === "walk" ? 0.072 : 0) * bobA;
         const bobY = amp * Math.abs(Math.sin(state.bob)) * (0.5 + 0.5 * speedN);
-        const pitch = (state.gait === "gallop" ? Math.sin(state.bob) * 0.04 * speedN - 0.028 * speedN : state.gait === "trot" ? Math.sin(state.bob * 1.4) * 0.022 : 0) * pitchA;
+        const pitch = (state.gait === "gallop" ? Math.sin(state.bob) * 0.04 * speedN - 0.028 * speedN : state.gait === "trot" ? Math.sin(state.bob * 1.4) * 0.022 : state.gait === "walk" ? Math.sin(state.bob * 1.2) * 0.016 : 0) * pitchA;
         const roll = state.gait === "idle" ? 0 : Math.sin(state.bob * 0.55) * (state.gait === "gallop" ? 0.05 : 0.03) * speedN * rollA;
         mesh2.body.position.y = bobY;
         mesh2.body.rotation.x = pitch;
@@ -59330,10 +59332,10 @@ void main() {
         const freq = (state.gait === "gallop" ? 11 : state.gait === "trot" ? 8.5 : state.gait === "walk" ? 5.2 : 0) * bobF;
         state.bob += freq * dt;
         const speedN = MathUtils.clamp(abs / profile2.gallop, 0, 1);
-        const amp = (state.gait === "gallop" ? 0.13 : state.gait === "trot" ? 0.09 : state.gait === "walk" ? 0.055 : 0) * bobA;
+        const amp = (state.gait === "gallop" ? 0.13 : state.gait === "trot" ? 0.09 : state.gait === "walk" ? 0.078 : 0) * bobA;
         const bobY = amp * Math.abs(Math.sin(state.bob * 2)) * (0.5 + 0.5 * speedN);
         mesh2.body.position.y = bobY;
-        mesh2.body.rotation.x = (state.gait === "gallop" ? Math.sin(state.bob) * 0.07 * speedN - 0.03 * speedN : state.gait === "trot" ? Math.sin(state.bob * 2) * 0.03 : 0) * pitchA;
+        mesh2.body.rotation.x = (state.gait === "gallop" ? Math.sin(state.bob) * 0.07 * speedN - 0.03 * speedN : state.gait === "trot" ? Math.sin(state.bob * 2) * 0.03 : state.gait === "walk" ? Math.sin(state.bob * 1.5) * 0.018 : 0) * pitchA;
         mesh2.body.rotation.z = state.gait === "idle" ? 0 : Math.sin(state.bob * 0.5) * 0.04 * speedN * rollA;
         state.rideBobY = bobY;
         const baseY2 = mesh2.rider.userData.baseY ?? mesh2.rider.position.y;
@@ -87678,7 +87680,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-975253a59001", tipSha: false ? "" : "dd28cc2", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-eb6954bbc5a1", tipSha: false ? "" : "d2fbdb1", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -87705,7 +87707,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "dd28cc2" : "") || "";
+      const tip = g2.tipSha || (true ? "d2fbdb1" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");

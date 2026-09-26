@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-abaf2fcdd6ab">
-<meta name="lsgh-tip" content="aaf35e3">
+<meta name="lsgh-build" content="0.35.0-next.0-9afbc8a2cd8d">
+<meta name="lsgh-tip" content="22189e5">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -497,7 +497,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip aaf35e3</div>
+    <div class="kicker">Soft Open · Quiet · tip 22189e5</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -58643,7 +58643,11 @@ void main() {
       [-1.5, 46.5],
       // Soft Open Quiet tip 66 — east far-bank hoof (+x): tip 64 sat at x≈−1.5
       // so east wet edge still bare (hoofFarE 0 vs edgeFarE 9 / pebbleFarE 1).
-      [6.5, 46.4]
+      [6.5, 46.4],
+      // Soft Open Quiet tip 76 — west far-bank hoof (−x): tip 66 left hoofFarW 0
+      // while east has 2; twin/rut at ceiling so non-twin craft. [-8.5, 46.8]
+      // (pNN 1.36 / tNN 2.84 / hNN 1.64). hoof 32→34 / hoofFarW 0→2.
+      [-8.5, 46.8]
     ];
     for (let i = 0; i < hoofSites.length; i++) {
       const [hx, hz] = hoofSites[i];
@@ -87599,7 +87603,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-abaf2fcdd6ab", tipSha: false ? "" : "aaf35e3", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-9afbc8a2cd8d", tipSha: false ? "" : "22189e5", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -87626,7 +87630,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "aaf35e3" : "") || "";
+      const tip = g2.tipSha || (true ? "22189e5" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");

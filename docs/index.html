@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-ebb8ced1ed8c">
-<meta name="lsgh-tip" content="17cfa5f">
+<meta name="lsgh-build" content="0.35.0-next.0-07a52b590e16">
+<meta name="lsgh-tip" content="5cf53e0">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -168,6 +168,22 @@ html.rc-heist #captions .skip{
 }
 html.touch-ui.rc-heist #captions{bottom:calc(max(12px,env(safe-area-inset-bottom)) + 168px);max-width:min(340px,78vw);font-size:12px}
 html.touch-ui.rc-heist #captions .skip{font-size:8px;letter-spacing:.1em}
+/* Soft Open Quiet tip 93 — phone hitch: Gas/Brake/HB still 92×70 @ op1 after
+   minimap Quiet slim; horse ride, car pedals shouted over postcard. Slim + fade. */
+html.touch-ui.rc-heist #touch-controls .tc-pedals{gap:8px}
+html.touch-ui.rc-heist #touch-controls .tc-pedal{
+  width:72px;height:52px;opacity:.58;font-size:10px;letter-spacing:.08em;
+  background:rgba(10,14,22,.28);border-color:rgba(255,255,255,.14);
+}
+html.touch-ui.rc-heist #touch-controls .tc-gas{
+  background:rgba(242,177,52,.22);color:rgba(26,18,0,.82);border-color:rgba(242,177,52,.35);
+}
+html.touch-ui.rc-heist #touch-controls .tc-hb{
+  background:rgba(180,60,50,.26);border-color:rgba(255,140,120,.28);
+}
+html.touch-ui.rc-heist #touch-controls .tc-brake{
+  background:rgba(10,14,22,.28);
+}
 @media(max-width:720px){
   html.rc-heist #crew-hud{width:calc(100vw - 24px);left:12px;top:12px}
   html.rc-heist #challenge{top:auto;left:12px;right:12px;max-width:none;position:absolute}
@@ -502,7 +518,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip 17cfa5f</div>
+    <div class="kicker">Soft Open · Quiet · tip 5cf53e0</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -87613,7 +87629,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-ebb8ced1ed8c", tipSha: false ? "" : "17cfa5f", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-07a52b590e16", tipSha: false ? "" : "5cf53e0", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -87640,7 +87656,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "17cfa5f" : "") || "";
+      const tip = g2.tipSha || (true ? "5cf53e0" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");

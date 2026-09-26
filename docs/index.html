@@ -2,8 +2,8 @@
 <html lang="en" class="red-county">
 <head>
 <meta charset="utf-8">
-<meta name="lsgh-build" content="0.35.0-next.0-8dd70b9989e8">
-<meta name="lsgh-tip" content="b00dcfa">
+<meta name="lsgh-build" content="0.35.0-next.0-06d0f52e32df">
+<meta name="lsgh-tip" content="234f357">
 <meta name="lsgh-mode" content="red-county">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -497,7 +497,7 @@ html.touch-ui #app canvas.game, html.touch-ui #touch-controls {
   <div id="viewfinder"><div class="frame"></div><div class="rec"><i></i>SCOUT CAM</div><div class="meta">35mm · f/2.8 · 1/250</div><div class="eval"><div class="grade">—</div><div class="tip"></div><div class="checks"></div><div class="act"></div></div></div>
   <div id="photomode"><div class="lb t"></div><div class="lb b"></div><div class="bar"></div></div>
   <div id="title" class="overlay">
-    <div class="kicker">Soft Open · Quiet · tip b00dcfa</div>
+    <div class="kicker">Soft Open · Quiet · tip 234f357</div>
     <h1>LONE STAR<span>RED COUNTY</span></h1>
     <p class="sub">Outlaw western Soft Open. Ride for Rae — horses, hitch heist, creek drop. Quiet approach.</p>
     <div class="menu" id="title-menu"><button class="btn primary" id="btn-soft-open" disabled>Start Soft Open</button><button class="btn" id="btn-settings">Settings</button><button class="btn" id="btn-controls">Controls</button></div>
@@ -56781,22 +56781,26 @@ void main() {
   }
   function placeApproachHoof(group, kit, x, z, seed = 0) {
     const h = gritHash(x * 1.21 + seed, z * 0.84);
+    const nearWet = Math.max(0, Math.min(1, (z - 44.8) / 1.8));
+    const fade = 1 - nearWet * 0.55;
+    const shrink = 1 - nearWet * 0.42;
     const mat3 = new MeshBasicMaterial({
       map: gritAoMap(),
       color: h > 0.45 ? 4864552 : 3812896,
       transparent: true,
-      opacity: 0.42 + h * 0.18,
+      opacity: (0.42 + h * 0.18) * fade,
       depthWrite: false
     });
     const disc3 = new Mesh(new PlaneGeometry(2, 2), mat3);
     disc3.name = "approachHoof";
     disc3.rotation.x = -Math.PI / 2;
     disc3.rotation.z = (h - 0.5) * 0.9 + seed % 3 * 0.15;
-    const sx = 0.18 + h * 0.1;
-    const sz = 0.26 + h * 0.12;
-    disc3.scale.set(sx, sz, 1);
+    const sx = (0.18 + h * 0.1) * shrink;
+    const szPad = (0.26 + h * 0.12) * shrink;
+    disc3.scale.set(sx, szPad, 1);
     disc3.position.set(x, 0.024 + h * 2e-3, z);
     disc3.renderOrder = 2;
+    disc3.userData.hoofNear = nearWet > 0.35;
     group.add(disc3);
     return disc3;
   }
@@ -87602,7 +87606,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
   // src/main.js
   var buildVegetation2 = buildVegetation;
   var canvas3 = document.getElementById("gl");
-  var g = { buildId: false ? "source" : "0.35.0-next.0-8dd70b9989e8", tipSha: false ? "" : "b00dcfa", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
+  var g = { buildId: false ? "source" : "0.35.0-next.0-06d0f52e32df", tipSha: false ? "" : "234f357", inCar: false, state: "title", cameraSnap: false, paused: false, look: { dx: 0, dy: 0, wheel: 0 } };
   window.LS = g;
   window.__ls_keys = {};
   window.addEventListener("keydown", (e) => {
@@ -87629,7 +87633,7 @@ gl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor * (1.0 - keepF) );
     try {
       document.documentElement.classList.add("red-county");
       document.title = "Red County \xB7 Soft Open";
-      const tip = g2.tipSha || (true ? "b00dcfa" : "") || "";
+      const tip = g2.tipSha || (true ? "234f357" : "") || "";
       const kicker = document.querySelector("#title .kicker");
       if (kicker) kicker.textContent = tip ? "Soft Open \xB7 Quiet \xB7 tip " + tip : "Soft Open \xB7 Quiet";
       const h1 = document.querySelector("#title h1");

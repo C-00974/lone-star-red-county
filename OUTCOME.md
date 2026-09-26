@@ -1,18 +1,18 @@
 # RED COUNTY Soft Open — product face
 
-**Tip:** `aecd39b`
+**Tip:** `f7f7182`
 **Source:** LoneStar-Next branch `red-county`
-**Published:** 2026-09-26T19:33:53.701Z
+**Published:** 2026-09-26T19:43:24.014Z
 
 ## Play (one link — phone + desktop)
 
 **https://c-00974.github.io/lone-star-red-county/**
 
-Single `index.html`. Touch UI auto-detects (same pattern as Golden Hour). Optional `?v=aecd39b` busts cache; `?touch=1` is not required.
+Single `index.html`. Touch UI auto-detects (same pattern as Golden Hour). Optional `?v=f7f7182` busts cache; `?touch=1` is not required.
 
 This face is **Red County Soft Open only** — never Golden Hour Lotus / Greenville drive.
 
-Mirror (engine play repo, not the product face): https://c-00974.github.io/lone-star-golden-hour-next-play/red-county.html?v=aecd39b
+Mirror (engine play repo, not the product face): https://c-00974.github.io/lone-star-golden-hour-next-play/red-county.html?v=f7f7182
 
 ## Notes
 
